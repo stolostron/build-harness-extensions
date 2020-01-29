@@ -1,7 +1,7 @@
 export SHELL = /bin/bash
 export GITHUB_USER ?=
 export GITHUB_TOKEN ?=
-export BUILD_HARNESS_ORG ?= cloudposse
+export BUILD_HARNESS_ORG ?= open-cluster-management
 export BUILD_HARNESS_PROJECT ?= build-harness
 export BUILD_HARNESS_BRANCH ?= master
 export BUILD_HARNESS_PATH ?= $(shell until [ -d "$(BUILD_HARNESS_PROJECT)" ] || [ "`pwd`" == '/' ]; do cd ..; done; pwd)/$(BUILD_HARNESS_PROJECT)
