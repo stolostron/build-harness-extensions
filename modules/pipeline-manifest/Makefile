@@ -1,5 +1,4 @@
 # GITHUB_USER containing '@' char must be escaped with '%40'
-JQ ?= jq
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
@@ -40,6 +39,7 @@ pipeline-manifest/_sort: %_sort:
 .PHONY: pipeline-manifest/_clone
 # Clone the configured pipeline manifest repo
 pipeline-manifest/_clone: %_clone:
+	@$(SELF) jq/install > /dev/null
 	@if [ -d $(PIPELINE_MANIFEST_DIR) ];  \
 	then $(SELF) -s pipeline-manifest/_pull; \
 	else $(GIT) clone -b $(PIPELINE_MANIFEST_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
