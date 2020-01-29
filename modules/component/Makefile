@@ -64,8 +64,9 @@ component/test/e2e: %test/e2e:
 component/deploy: %deploy:
 	$(call assert-set,COMPONENT_NAME)
 	$(call assert-set,COMPONENT_VERSION)
-	@echo component/clone
-	${COMPONENT_DEPLOY_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
+	@echo component/deploy
+	@$(SELF) oc/install
+	${COMPONENT_DEPLOY_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION} ${OC} ${BUILD_HARNESS_PATH}/../
 
 .PHONY: component/push
 ## Push the component to COMPONENT_DOCKER_REPO
