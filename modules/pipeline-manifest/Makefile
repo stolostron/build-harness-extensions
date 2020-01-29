@@ -33,12 +33,12 @@ DELETED_COMPONENT ?=
 
 
 .PHONY: pipeline-manifest/_sort
-## Parse the configured pipeline manifest repo
+# Parse the configured pipeline manifest repo
 pipeline-manifest/_sort: %_sort:
 	@$(JQ) '$(PM_SORT_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
 
 .PHONY: pipeline-manifest/_clone
-## Clone the configured pipeline manifest repo
+# Clone the configured pipeline manifest repo
 pipeline-manifest/_clone: %_clone:
 	@if [ -d $(PIPELINE_MANIFEST_DIR) ];  \
 	then $(SELF) -s pipeline-manifest/_pull; \
@@ -46,24 +46,24 @@ pipeline-manifest/_clone: %_clone:
 	fi
 
 .PHONY: pipeline-manifest/_pull
-## Pull the configured pipeline manifest repo
+# Pull the configured pipeline manifest repo
 pipeline-manifest/_pull: %_pull:
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) pull --quiet
 
 .PHONY: pipeline-manifest/_push
-## Push the configured pipeline manifest repo
+# Push the configured pipeline manifest repo
 pipeline-manifest/_push: %_push:
 	@$(SELF) pipeline-manifest/_sort
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "$(PIPELINE_GIT_MESSAGE)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_read
-## Parse the configured pipeline manifest repo
+# Parse the configured pipeline manifest repo
 pipeline-manifest/_read: %_read: %_clone
 	@$(JQ) '$(PM_MANIFEST_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
 
 .PHONY: pipeline-manifest/add
-## Add component named $COMPONENT_NAME at version $COMPONENT_VERSION to the pipeline manifest in stage $PIPELINE_STAGE 
+# Add component named $COMPONENT_NAME at version $COMPONENT_VERSION to the pipeline manifest in stage $PIPELINE_STAGE 
 pipeline-manifest/add: %add: %_clone %_add
 	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Added $(PIPELINE_MANIFEST_COMPONENT)"
 
@@ -77,7 +77,7 @@ pipeline-manifest/_add: %_add:
 	@$(JQ) '$(PM_ADDITION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
 
 .PHONY: pipeline-manifest/update
-## Update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
+## Add or update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
 pipeline-manifest/update: %update: %_clone %_update
 	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Updated $(PIPELINE_MANIFEST_COMPONENT)"
 
