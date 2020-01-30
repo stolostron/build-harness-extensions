@@ -39,7 +39,7 @@ pipeline-manifest/_sort: %_sort:
 .PHONY: pipeline-manifest/_clone
 # Clone the configured pipeline manifest repo
 pipeline-manifest/_clone: %_clone:
-	@$(SELF) jq/install > /dev/null
+	@$(shell $(SELF) jq/install 1&>2 /dev/null)
 	@if [ -d $(PIPELINE_MANIFEST_DIR) ];  \
 	then $(SELF) -s pipeline-manifest/_pull; \
 	else $(GIT) clone -b $(PIPELINE_MANIFEST_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
