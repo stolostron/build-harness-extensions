@@ -87,12 +87,3 @@ component/pull: %pull:
 	$(call assert-set,COMPONENT_VERSION)
 	$(DOCKER) login ${COMPONENT_DOCKER_REPO} -u ${DOCKER_USER} -p ${DOCKER_PASS}
 	$(DOCKER) pull ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
-
-.PHONY: component/manifest/update
-## Update the pipeline manifest for PIPELINE_MANIFEST_COMPONENT to PIPELINE_MANIFEST_PAYLOAD
-component/manifest/update: %manifest/update:
-	$(call assert-set,COMPONENT_NAME)
-	$(call assert-set,COMPONENT_VERSION)
-	@echo component/manifest/update
-	@$(SELF) pipeline-manifest/update
-
