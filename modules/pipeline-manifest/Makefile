@@ -52,7 +52,7 @@ pipeline-manifest/_pull: %_pull:
 
 .PHONY: pipeline-manifest/_push
 # Push the configured pipeline manifest repo
-pipeline-manifest/_push: %_push:
+pipeline-manifest/_push: %_push: %_clone
 	@$(SELF) pipeline-manifest/_sort
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "$(PIPELINE_GIT_MESSAGE)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
@@ -121,4 +121,5 @@ pipeline-manifest/_delete: %_delete:
 pipeline-manifest/_promote: %_promote: %_clone:
 	$(call assert-set,PROMTE_FROM)
 	$(call assert-set,PROMTE_TO)
-	cp $(PROMTE_FROM).json $(PROMTE_TO).json
+	cp $(PIPELINE_MANIFEST_DIR)/$(PROMTE_FROM).json $(PIPELINE_MANIFEST_DIR)/$(PROMTE_TO).json
+	
