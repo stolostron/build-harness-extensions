@@ -23,7 +23,7 @@ PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/mvpcicdpipeline
 
 PIPELINE_STAGE ?= integration
 PM_MANIFEST_QUERY ?= .[] |select(.name == "$(PIPELINE_MANIFEST_COMPONENT)")
-PM_ADDITION_QUERY ?= .[. | length] |= . + {"name": "$(PIPELINE_MANIFEST_COMPONENT)", "tag": "$(PIPELINE_MANIFEST_VERSION)", "sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
+PM_ADDITION_QUERY ?= .[. | length] |= . + {"name": "$(PIPELINE_MANIFEST_COMPONENT)", "tag": "$(PIPELINE_MANIFEST_VERSION)-$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.name != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.name)
 
@@ -115,3 +115,10 @@ pipeline-manifest/delete: %delete: %_clone %_delete
 pipeline-manifest/_delete: %_delete:
 	$(call assert-set,DELETED_COMPONENT)
 	@$(JQ) '[$(PM_DELETION_QUERY)]' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
+
+.PHONY: pipeline-manifest/_promote
+# Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
+pipeline-manifest/_promote: %_promote: %_clone:
+	$(call assert-set,PROMTE_FROM)
+	$(call assert-set,PROMTE_TO)
+	cp $(PROMTE_FROM).json $(PROMTE_TO).json
