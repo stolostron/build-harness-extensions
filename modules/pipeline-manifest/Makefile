@@ -5,9 +5,9 @@ GITHUB_TOKEN ?=
 # May or may not be in github enterprise
 PIPELINE_MANIFEST_SITE ?= github.ibm.com
 # May be in RedHat main org or in some ACM specific org
-PIPELINE_MANIFEST_ORG ?= IBMPrivateCloud
+PIPELINE_MANIFEST_ORG ?= open-cluster-management
 # Repo name not yet confirmed
-PIPELINE_MANIFEST_REPO?= mvp-pipeline
+PIPELINE_MANIFEST_REPO?= pipeline
 # The URL for the pipeline repo
 PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO).git"
 # Branch of manifest to pull
