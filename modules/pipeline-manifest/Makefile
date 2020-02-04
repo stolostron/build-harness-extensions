@@ -3,7 +3,7 @@ GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
 # May or may not be in github enterprise
-PIPELINE_MANIFEST_SITE ?= github.ibm.com
+PIPELINE_MANIFEST_SITE ?= github.com
 # May be in RedHat main org or in some ACM specific org
 PIPELINE_MANIFEST_ORG ?= open-cluster-management
 # Repo name not yet confirmed
