@@ -118,8 +118,7 @@ pipeline-manifest/_delete: %_delete:
 
 .PHONY: pipeline-manifest/_promote
 # Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
-pipeline-manifest/_promote: %_promote: %_clone:
+pipeline-manifest/_promote: %_promote: %_clone
 	$(call assert-set,PROMTE_FROM)
 	$(call assert-set,PROMTE_TO)
 	cp $(PIPELINE_MANIFEST_DIR)/$(PROMTE_FROM).json $(PIPELINE_MANIFEST_DIR)/$(PROMTE_TO).json
-	
