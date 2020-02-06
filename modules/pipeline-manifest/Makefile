@@ -11,7 +11,7 @@ PIPELINE_MANIFEST_REPO?= pipeline
 # The URL for the pipeline repo
 PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO).git"
 # Branch of manifest to pull
-PIPELINE_MANIFEST_BRANCH ?= master
+PIPELINE_MANIFEST_BRANCH ?= release-1.0.0
 # Directory to put manifest in
 PIPELINE_MANIFEST_DIR ?= $(PIPELINE_MANIFEST_REPO)
 # The name of the component to modify
