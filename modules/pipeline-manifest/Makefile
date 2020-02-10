@@ -19,7 +19,7 @@ PIPELINE_MANIFEST_COMPONENT ?= $(COMPONENT_NAME)
 # The payload to change of the component specified by PIPELINE_MANIFEST_COMPONENT
 PIPELINE_MANIFEST_VERSION ?= $(COMPONENT_VERSION)
 
-PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/mvpcicdpipeline
+PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
 
 PIPELINE_STAGE ?= integration
 PM_MANIFEST_QUERY ?= .[] |select(.name == "$(PIPELINE_MANIFEST_COMPONENT)")
