@@ -2,7 +2,7 @@
 COMPONENT_TYPE ?= component
 
 # Full path to this modules' scripts bin directory.
-COMPONENT_SCRIPTS_PATH=${BUILD_HARNESS_PATH}/../build-harness-extensions/modules/component/bin/${COMPONENT_TYPE}
+COMPONENT_SCRIPTS_PATH ?= ${BUILD_HARNESS_PATH}/../build-harness-extensions/modules/component/bin/${COMPONENT_TYPE}
 
 # Find component name and component version from repo artifacts
 COMPONENT_NAME ?= $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_NAME 2> /dev/null)
