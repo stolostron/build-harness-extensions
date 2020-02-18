@@ -113,7 +113,7 @@ $(hash_sha256 "${HTTP_CANONICAL_REQUEST}")"
   signingKey=$(hmac_sha256 hexkey:"${serviceKey}" "aws4_request")
 
   printf "${stringToSign}" | openssl dgst -sha256 -mac HMAC -macopt \
-      hexkey:"${signingKey}" | awk '{print $0}'
+      hexkey:"${signingKey}" | awk '{print $2}'
 }
 
 function usage
