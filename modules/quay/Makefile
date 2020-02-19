@@ -3,10 +3,8 @@ DOCKER := $(shell which docker)
 
 QUAY_DRY_RUN ?= false
 QUAY_TOKEN ?= 
-QUAY_REPO ?= ${COMPONENT_DOCKER_REPO}
 QUAY_COMPONENT_TAG ?=
 QUAY_RETAG_NAME ?=
-QUAY_RETAG_SHA ?= ${PIPELINE_MANIFEST_COMPONENT_SHA256}
 PIPELINE_MANIFEST_ORG ?= open-cluster-management
 
 # Retag needs to do the following steps:
@@ -19,7 +17,6 @@ quay/retag: %retag:
 	$(call assert-set,QUAY_TOKEN)
 	$(call assert-set,QUAY_RETAG_NAME)
 	$(call assert-set,COMPONENT_NAME)
-	$(call assert-set,QUAY_RETAG_SHA)
 	$(call assert-set,QUAY_COMPONENT_TAG)
 	$(call assert-set,PIPELINE_MANIFEST_ORG)
 	@$(SELF) jq/install > /dev/null
