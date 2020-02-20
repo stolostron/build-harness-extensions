@@ -26,6 +26,28 @@ function putS3
   return $?
 }
 
+# delete a file from S3
+function deleteS3
+{
+  s3_folder_path=$2
+  file_path=$3
+  date=$(date -R)
+  acl="x-amz-acl:private"
+  content_type="application/x-compressed-tar"
+  string="DELETE\n\n$content_type\n$date\n$acl\n/$S3BUCKET$s3_folder_path${file_path##/*/}"
+  signature=$(echo -en "${string}" | openssl sha1 -hmac "${S3SECRET}" -binary | base64)
+
+  curl -L --retry 3 --retry-delay 10 -X DELETE -T "$file_path" \
+       -H "Host: $S3BUCKET.${AWS_SERVICE}.amazonaws.com" \
+       -H "Date: $date" \
+       -H "Content-Type: $content_type" \
+       -H "$acl" \
+       -H "Authorization: AWS ${S3KEY}:$signature" \
+       "https://$S3BUCKET.${AWS_SERVICE}.amazonaws.com$s3_folder_path${file_path##/*/}"
+
+  return $?
+}
+
 # get file from S3
 function getS3
 {
@@ -112,8 +134,11 @@ $(hash_sha256 "${HTTP_CANONICAL_REQUEST}")"
   serviceKey=$(hmac_sha256 hexkey:"${regionKey}" "${AWS_SERVICE}")
   signingKey=$(hmac_sha256 hexkey:"${serviceKey}" "aws4_request")
 
+  if [ "$BUILD_HARNESS_OS" == "darwin" ]; then
   printf "${stringToSign}" | openssl dgst -sha256 -mac HMAC -macopt \
-      hexkey:"${signingKey}" | awk '{print $2}'
+      hexkey:"${signingKey}" | awk '{print $0}'; else
+  printf "${stringToSign}" | openssl dgst -sha256 -mac HMAC -macopt \
+      hexkey:"${signingKey}" | awk '{print $2}'; fi
 }
 
 function usage
@@ -127,6 +152,8 @@ if [ "$1" = "get" ]; then
   getS3 $1 $2 $3
 elif [ "$1" = "put" ]; then
   putS3 $1 $2 $3
+elif [ "$1" = "delete" ]; then
+  deleteS3 $1 $2 $3
 else
   usage
   exit 2

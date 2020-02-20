@@ -21,3 +21,9 @@ persistence/get-file: %get-file:
 persistence/put-file: %put-file:
 	@echo "Saving file: $(PERSIST_FILE)"
 	$(shell $(BUILD_HARNESS_PATH)/../build-harness-extensions/modules/persistence/bin/s3_persist.sh put $(PERSIST_PATH) $(PERSIST_FILE))
+
+.PHONY: persistence/delete-file
+## Delete a file
+persistence/delete-file: %delete-file:
+	@echo "Deleting file: $(PERSIST_FILE)"
+	$(shell $(BUILD_HARNESS_PATH)/../build-harness-extensions/modules/persistence/bin/s3_persist.sh delete $(PERSIST_PATH) $(PERSIST_FILE))
