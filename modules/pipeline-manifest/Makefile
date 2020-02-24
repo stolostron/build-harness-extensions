@@ -10,39 +10,55 @@ PIPELINE_MANIFEST_ORG ?= open-cluster-management
 PIPELINE_MANIFEST_REPO?= pipeline
 # The URL for the pipeline repo
 PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO).git"
-# Branch of manifest to pull
-PIPELINE_MANIFEST_BRANCH ?= release-1.0.0
+# Branch of release compenent is on, i.e release-1.0.0
+PIPELINE_MANIFEST_COMPONENT_BRANCH  ?= $(PIPELINE_MANIFEST_BRANCH)
+# Release version of the product
+PIPELINE_MANIFEST_RELEASE_VERSION := $(shell echo $(PIPELINE_MANIFEST_BRANCH) | awk -F"-" '{ print $2 }')
 # Directory to put manifest in
 PIPELINE_MANIFEST_DIR ?= $(PIPELINE_MANIFEST_REPO)
 # The name of the component to modify
 PIPELINE_MANIFEST_COMPONENT ?= $(COMPONENT_NAME)
 # The payload to change of the component specified by PIPELINE_MANIFEST_COMPONENT
-PIPELINE_MANIFEST_VERSION ?= $(COMPONENT_VERSION)
+PIPELINE_MANIFEST_COMPONENT_VERSION ?= $(COMPONENT_VERSION)
+# Pipeline manifest file name
+PIPELINE_MANIFEST_FILE_NAME ?= manifest
+# Pipeline manifest snapshot folder
+PIPELINE_MANIFEST_SNAPSHOT_FOLDER ?= snapshots
 
 PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
 
+PIPELINE_MANIFEST_COMPONENT_SUFFIX ?= $(PIPELINE_MANIFEST_COMPONENT_SHA256)
+
+PIPELINE_MANIFEST_COMPONENT_TAG ?= $(PIPELINE_MANIFEST_COMPONENT_VERSION)-$(PIPELINE_MANIFEST_COMPONENT_SUFFIX)
+
 PIPELINE_STAGE ?= integration
 PM_MANIFEST_QUERY ?= .[] |select(.name == "$(PIPELINE_MANIFEST_COMPONENT)")
-PM_ADDITION_QUERY ?= .[. | length] |= . + {"name": "$(PIPELINE_MANIFEST_COMPONENT)", "tag": "$(PIPELINE_MANIFEST_VERSION)-$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
+PM_ADDITION_QUERY ?= .[. | length] |= . + {"name": "$(PIPELINE_MANIFEST_COMPONENT)", "tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.name != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.name)
+
+PROMOTE_FROM ?= $(PIPELINE_STAGE)
+PROMOTE_TO ?=
 
 REPLACED_COMPONENT ?=
 DELETED_COMPONENT ?=
 
+PIPELINE_MANIFEST_GIT_BRANCH := $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_FROM)
+
+DATETIME := $(shell (date +%Y-%m-%d-%H-%M-%S))
 
 .PHONY: pipeline-manifest/_sort
 # Parse the configured pipeline manifest repo
 pipeline-manifest/_sort: %_sort:
-	@$(JQ) '$(PM_SORT_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
+	@$(JQ) '$(PM_SORT_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/_clone
 # Clone the configured pipeline manifest repo
 pipeline-manifest/_clone: %_clone:
-	@$(shell $(SELF) jq/install 1&>2 /dev/null)
+	@$(shell $(SELF) jq/install > /dev/null)
 	@if [ -d $(PIPELINE_MANIFEST_DIR) ];  \
 	then $(SELF) -s pipeline-manifest/_pull; \
-	else $(GIT) clone -b $(PIPELINE_MANIFEST_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
+	else $(GIT) clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
 	fi
 
 .PHONY: pipeline-manifest/_pull
@@ -54,13 +70,19 @@ pipeline-manifest/_pull: %_pull:
 # Push the configured pipeline manifest repo
 pipeline-manifest/_push: %_push: %_clone
 	@$(SELF) pipeline-manifest/_sort
+	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(DATETIME).json
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(DATETIME).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "$(PIPELINE_GIT_MESSAGE)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(DATETIME).json $(DATETIME) true \
+	 || ( cd $(PIPELINE_MANIFEST_DIR); rm -f $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(DATETIME).json && $(GIT) commit -am "Deleted snapshot $(DATETIME) --quiet" && $(GIT) push --quiet )
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(DATETIME).json $(DATETIME) false
+	
 
 .PHONY: pipeline-manifest/_read
 # Parse the configured pipeline manifest repo
 pipeline-manifest/_read: %_read: %_clone
-	@$(JQ) '$(PM_MANIFEST_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
+	@$(JQ) '$(PM_MANIFEST_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/add
 # Add component named $COMPONENT_NAME at version $COMPONENT_VERSION to the pipeline manifest in stage $PIPELINE_STAGE 
@@ -74,13 +96,13 @@ pipeline-manifest/_add: %_add:
 	$(call assert-set,COMPONENT_VERSION)
 	$(call assert-set,PIPELINE_MANIFEST_COMPONENT_REPO)
 	$(call assert-set,PIPELINE_MANIFEST_COMPONENT_SHA256)
-	@$(JQ) '$(PM_ADDITION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
+	@$(JQ) '$(PM_ADDITION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/update
 ## Add or update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
 pipeline-manifest/update: %update: %_clone %_update
 	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Updated $(PIPELINE_MANIFEST_COMPONENT)"
-	@echo "Successfully updated ${PIPELINE_MANIFEST_COMPONENT} to ${PIPELINE_MANIFEST_COMPONENT}:${PIPELINE_MANIFEST_VERSION} in https://$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO)"
+	@echo "Successfully updated ${PIPELINE_MANIFEST_COMPONENT} to ${PIPELINE_MANIFEST_COMPONENT}:${PIPELINE_MANIFEST_COMPONENT_VERSION} in https://$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO)"
 
 .PHONY: pipeline-manifest/_update
 # Update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
@@ -115,11 +137,21 @@ pipeline-manifest/delete: %delete: %_clone %_delete
 # Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
 pipeline-manifest/_delete: %_delete:
 	$(call assert-set,DELETED_COMPONENT)
-	@$(JQ) '[$(PM_DELETION_QUERY)]' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_STAGE).json
+	@$(JQ) '[$(PM_DELETION_QUERY)]' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/_promote
 # Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
 pipeline-manifest/_promote: %_promote: %_clone
 	$(call assert-set,PROMOTE_FROM)
 	$(call assert-set,PROMOTE_TO)
-	cp $(PIPELINE_MANIFEST_DIR)/$(PROMOTE_FROM).json $(PIPELINE_MANIFEST_DIR)/$(PROMOTE_TO).json
+	cp $(PIPELINE_MANIFEST_DIR)/$(PROMOTE_FROM).json $(PIPELINE_MANIFEST_FILE_NAME).json
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) checkout $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_TO)
+	mv $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
+
+#.PHONY: pipeline-manifest/_snapshot
+# Create snapshot of current repo.
+#pipeline-manifest/_snapshot: %_snapshot: %_clone
+	## for i in manifest.json []
+	## $(SELF) pipeline-manifest/_add  PIPELINE_MANIFEST_COMPONENT_SUFFIX=$(DATETIME)
+	## fi
+
