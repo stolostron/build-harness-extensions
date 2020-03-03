@@ -25,6 +25,8 @@ PIPELINE_MANIFEST_COMPONENT_VERSION ?= $(COMPONENT_VERSION)
 PIPELINE_MANIFEST_FILE_NAME ?= manifest
 # Pipeline manifest snapshot folder
 PIPELINE_MANIFEST_SNAPSHOT_FOLDER ?= snapshots
+# The branch of the pipeline to use for quay retagging (typically quay-retag vs. quay-retag-test)
+PIPELINE_MANIFEST_RETAG_BRANCH ?= quay-retag
 
 PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
 
@@ -135,7 +137,7 @@ pipeline-manifest/_replace: %_replace:
 .PHONY: pipeline-manifest/delete
 ## Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
 pipeline-manifest/delete: %delete: %_clone %_delete
-	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Deleted $(PIPELINE_MANIFEST_COMPONENT)"
+	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Deleted $(DELETED_COMPONENT)"
 
 .PHONY: pipeline-manifest/_delete
 # Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
@@ -162,7 +164,7 @@ pipeline-manifest/_promote: %_promote: %_clone
 pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 	@$(SELF) pipeline-manifest/_datetime_gen
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME).json
-	@cd $(PIPELINE_MANIFEST_DIR); git checkout quay-retag
+	@cd $(PIPELINE_MANIFEST_DIR); git checkout $(PIPELINE_MANIFEST_RETAG_BRANCH)
 	@echo $(PIPELINE_MANIFEST_GIT_BRANCH) > $(PIPELINE_MANIFEST_DIR)/ORIGIN_BRANCH
 	@cat DATETIME > $(PIPELINE_MANIFEST_DIR)/TAG
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
@@ -174,7 +176,7 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG).json
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG))"  --quiet
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG)"  --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
