@@ -26,7 +26,9 @@ imagescan/status:
 	@$(call assert-set,SECURITYSCANS_IMAGE_NAME)
 	@$(call assert-set,SECURITYSCANS_IMAGE_VERSION)
 	@$(call assert-set,SECURITYSCANS_TK)
-	@python3 $(SECURITYSCANS_DIR)/imagescan.py --image ${SECURITYSCANS_DOCKER_REPO}/${SECURITYSCANS_IMAGE_NAME}:${SECURITYSCANS_IMAGE_VERSION}${SECURITYSCANS_IMAGE_TAG_EXTENSION} --imagescan_token $(SECURITYSCANS_TK)
+	if [[ "$(TRAVIS_BRANCH)" == release-* ]]; then \
+		@python3 $(SECURITYSCANS_DIR)/imagescan.py --image ${SECURITYSCANS_DOCKER_REPO}/${SECURITYSCANS_IMAGE_NAME}:${SECURITYSCANS_IMAGE_VERSION}${SECURITYSCANS_IMAGE_TAG_EXTENSION} --imagescan_token $(SECURITYSCANS_TK) \
+	fi
 
 ## Run all security scans
 security/scans: %security/scans: %configscan/report %imagescan/status
