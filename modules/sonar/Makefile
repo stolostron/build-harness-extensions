@@ -3,7 +3,8 @@
 sonar/go: go/gosec-install
 	go test -coverprofile=coverage.out -json ./... > report.json
 	gosec --quiet -fmt sonarqube -out gosec.json -no-fail ./...
-	SONARQUBE_SCANNER_PARAMS="" sonar-scanner --debug
+	unset SONARQUBE_SCANNER_PARAMS
+	sonar-scanner --debug
 
 # This expects that your code uses Jest to execute tests.
 # Add this field to your jest.config.js file to generate the report:
@@ -19,4 +20,5 @@ sonar/js/jest-init:
 .PHONY: sonar/js
 ## Runs the SonarCloud analysis for JavaScript. This will generally be run as part of a Travis build, not during local development.
 sonar/js:
-	SONARQUBE_SCANNER_PARAMS="" sonar-scanner --debug
+	unset SONARQUBE_SCANNER_PARAMS
+	sonar-scanner --debug
