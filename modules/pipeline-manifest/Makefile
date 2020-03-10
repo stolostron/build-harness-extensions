@@ -26,7 +26,7 @@ PIPELINE_MANIFEST_FILE_NAME ?= manifest
 # Pipeline manifest snapshot folder
 PIPELINE_MANIFEST_SNAPSHOT_FOLDER ?= snapshots
 # The branch of the pipeline to use for quay retagging (typically quay-retag vs. quay-retag-test)
-PIPELINE_MANIFEST_RETAG_BRANCH ?= quay-retag
+PIPELINE_MANIFEST_RETAG_BRANCH ?= quay-retag-test
 
 PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
 
