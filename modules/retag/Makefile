@@ -43,3 +43,9 @@ retag/git: %git:
 	then $(CURL) --fail --output /dev/null -L -X GET -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${RETAG_REPO}/git/commits/${RETAG_GITHUB_SHA}"; \
 	else $(CURL) -L -X POST -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${RETAG_REPO}/git/refs" --data '{ "ref": "refs/tags/${RETAG_SNAPSHOT_NAME}", "sha": "${RETAG_GITHUB_SHA}" }'; \
 	fi
+
+.PHONY: retag/getquaysha
+## Get the quay sha256 out of the manifest digest
+retag/getquaysha: %getquaysha:
+	@$(shell $(SELF) jq/install > /dev/null)
+	@$(CURL) --fail --silent -X GET -H "Authorization: Bearer ${QUAY_TOKEN}" "https://quay.io/api/v1/repository/${PIPELINE_MANIFEST_ORG}/${COMPONENT_NAME}/tag/?onlyActiveTags=true&specificTag=${RETAG_QUAY_COMPONENT_TAG}" | $(JQ) -r .tags[0].manifest_digest
