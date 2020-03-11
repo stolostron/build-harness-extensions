@@ -42,6 +42,7 @@ component/build: %build: %init
 	$(call assert-set,COMPONENT_VERSION)
 	@echo component/build
 	${COMPONENT_BUILD_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
+	@echo "Built the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
 
 .PHONY: component/test/unit
 ## Execute component's unit tests
@@ -50,6 +51,8 @@ component/test/unit: %test/unit:
 	$(call assert-set,COMPONENT_VERSION)
 	@echo component/test/unit
 	${COMPONENT_UNIT_TEST_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
+	@echo "Run Unit Tests on the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
+
 
 .PHONY: component/test/e2e
 ## Execute component's e2e tests
@@ -58,6 +61,8 @@ component/test/e2e: %test/e2e:
 	$(call assert-set,COMPONENT_VERSION)
 	@echo component/test/e2e
 	${COMPONENT_E2E_TEST_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
+	@echo "Run E2E Tests on the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
+
 
 .PHONY: component/deploy
 ## Deploy the component
@@ -67,6 +72,8 @@ component/deploy: %deploy:
 	@echo component/deploy
 	@$(SELF) oc/install
 	${COMPONENT_DEPLOY_COMMAND} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION} ${OC} ${BUILD_HARNESS_PATH}/../
+	@echo "Deployed the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
+
 
 .PHONY: component/push
 ## Push the component to COMPONENT_DOCKER_REPO
@@ -88,3 +95,5 @@ component/pull: %pull:
 	$(call assert-set,COMPONENT_VERSION)
 	$(DOCKER) login ${COMPONENT_DOCKER_REPO} -u ${DOCKER_USER} -p ${DOCKER_PASS}
 	$(DOCKER) pull ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
+	@echo "Pulled the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
+
