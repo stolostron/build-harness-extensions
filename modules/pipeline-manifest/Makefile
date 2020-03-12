@@ -47,8 +47,10 @@ REPLACED_COMPONENT ?=
 DELETED_COMPONENT ?=
 
 PIPELINE_MANIFEST_GIT_BRANCH ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_FROM)
+PIPELINE_MANIFEST_RETAG_REPO ?= quay
 
 DATETIME_VAR := $(shell (date +%Y-%m-%d-%H-%M-%S))
+
 
 .PHONY: pipeline-manifest/_datetime_gen
 # Factory method for storing datetime variable
@@ -146,16 +148,19 @@ pipeline-manifest/_delete: %_delete:
 	@$(JQ) '[$(PM_DELETION_QUERY)]' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/_promote
-# Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
+# Promote LATEST_MANIFEST from PROMOTE_FROM stage to PROMOTE_TO stage and tag git repos with release based on manifest TAG
 pipeline-manifest/_promote: %_promote: %_clone
 	$(call assert-set,PROMOTE_FROM)
 	$(call assert-set,PROMOTE_TO)
-	@$(eval LATEST_MANIFEST := $(shell cd $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER); ls -t1 manifest*.json | head -n 1))
-	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST) $(LATEST_MANIFEST)
+	$(call assert-set,LATEST_MANIFEST)
+	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json $(LATEST_MANIFEST).json
+	@if [ $(PROMOTE_TO) = "stable" ]; then \
+	$(SELF) pipeline-manifest/_validate-tag PIPELINE_MANIFEST_RETAG_REPO=git PIPELINE_MANIFEST_FILE_NAME=$(LATEST_MANIFEST); \
+	fi
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) checkout $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_TO)
-	@cp $(LATEST_MANIFEST) $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
-	@mv $(LATEST_MANIFEST) $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_FILE)
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)
+	@cp $(LATEST_MANIFEST).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
+	@mv $(LATEST_MANIFEST).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Promote from $(PROMOTE_FROM) to $(PROMOTE_TO)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push
 
@@ -182,5 +187,5 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 .PHONY: pipeline-manifest/_validate-tag
 # Validate Manifest lives in quay
 pipeline-manifest/_validate-tag: %_validate-tag:
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true quay
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false quay
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO)
