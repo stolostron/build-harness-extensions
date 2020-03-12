@@ -148,14 +148,14 @@ pipeline-manifest/_delete: %_delete:
 	@$(JQ) '[$(PM_DELETION_QUERY)]' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/_promote
-# Remove component named $DELETED_COMPONENT from $PIPELINE_STAGE's manifest pipeline
+# Promote LATEST_MANIFEST from PROMOTE_FROM stage to PROMOTE_TO stage and tag git repos with release based on manifest TAG
 pipeline-manifest/_promote: %_promote: %_clone
 	$(call assert-set,PROMOTE_FROM)
 	$(call assert-set,PROMOTE_TO)
 	$(call assert-set,LATEST_MANIFEST)
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json $(LATEST_MANIFEST).json
-	@if [ $(PROMOTE_TO) = "stable" ]; \
-	$(SELF) pipeline-manifest/_validate-tag PIPELINE_MANIFEST_RETAG_REPO=git PIPELINE_MANIFEST_FILE_NAME=$(LATEST_MANIFEST)
+	@if [ $(PROMOTE_TO) = "stable" ]; then \
+	$(SELF) pipeline-manifest/_validate-tag PIPELINE_MANIFEST_RETAG_REPO=git PIPELINE_MANIFEST_FILE_NAME=$(LATEST_MANIFEST); \
 	fi
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) checkout $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_TO)
 	@cp $(LATEST_MANIFEST).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
