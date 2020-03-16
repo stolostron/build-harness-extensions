@@ -1,1 +1,0 @@
-RELEASE_FF_BRANCH = $(shell cat RELEASE_FF_BRANCH)
