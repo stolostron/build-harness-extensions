@@ -1,5 +1,5 @@
-CURL := $(shell which curl)
-DOCKER := $(shell which docker)
+CURL := $(shell which curl 2> /dev/null)
+DOCKER := $(shell which docker 2> /dev/null)
 
 QUAY_TOKEN ?= 
 RETAG_DRY_RUN ?= false
