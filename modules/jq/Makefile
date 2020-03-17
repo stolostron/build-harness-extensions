@@ -1,4 +1,4 @@
-CURL := $(shell which curl)
+CURL := $(shell which curl 2> /dev/null)
 TMP ?= /tmp
 JQ_VERSION ?= 1.5
 JQ_PLATFORM ?= $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/osx-amd/g')
