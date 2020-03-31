@@ -43,7 +43,7 @@ do
     search_path_name=`yq r values.yaml ${search_path}name`
     if [[ "" = "$search_path_name" ]]
     then
-      echo "Oh no, there's an image with no name!"
+      echo "Oh no, there's an image with no name in $f!"
     else
       #echo search_path_name: $search_path_name
       search_path_version=`yq r values.yaml ${search_path}tag`
@@ -62,7 +62,7 @@ do
     fi
   done
   cd ..
-  tar -cvzf $f $subdir/*
+  tar -czf $f $subdir/*
   #rm -rf $subdir
   echo ""
 done
