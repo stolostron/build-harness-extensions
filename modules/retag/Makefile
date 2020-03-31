@@ -4,7 +4,6 @@ GITHUB_TOKEN ?=
 
 # Branch we are working with - i.e release-1.0.0
 RETAG_GIT_BRANCH  ?= release-1.0.0
-# Pipeline manifest file to work with
 
 CURL := $(shell which curl 2> /dev/null)
 DOCKER := $(shell which docker 2> /dev/null)
