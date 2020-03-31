@@ -1,3 +1,10 @@
+# GITHUB_USER containing '@' char must be escaped with '%40'
+GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
+GITHUB_TOKEN ?=
+
+# Branch we are working with - i.e release-1.0.0
+RETAG_GIT_BRANCH  ?= release-1.0.0
+
 CURL := $(shell which curl 2> /dev/null)
 DOCKER := $(shell which docker 2> /dev/null)
 
@@ -49,3 +56,13 @@ retag/git: %git:
 retag/getquaysha: %getquaysha:
 	@$(shell $(SELF) jq/install > /dev/null)
 	@$(CURL) --fail --silent -X GET -H "Authorization: Bearer ${QUAY_TOKEN}" "https://quay.io/api/v1/repository/${PIPELINE_MANIFEST_ORG}/${COMPONENT_NAME}/tag/?onlyActiveTags=true&specificTag=${RETAG_QUAY_COMPONENT_TAG}" | $(JQ) -r .tags[0].manifest_digest
+
+.PHONY: retag/shabuild
+## Build/package with inserted digest sha256 values
+retag/shabuild: %shabuild:
+	@$(shell $(SELF) jq/install > /dev/null)
+	@$(shell $(SELF) yq/install > /dev/null)
+	$(GIT) clone -b $(RETAG_GIT_BRANCH) https://github.com/open-cluster-management/multicloudhub-repo.git
+	$(shell $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/retag/bin/process.sh multicloudhub-repo/multiclusterhub/charts ${RETAG_SNAPSHOT_NAME} > temp.out )
+	@cat temp.out
+
