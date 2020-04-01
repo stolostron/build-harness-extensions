@@ -21,7 +21,7 @@ stages:
 jobs:
   include:
     - stage: build
-      name: "Build the image and push it
+      name: "Build the image and push it"
       script:
         - |
           docker build --tag quay.io/open-cluster-management/build-harness:latest .
