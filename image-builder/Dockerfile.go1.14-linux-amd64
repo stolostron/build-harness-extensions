@@ -1,0 +1,38 @@
+FROM registry.access.redhat.com/ubi8/ubi
+
+ENV GOPATH=/go \
+    GOVERSION=1.14.1 \
+    GOOS=linux \
+    GOARCH=amd64 \
+    GOPROXY=direct \
+    GOSUMDB=off \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin
+
+RUN yum install -y \
+    bc \
+    file \
+    findutils \
+    gpgme \
+    git \
+    hostname \
+    lsof \
+    make \
+    openssl \
+    openssl-devel \
+    socat \
+    systemd-devel \
+    tar \
+    util-linux \
+    wget \
+    which \
+    zip \
+ && yum clean all \
+ && mkdir -p /go/{bin,pkg,src} /build-harness \
+ && wget --progress=dot:mega https://dl.google.com/go/go${GOVERSION}.${GOOS}-${GOARCH}.tar.gz \
+ && tar -C /usr/local -xzf go${GOVERSION}.${GOOS}-${GOARCH}.tar.gz \
+ && rm go${GOVERSION}.${GOOS}-${GOARCH}.tar.gz \
+ && cd /build-harness \
+ && git clone https://github.com/cloudposse/build-harness.git \
+ && git clone https://github.com/open-cluster-management/build-harness-extensions.git \
+ && rm -rf build-harness/.git \
+ && rm -rf build-harness-extensions/.git
