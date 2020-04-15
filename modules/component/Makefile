@@ -96,9 +96,9 @@ component/push: %push:
 	$(DOCKER) push ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
 	@echo "Pushed the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
 
-.PHONY: component/retag-and-push
+.PHONY: component/retag
 ## Push the component to COMPONENT_DOCKER_REPO
-component/retag-and-push: %retag-and-push:
+component/retag: %retag:
 	$(call assert-set,DOCKER_USER)
 	$(call assert-set,DOCKER_PASS)
 	$(call assert-set,COMPONENT_NAME)
@@ -106,9 +106,7 @@ component/retag-and-push: %retag-and-push:
 	$(call assert-set,COMPONENT_NEWTAG)
 	$(DOCKER) login ${COMPONENT_DOCKER_REPO} -u ${DOCKER_USER} -p ${DOCKER_PASS}
 	$(DOCKER) tag ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION} ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_NEWTAG}
-	$(DOCKER) push ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_NEWTAG}
 	@echo "Tagged the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION} as ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_NEWTAG}"
-	@echo "Pushed the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_NEWTAG}"
 
 .PHONY: component/pull
 ## pull the component from COMPONENT_DOCKER_REPO
