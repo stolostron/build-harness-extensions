@@ -96,9 +96,9 @@ component/push: %push:
 	$(DOCKER) push ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}
 	@echo "Pushed the following image: ${COMPONENT_DOCKER_REPO}/${COMPONENT_NAME}:${COMPONENT_VERSION}${COMPONENT_TAG_EXTENSION}"
 
-.PHONY: component/retag
+.PHONY: component/tag
 ## Tag the component into COMPONENT_NEWTAG
-component/retag: %retag:
+component/tag: %tag:
 	$(call assert-set,DOCKER_USER)
 	$(call assert-set,DOCKER_PASS)
 	$(call assert-set,COMPONENT_NAME)
