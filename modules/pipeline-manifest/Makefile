@@ -233,7 +233,6 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 .PHONY: pipeline-manifest/_snapshot
 # Create snapshot of current repo.
 pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
-	ls $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG).json
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-v2.json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-v2.json
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
