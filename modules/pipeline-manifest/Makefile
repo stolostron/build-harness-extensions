@@ -239,7 +239,7 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-v2.json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG)"
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
