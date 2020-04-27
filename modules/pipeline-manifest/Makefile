@@ -22,9 +22,10 @@ PIPELINE_MANIFEST_DIR ?= $(PIPELINE_MANIFEST_REPO)
 PIPELINE_MANIFEST_COMPONENT ?= $(COMPONENT_NAME)
 # The payload to change of the component specified by PIPELINE_MANIFEST_COMPONENT
 PIPELINE_MANIFEST_COMPONENT_VERSION ?= $(COMPONENT_VERSION)
-# Pipeline manifest file name
+# Pipeline manifest file names
 PIPELINE_MANIFEST_FILE_NAME ?= manifest
 PIPELINE_MANIFEST_FILE_NAME_V2 ?= manifest-v2
+PIPELINE_MANIFEST_ALIAS_FILE_NAME ?=image-alias
 # Pipeline manifest snapshot folder
 PIPELINE_MANIFEST_SNAPSHOT_FOLDER ?= snapshots
 # The branch of the pipeline to use for quay retagging (typically quay-retag vs. quay-retag-test)
@@ -44,7 +45,7 @@ PM_DELETION_QUERY ?= .[] | select(.name != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.name)
 
 PM_MANIFEST_QUERY_V2 ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
-PM_ADDITION_QUERY_V2 ?= .[. | length] |= . + {"image-key": "$(PIPELINE_MANIFEST_COMPONENT_KEY)", "image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
+PM_ADDITION_QUERY_V2 ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY_V2 ?= .[] | select(.["image-name"] != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY_V2 ?= . | sort_by(.["image-name"])
 
@@ -218,7 +219,6 @@ pipeline-manifest/_promote: %_promote: %_clone
 # Stage snapshot of current repo.
 pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 	@$(SELF) pipeline-manifest/_datetime_gen
-	@echo DEBUG PIPELINE_MANIFEST_DIR/filename: $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME).json
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-v2.json $(PIPELINE_MANIFEST_FILE_NAME)-v2.json
 	@cd $(PIPELINE_MANIFEST_DIR); git checkout $(PIPELINE_MANIFEST_RETAG_BRANCH)
@@ -227,6 +227,7 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 	@cat DATETIME > $(PIPELINE_MANIFEST_DIR)/TAG
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-v2.json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-v2.json
+	@cp $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Stage snapshot of $(PIPELINE_MANIFEST_COMPONENT)-$(PIPELINE_MANIFEST_COMPONENT_SUFFIX)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
@@ -247,5 +248,5 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 pipeline-manifest/_validate-tag: %_validate-tag:
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO)
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO)
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json > out.tmp
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
 	@cat out.tmp
