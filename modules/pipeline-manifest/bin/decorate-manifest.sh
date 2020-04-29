@@ -26,12 +26,12 @@ rm manifest-sha.badjson 2> /dev/null
 cat $manifest_filename | jq -rc '.[]' | while IFS='' read item;do
   name=$(echo $item | jq -r '.["image-name"]')
   remote=$(echo $item | jq -r '.["image-remote"]')
-  repository=$(echo $item | jq -r '.["git-repository"]' | awk -F"/" '{ print $1 }')
+  repository=$(echo $item | jq -r '.["image-remote"]' | awk -F"/" '{ print $2 }')
   tag=$(echo $item | jq -r '.["image-tag"]')
   image_key=$(jq -r --arg image_name $name '.[] | select (.["image-name"]==$image_name) | .["image-key"]' $dictionary_filename )
- #echo name: [$name] remote: [$remote] repostory: [$repository] tag: [$tag]
+  # echo image name: [$name] remote: [$remote] repostory: [$repository] tag: [$tag] image_key: [$image_key]
   url="https://quay.io/api/v1/repository/$repository/$name/tag/?onlyActiveTags=true&specificTag=$tag"
-  #echo $url
+  # echo $url
   curl_command="curl -s -X GET -H \"Authorization: Bearer $QUAY_TOKEN\" \"$url\""
   #echo $curl_command
   sha_value=$(eval "$curl_command | jq -r .tags[0].manifest_digest")
@@ -45,4 +45,4 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item;do
 done
 echo Creating $new_filename file
 jq -s '.' < manifest-sha.badjson > $new_filename
-rm manifest-sha.badjson
+rm manifest-sha.badjson 2> /dev/null
