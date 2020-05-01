@@ -21,3 +21,4 @@ echo Incoming manfiest filename: $manifest_filename
 echo Incoming tag: $TAG
 ep_quaysha=`make retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=endpoint-operator`
 echo endpoint-operator quay sha: $ep_quaysha
+jq --version
