@@ -23,8 +23,8 @@ echo Incoming tag: $TAG
 echo Before, $manifest_filename is:
 cat $manifest_filename
 
-ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=endpoint-operator`
-mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=multiclusterhub-operator`
+ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG-dls COMPONENT_NAME=endpoint-operator`
+mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG-dls COMPONENT_NAME=multiclusterhub-operator`
 echo endpoint-operator quay sha: $ep_quaysha
 echo multiclusterhub-operator quay sha: $mco_quaysha
 jq --version
