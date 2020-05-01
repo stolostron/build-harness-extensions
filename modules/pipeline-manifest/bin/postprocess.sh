@@ -19,6 +19,16 @@ TAG=$2
 
 echo Incoming manfiest filename: $manifest_filename
 echo Incoming tag: $TAG
+
+echo Before, $manifest_filename is:
+cat $manifest_filename
+
 ep_quaysha=`make retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=endpoint-operator`
+mco_quaysha=`make retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=multiclusterhub-operator`
 echo endpoint-operator quay sha: $ep_quaysha
+echo multiclusterhub-operator quay sha: $mco_quaysha
 jq --version
+jq --arg ep_quaysha $ep_quaysha '(.[] | select (.["image-name"] == "endpoint-operator") | .["image-digest"]) |= $ep_quaysha' $manifest_filename > tmp.json ; mv tmp.json $manifest_filename
+jq --arg mco_quaysha $mco_quaysha '(.[] | select (.["image-name"] == "multiclusterhub-operator") | .["image-digest"]) |= $mco_quaysha' $manifest_filename > tmp.json ; mv tmp.json $manifest_filename
+echo After, $manifest_filename is:
+cat $manifest_filename
