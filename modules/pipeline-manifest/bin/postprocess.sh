@@ -25,14 +25,14 @@ echo ENDPOINT: $ENDPOINT
 if [[ "$ENDPOINT" == "1" ]]
 then
   # The endpoint operator needs to exist first so later we can get its sha and insert that into hub operator
-  ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG-sha COMPONENT_NAME=endpoint-operator`
+  ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=endpoint-operator`
   mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=multiclusterhub-operator`
   echo first round, endpoint-operator quay sha: $ep_quaysha
   echo first round, multiclusterhub-operator quay sha: $mco_quaysha
 else
   # Now that endpoint operator exists, grab its sha so we have that in the manifest to insert into hub operator
-  ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG-sha COMPONENT_NAME=endpoint-operator`
-  mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG-sha COMPONENT_NAME=multiclusterhub-operator`
+  ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=endpoint-operator`
+  mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$TAG COMPONENT_NAME=multiclusterhub-operator`
   echo second round, endpoint-operator quay sha: $ep_quaysha
   echo second round, multiclusterhub-operator quay sha: $mco_quaysha
 fi
