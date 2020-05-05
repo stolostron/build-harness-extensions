@@ -22,7 +22,7 @@ for v in data:
         compenent_tag = v["image-tag"]
         compenent_sha = v["git-sha256"]
         component_repo = v["git-repository"]
-        component_version = v["image-tag"].replace('-'+v["sha256"],'')
+        component_version = v["image-tag"].replace('-'+v["git-sha256"],'')
     retag_name = component_version + "-SNAPSHOT-" + sys.argv[2]
     if (component_repo.startswith('open-cluster-management')):
       run('echo RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={} repo-type={}'.format(retag_name, component_repo, component_name, compenent_tag, compenent_sha, sys.argv[3], sys.argv[4]), shell=True)
