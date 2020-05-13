@@ -1,0 +1,28 @@
+export SHELL = /bin/bash
+export GITHUB_USER ?=
+export GITHUB_TOKEN ?=
+
+export BUILD_HARNESS_ORG ?= open-cluster-management
+export BUILD_HARNESS_PROJECT ?= build-harness
+export BUILD_HARNESS_BRANCH ?= master
+export BUILD_HARNESS_PATH ?= /opt/build-harness/build-harness
+-include $(BUILD_HARNESS_PATH)/Makefile
+
+export BUILD_HARNESS_EXTENSIONS_ORG ?= open-cluster-management
+export BUILD_HARNESS_EXTENSIONS_PROJECT ?= build-harness-extensions
+export BUILD_HARNESS_EXTENSIONS_BRANCH ?= master
+export BUILD_HARNESS_EXTENSIONS_PATH ?= /opt/build-harness/build-harness-extensions
+-include $(BUILD_HARNESS_EXTENSIONS_PATH)/Makefile
+
+.PHONY : init
+## Init build-harness
+init::
+	@echo $(shell date)
+	@echo "No initialization needed for build harness in OpenShift CI"
+
+.PHONY : clean
+## Clean build-harness
+clean::
+	@echo $(shell date)
+	@echo "If you want to remove the OpenShift CI build harness, please run"
+	@echo "    rm -rf /opt/build-harness"
