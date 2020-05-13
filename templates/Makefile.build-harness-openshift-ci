@@ -19,10 +19,10 @@ export BUILD_HARNESS_EXTENSIONS_PATH ?= /opt/build-harness/build-harness-extensi
 init::
 	@echo $(shell date)
 	@echo "No initialization needed for build harness in OpenShift CI"
+	@echo "The path for the build harness is /opt/build-harness"
 
 .PHONY : clean
 ## Clean build-harness
 clean::
 	@echo $(shell date)
-	@echo "If you want to remove the OpenShift CI build harness, please run"
-	@echo "    rm -rf /opt/build-harness"
+	@echo "clean is not supported for the build harness in Openshift CI""
