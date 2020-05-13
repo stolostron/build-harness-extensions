@@ -19,6 +19,7 @@ export BUILD_HARNESS_EXTENSIONS_PATH ?= /opt/build-harness/build-harness-extensi
 init::
 	@echo $(shell date)
 	@echo "No initialization needed for build harness in OpenShift CI"
+	@echo "The build harness is included as part of the image builder"
 	@echo "The path for the build harness is /opt/build-harness"
 
 .PHONY : clean
