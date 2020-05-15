@@ -12,7 +12,7 @@ sonar/go: go/gosec-install
 
 .PHONY: sonar/go/openshiftci
 ## Run SonarCloud analysis for Go on OpenShift CI. This will not be run during local development.
-sonar/go/openshift-ci:
+sonar/go/openshiftci:
 	test -r /etc/sonarcloud/token
 	export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token)"
 	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > report.json
