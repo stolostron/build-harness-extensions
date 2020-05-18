@@ -14,16 +14,26 @@ sonar/go: go/gosec-install
 ## Run SonarCloud analysis for Go on OpenShift CI. This will not be run during local development.
 sonar/go/openshiftci: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
 sonar/go/openshiftci:
-	# Verify sonar token from kube secret has been mounted
+	@echo "Verify sonar token from kube secret has been mounted"
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" ; exit 1 ; fi
 	
-	# Running go test
+	@echo "Running go test"
 	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json "${ARTIFACT_DIR}/sonar_gotest.json"
 	
-	# Running gosec 
+	@echo "Running gosec" 
 	gosec -fmt sonarqube -no-fail ./... | tee gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
-	# Starting Sonar Scanner
+	@echo "Starting Sonar Scanner"
+	@echo "JOB_TYPE=${JOB_TYPE}"
+	@echo "PULL_BASE_REF=${PULL_BASE_REF}"
+	@echo "PULL_NUMBER=${PULL_NUMBER}"
+	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")"
+	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
+		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
+		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
+		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
+	fi
+
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACT_DIR}/sonar.log"
 
 
