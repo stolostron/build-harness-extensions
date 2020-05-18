@@ -18,13 +18,13 @@ sonar/go/openshiftci:
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" ; exit 1 ; fi
 	
 	# Running go test
-	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json
+	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json "${ARTIFACT_DIR}/sonar_gotest.json"
 	
 	# Running gosec 
-	gosec -fmt sonarqube -no-fail ./... | tee gosec.json 
+	gosec -fmt sonarqube -no-fail ./... | tee gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
 	# Starting Sonar Scanner
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACT_DIR}/sonar.log"
 
 
 # This expects that your code uses Jest to execute tests.
