@@ -39,8 +39,8 @@ sonar/go/openshiftci:
 
 .PHONY: sonar/go/openshiftci-post
 ## Run SonarCloud analysis for Go on OpenShift CI as a post-submit job. This will not be run during local development.
-sonar/go/openshiftci: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
-sonar/go/openshiftci:
+sonar/go/openshiftci-post: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
+sonar/go/openshiftci-post:
 	@echo "Verify sonar token from kube secret has been mounted"
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" ; exit 1 ; fi
 	
