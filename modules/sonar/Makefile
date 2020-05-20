@@ -37,6 +37,29 @@ sonar/go/openshiftci:
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACT_DIR}/sonar.log"
 
 
+.PHONY: sonar/go/openshiftci-post
+## Run SonarCloud analysis for Go on OpenShift CI as a post-submit job. This will not be run during local development.
+sonar/go/openshiftci: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
+sonar/go/openshiftci:
+	@echo "Verify sonar token from kube secret has been mounted"
+	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" ; exit 1 ; fi
+	
+	@echo "Running go test"
+	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json "${ARTIFACTS}/sonar_gotest.json"
+	
+	@echo "Running gosec" 
+	gosec -fmt sonarqube -no-fail ./... | tee gosec.json "${ARTIFACTS}/sonar_gosec.json"
+	
+	@echo "Starting Sonar Scanner"
+	@echo "JOB_TYPE=${JOB_TYPE}"
+	@echo "PULL_BASE_REF=${PULL_BASE_REF}"
+	@if [[ "${JOB_TYPE}" == "postsubmit" ]]; then \
+		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
+	fi
+
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACTS}/sonar.log"
+
+
 # This expects that your code uses Jest to execute tests.
 # Add this field to your jest.config.js file to generate the report:
 #     testResultProcessor: 'jest-sonar-reporter',
