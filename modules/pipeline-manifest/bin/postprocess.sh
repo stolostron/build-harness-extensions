@@ -22,7 +22,7 @@ EP_VERS=`jq -r '(.[] | select (.["image-name"] == "endpoint-operator") | .["imag
 MCHO_VERS=`jq -r '(.[] | select (.["image-name"] == "multiclusterhub-operator") | .["image-version"])' $1`
 
 echo Incoming manfiest filename: $manifest_filename
-echo Incoming tag (date): $DATE_TAG
+echo Incoming date tag: $DATE_TAG
 echo Endpoint version: $EP_VERS
 echo MCHO version: $MCHO_VERS
 echo ENDPOINT: $ENDPOINT
