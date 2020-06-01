@@ -33,8 +33,9 @@ for v in data:
         retag_name = sys.argv[2]
     if (component_repo.startswith('open-cluster-management')):
         # We don't try to tag anyone else's repos
-        run('echo RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={} repo-type={}'.format(retag_name, component_repo, component_name, compenent_tag, compenent_sha, sys.argv[3], sys.argv[4]), shell=True)
-        if (sys.argv[4] == "git"):
-            run('make retag/git RETAG_SNAPSHOT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_repo, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
-        elif (sys.argv[4] == "quay"):
-            run('make retag/quay RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_name, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
+        if (component_name != "origin-oauth-proxy"):
+            run('echo RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={} repo-type={}'.format(retag_name, component_name, component_repo, compenent_tag, compenent_sha, sys.argv[3], sys.argv[4]), shell=True)
+            if (sys.argv[4] == "git"):
+                run('make retag/git RETAG_SNAPSHOT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_repo, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
+            elif (sys.argv[4] == "quay"):
+                run('make retag/quay RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_name, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
