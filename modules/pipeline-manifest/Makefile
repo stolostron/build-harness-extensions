@@ -1,7 +1,7 @@
-# CI=true if running in Prow (OpenShift CI)
-CI ?=
+# The environment variable CI is set to "true" if running in Prow (OpenShift CI)
+OPENSHIFT_CI = $(shell echo $$CI)
 
-ifeq ($(CI),true)
+ifeq ($(OPENSHIFT_CI),true)
 # For OpenShift CI, the GitHub token for the acm-cicd user is mounted in a
 # Kube secret.
 GITHUB_USER = acm-cicd%40redhat.com
