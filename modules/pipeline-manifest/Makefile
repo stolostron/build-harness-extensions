@@ -59,7 +59,8 @@ PIPELINE_MANIFEST_GIT_BRANCH ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_F
 PIPELINE_MANIFEST_RETAG_REPO ?= quay
 
 DATETIME_VAR := $(shell (date +%Y-%m-%d-%H-%M-%S))
-
+Z_RELEASE_VERSION ?= $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/open-cluster-management/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
+	
 
 .PHONY: pipeline-manifest/_datetime_gen
 # Factory method for storing datetime variable
@@ -202,14 +203,14 @@ pipeline-manifest/_promote: %_promote: %_clone
 	$(call assert-set,PROMOTE_FROM)
 	$(call assert-set,PROMOTE_TO)
 	$(call assert-set,LATEST_MANIFEST)
-	@Z_RELEASE_VERSION=$( shell curl -H "Authorization: token $(GITHUB_TOKEN)" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/open-cluster-management/release/$(PIPELINE_MANIFEST_BRANCH)/Z_RELEASE_VERSION)
+	@echo Z_RELEASE_VERSION is $(Z_RELEASE_VERSION)
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json $(LATEST_MANIFEST).json
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)-v2.json $(LATEST_MANIFEST)-v2.json
 	@cp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)-$(Z_RELEASE_VERSION).json $(LATEST_MANIFEST)-$(Z_RELEASE_VERSION).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) checkout $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_TO)
 	@cp $(LATEST_MANIFEST).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@cp $(LATEST_MANIFEST)-v2.json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-v2.json
-	@if [ ! -d $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-$(Z_RELEASE_VERSION).json ] then $(GIT) add $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-$(Z_RELEASE_VERSION).json; fi
+	@if [ ! -d $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-$(Z_RELEASE_VERSION).json ]; then $(GIT) add $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-$(Z_RELEASE_VERSION).json; fi
 	@cp $(LATEST_MANIFEST)-$(Z_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME)-$(Z_RELEASE_VERSION).json
 	@mv $(LATEST_MANIFEST).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST).json
 	@mv $(LATEST_MANIFEST)-v2.json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)-v2.json
@@ -218,7 +219,8 @@ pipeline-manifest/_promote: %_promote: %_clone
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)-v2.json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(LATEST_MANIFEST)-$(Z_RELEASE_VERSION).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Promote from $(PROMOTE_FROM) to $(PROMOTE_TO)" --quiet
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push
+	#@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push
+	
 
 .PHONY: pipeline-manifest/_snapshot-staging
 # Stage snapshot of current repo.
