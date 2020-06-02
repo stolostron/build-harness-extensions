@@ -1,6 +1,27 @@
+# CI=true if running in Prow (OpenShift CI)
+CI ?=
+
+ifeq ($(CI),true)
+# For OpenShift CI, the GitHub token for the acm-cicd user is mounted in a
+# Kube secret.
+GITHUB_USER = acm-cicd%40redhat.com
+GITHUB_TOKEN := $(shell cat /etc/github/token 2> /dev/null )
+
+# In OpenShift CI, pull related variables are named differently than in Travis.
+# They also are not injected until the container starts, so they can't be passed
+# in as arguments to make. See:
+#
+# https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
+#
+PIPELINE_MANIFEST_COMPONENT_REPO := ${REPO_OWNER}/${REPO_NAME}
+PIPELINE_MANIFEST_BRANCH := ${PULL_BASE_REF}
+PIPELINE_MANIFEST_COMPONENT_SHA256 := ${PULL_BASE_SHA}
+else
+
 # GITHUB_USER containing '@' char must be escaped with '%40'
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
+endif
 
 # May or may not be in github enterprise
 PIPELINE_MANIFEST_SITE ?= github.com
@@ -134,7 +155,7 @@ pipeline-manifest/_add_v2: %_add_v2:
 ## Add or update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
 pipeline-manifest/update: %update: %_clone %_update %_update_v2
 	@$(SELF) pipeline-manifest/_push PIPELINE_GIT_MESSAGE="Updated $(PIPELINE_MANIFEST_COMPONENT)"
-	@echo "Successfully updated ${PIPELINE_MANIFEST_COMPONENT} to ${PIPELINE_MANIFEST_COMPONENT}:${PIPELINE_MANIFEST_COMPONENT_VERSION} in https://$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO)#$(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PIPELINE_STAGE)"
+	@echo "Successfully updated $(PIPELINE_MANIFEST_COMPONENT) to $(PIPELINE_MANIFEST_COMPONENT):$(PIPELINE_MANIFEST_COMPONENT_VERSION) in https://$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO)#$(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PIPELINE_STAGE)"
 
 .PHONY: pipeline-manifest/_update
 # Update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
