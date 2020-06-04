@@ -4,8 +4,18 @@ SONAR_GO_TEST_ARGS ?= ./...
 .PHONY: sonar/go
 ## Run SonarCloud analysis for Go on Travis CI. This will not be run during local development.
 sonar/go: go/gosec-install
+	@echo "-> Starting sonar/go"
+	@echo "--> Starting go test"
 	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > report.json
+	@echo "---> go test report.json"
+	@cat report.json
+	@echo "---> go test coverage.out"
+	@cat coverage.out
+	@echo "--> Running gosec"
 	gosec -fmt sonarqube -out gosec.json -no-fail ./...
+	@echo "---> gosec gosec.json"
+	@cat gosec.json
+	@echo "--> Running sonar-scanner"
 	unset SONARQUBE_SCANNER_PARAMS
 	sonar-scanner --debug
 
