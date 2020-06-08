@@ -8,7 +8,7 @@ sonar/go: go/gosec-install
 	@echo "--> Starting go test"
 	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > report.json
 	@echo "---> go test report.json"
-	@cat report.json
+	@grep -v '"Action":"output"' report.json
 	@echo "--> Running gosec"
 	gosec -fmt sonarqube -out gosec.json -no-fail ./...
 	@echo "---> gosec gosec.json"
