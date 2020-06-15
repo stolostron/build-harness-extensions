@@ -11,20 +11,12 @@ from subprocess import run
 
 data = json.load(open(sys.argv[1]))
 for v in data:
-    try:
-        # First, try manifest keys v1
-        component_name = v["name"]
-        compenent_tag = v["tag"]
-        compenent_sha = v["sha256"]
-        component_repo = v["repository"]
-        component_version = v["tag"].replace('-'+v["sha256"],'')
-    except:
-        # If that doesn't work, try manifest keys v2
-        component_name = v["image-name"]
-        compenent_tag = v["image-tag"]
-        compenent_sha = v["git-sha256"]
-        component_repo = v["git-repository"]
-        component_version = v["image-tag"].replace('-'+v["git-sha256"],'')
+    # Use second-generation keys in manfiest
+    component_name = v["image-name"]
+    compenent_tag = v["image-tag"]
+    compenent_sha = v["git-sha256"]
+    component_repo = v["git-repository"]
+    component_version = v["image-tag"].replace('-'+v["git-sha256"],'')
     if (sys.argv[2].startswith('20')):
         # Assuming a date is coming in as a tag, mark it all up with SNAPSHOT decoration specifc to this repo
         retag_name = component_version + "-SNAPSHOT-" + sys.argv[2]
