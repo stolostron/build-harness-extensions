@@ -204,8 +204,8 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
-# Create sha-based manifest (validates as it goes, fails if all images are not present)
-pipeline-manifest/_validate-tag: %_validate-tag:
+# Validate all images or git repos identified in manifest exist and create sha-based manifest
+pipeline-manifest/_validate-tag: %_validate-tag: %_retag
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
 	@cat out.tmp
 
