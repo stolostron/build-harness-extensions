@@ -127,8 +127,8 @@ pipeline-manifest/_update: %_update:
 	$(call assert-set,COMPONENT_NAME)
 	$(call assert-set,COMPONENT_VERSION)
 	@if [ -z "$(SELF) -s pipeline-manifest/_read_alias" ]; \
-	then @echo "Component $(PIPELINE_MANIFEST_COMPONENT) does not have an entry in $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json; failing." || exit 1; \
-	else @echo "Component $(PIPELINE_MANIFEST_COMPONENT) has an entry in $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json."; \
+	then echo "Component $(PIPELINE_MANIFEST_COMPONENT) does not have an entry in $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json; failing." || exit 1; \
+	else echo "Component $(PIPELINE_MANIFEST_COMPONENT) has an entry in $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json."; \
         fi
 	@if [ -z "$(SELF) -s pipeline-manifest/_read" ]; \
 	then $(SELF) pipeline-manifest/_add; \
