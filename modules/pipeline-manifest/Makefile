@@ -96,6 +96,11 @@ pipeline-manifest/_push: %_push: %_clone
 pipeline-manifest/_read: %_read: %_clone
 	@$(JQ) '$(PM_MANIFEST_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
+.PHONY: pipeline-manifest/_read_alias
+# Locate the component name in the alias json
+pipeline-manifest/_read_alias: %_read_alias: %_clone
+	@$(JQ) '$(PM_MANIFEST_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json
+
 .PHONY: pipeline-manifest/add
 # Add component named $COMPONENT_NAME at version $COMPONENT_VERSION to the pipeline manifest in stage $PIPELINE_STAGE 
 pipeline-manifest/add: %add: %_clone %_add
@@ -121,6 +126,9 @@ pipeline-manifest/update: %update: %_clone %_update
 pipeline-manifest/_update: %_update:
 	$(call assert-set,COMPONENT_NAME)
 	$(call assert-set,COMPONENT_VERSION)
+	@if [ -z "$(SELF) -s pipeline-manifest/_read_alias" ]; \
+	then @echo "Component $(PIPELINE_MANIFEST_COMPONENT) does not have an entry in $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json; failing." || exit 1; \
+        fi
 	@if [ -z "$(SELF) -s pipeline-manifest/_read" ]; \
 	then $(SELF) pipeline-manifest/_add; \
 	else $(SELF) pipeline-manifest/_replace REPLACED_COMPONENT=$(PIPELINE_MANIFEST_COMPONENT); \
