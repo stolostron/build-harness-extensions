@@ -8,6 +8,7 @@ from subprocess import run
 #  sys.argv[2] - textual tag
 #  sys.argv[3] - boolean: dry run/validate (true) vs. actually do the tagging (false)
 #  sys.argv[4] - textual name of repo to do the tagging in (git|quay)
+#  sys.argv[5] - z-release "name" (i.e. 2.0.1)
 
 data = json.load(open(sys.argv[1]))
 for v in data:
@@ -17,9 +18,10 @@ for v in data:
     compenent_sha = v["git-sha256"]
     component_repo = v["git-repository"]
     component_version = v["image-tag"].replace('-'+v["git-sha256"],'')
-    if (sys.argv[2].startswith('20')):
-        # Assuming a date is coming in as a tag, mark it all up with SNAPSHOT decoration specifc to this repo
-        retag_name = component_version + "-SNAPSHOT-" + sys.argv[2]
+    if (sys.argv[2].startswith('202')):
+        # Assuming a date such as "2020-xx-yy..." is coming in as a tag, mark it all up with SNAPSHOT decoration specifc to this repo:
+        # z-release name + "-SNAPSHOT-" + tag (i.e. snapshot date/timestamp)
+        retag_name = sys.argv[5] + "-SNAPSHOT-" + sys.argv[2]
     else:
         # Tag is respected as literally and solely the second argument contents, likely a version/release tag
         retag_name = sys.argv[2]
