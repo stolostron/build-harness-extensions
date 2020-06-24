@@ -223,8 +223,8 @@ pipeline-manifest/_validate-tag: %_validate-tag:
 .PHONY: pipeline-manifest/_retag
 # Validate and retag all images or git repos identified in manifest
 pipeline-manifest/_retag: %_retag:
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(Z_RELEASE_VERSION)
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(Z_RELEASE_VERSION)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) `cat Z_RELEASE_VERSION`
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) `cat Z_RELEASE_VERSION`
 
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
