@@ -18,7 +18,8 @@ for v in data:
     compenent_sha = v["git-sha256"]
     component_repo = v["git-repository"]
     component_version = v["image-tag"].replace('-'+v["git-sha256"],'')
-    if (sys.argv[2].startswith('202')):
+    date_re=r"^\d{4}(-\d\d){5}$"
+    if re.search(date_re,sys.argv[2]):
         # Assuming a date such as "2020-xx-yy..." is coming in as a tag, mark it all up with SNAPSHOT decoration specifc to this repo:
         # z-release name + "-SNAPSHOT-" + tag (i.e. snapshot date/timestamp)
         retag_name = sys.argv[5] + "-SNAPSHOT-" + sys.argv[2]
