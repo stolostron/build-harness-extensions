@@ -196,6 +196,8 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 	@cd $(PIPELINE_MANIFEST_DIR); git checkout $(PIPELINE_MANIFEST_RETAG_BRANCH)
 	@echo $(PIPELINE_MANIFEST_GIT_BRANCH) > $(PIPELINE_MANIFEST_DIR)/ORIGIN_BRANCH
 	@echo $(PIPELINE_MANIFEST_RELEASE_VERSION) > $(PIPELINE_MANIFEST_DIR)/RELEASE_VERSION
+	@echo $(Z_RELEASE_VERSION) > $(PIPELINE_MANIFEST_DIR)/Z_RELEASE_VERSION
+	@echo $(PIPELINE_MANIFEST_COMPONENT) > $(PIPELINE_MANIFEST_DIR)/COMPONENT_NAME
 	@cat DATETIME > $(PIPELINE_MANIFEST_DIR)/TAG
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@cp $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json
@@ -221,8 +223,8 @@ pipeline-manifest/_validate-tag: %_validate-tag:
 .PHONY: pipeline-manifest/_retag
 # Validate and retag all images or git repos identified in manifest
 pipeline-manifest/_retag: %_retag:
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO)
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(Z_RELEASE_VERSION)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(Z_RELEASE_VERSION)
 
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
