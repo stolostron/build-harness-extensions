@@ -211,7 +211,7 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG)" --quiet
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG)" for $(PIPELINE_MANIFEST_COMPONENT) --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
@@ -223,8 +223,8 @@ pipeline-manifest/_validate-tag: %_validate-tag:
 .PHONY: pipeline-manifest/_retag
 # Validate and retag all images or git repos identified in manifest
 pipeline-manifest/_retag: %_retag:
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) `cat Z_RELEASE_VERSION`
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) `cat Z_RELEASE_VERSION`
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
 
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
