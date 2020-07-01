@@ -222,6 +222,7 @@ pipeline-manifest/_retag: %_retag:
 .PHONY: pipeline-manifest/_get_latest_manifest
 # Get the latest manifest file in the snapshots directory of the pipeline repo on the PIPELINE_MANIFEST_LATEST_BRANCH branch (i.e. x.y-edge or x.y-stable) specific to a Z-release
 pipeline-manifest/_get_latest_manifest:
+	@$(shell $(SELF) jq/install > /dev/null)
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/get-latest-manifest.sh $(PIPELINE_MANIFEST_LATEST_BRANCH) $(PIPELINE_MANIFEST_LATEST_Z_RELEASE)
 
 .PHONY: pipeline-manifest/_postprocess
