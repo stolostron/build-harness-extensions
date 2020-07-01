@@ -29,7 +29,10 @@ PIPELINE_MANIFEST_ALIAS_FILE_NAME ?=image-alias
 PIPELINE_MANIFEST_SNAPSHOT_FOLDER ?= snapshots
 # The branch of the pipeline to use for quay retagging (typically quay-retag vs. quay-retag-test)
 PIPELINE_MANIFEST_RETAG_BRANCH ?= quay-retag
-
+# The branch of the pipeline to use for grabbing the latest manifest file (typically x.y-edge or x.y-stable)
+PIPELINE_MANIFEST_LATEST_BRANCH ?= 2.0-edge
+# The Z release of the pipeline to use for grabbing the latest manifest file
+PIPELINE_MANIFEST_LATEST_Z_RELEASE ?= 2.0.0
 PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
 
 PIPELINE_MANIFEST_COMPONENT_SUFFIX ?= $(PIPELINE_MANIFEST_COMPONENT_SHA256)
@@ -215,6 +218,11 @@ pipeline-manifest/_validate-tag: %_validate-tag:
 pipeline-manifest/_retag: %_retag:
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
+
+.PHONY: pipeline-manifest/_get_latest_manifest
+# Get the latest manifest file in the snapshots directory of the pipeline repo on the PIPELINE_MANIFEST_LATEST_BRANCH branch (i.e. x.y-edge or x.y-stable) specific to a Z-release
+pipeline-manifest/_get_latest_manifest:
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/get-latest-manifest.sh $(PIPELINE_MANIFEST_LATEST_BRANCH) $(PIPELINE_MANIFEST_LATEST_Z_RELEASE)
 
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
