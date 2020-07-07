@@ -196,7 +196,7 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 	@cat DATETIME > $(PIPELINE_MANIFEST_DIR)/TAG
 	@cp $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@cp $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Stage snapshot of $(PIPELINE_MANIFEST_COMPONENT)-$(PIPELINE_MANIFEST_COMPONENT_SUFFIX)" --quiet
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Stage $(Z_RELEASE_VERSION) snapshot of $(PIPELINE_MANIFEST_COMPONENT)-$(PIPELINE_MANIFEST_COMPONENT_SUFFIX)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_snapshot
@@ -204,7 +204,7 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added snapshot of $(TAG) for $(PIPELINE_MANIFEST_COMPONENT)" --quiet
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) snapshot of $(TAG) for $(PIPELINE_MANIFEST_COMPONENT)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
