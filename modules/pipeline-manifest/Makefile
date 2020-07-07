@@ -228,4 +228,4 @@ pipeline-manifest/_get_latest_manifest:
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
 pipeline-manifest/_postprocess: %_postprocess:
-	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT)
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
