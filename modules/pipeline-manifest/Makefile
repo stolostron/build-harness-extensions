@@ -45,6 +45,7 @@ PIPELINE_STAGE ?= integration
 
 PM_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
 PM_IMAGE_REMOTE_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]
+PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
 PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
 PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(DELETED_COMPONENT)")
@@ -193,13 +194,14 @@ pipeline-manifest/_osci_to_quay:
 	@echo Copy OpenShift CI image to Quay
 	@echo .. Getting image remote for component $(PIPELINE_MANIFEST_COMPONENT)
 	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
+	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
 	@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA
 	@echo Image remote is ; cat IMAGE_REMOTE
 	@if grep '^registry\.svc\.ci\.openshift\.org/open-cluster-management$$' IMAGE_REMOTE ; \
 	then \
 		echo .... Copying from OpenShift CI to Quay ; \
 		OSCI_REMOTE="`cat IMAGE_REMOTE`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
-		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat GIT_SHA`" ; \
+		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
 		echo ...... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
  		echo ...... Retagging to $$QUAY_REMOTE ; \
