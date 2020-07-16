@@ -196,22 +196,22 @@ pipeline-manifest/_osci_to_quay:
 	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
 	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
 	@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA
-	@echo Image remote is ; cat IMAGE_REMOTE
+	@echo .. Image remote is ; cat IMAGE_REMOTE
 	@if grep '^registry\.svc\.ci\.openshift\.org/open-cluster-management$$' IMAGE_REMOTE ; \
 	then \
-		echo .... Copying from OpenShift CI to Quay ; \
+		echo .. Copying from OpenShift CI to Quay ; \
 		OSCI_REMOTE="`cat IMAGE_REMOTE`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
 		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
-		echo ...... Pulling $$OSCI_REMOTE ; \
+		echo .... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
- 		echo ...... Retagging to $$QUAY_REMOTE ; \
+ 		echo .... Retagging to $$QUAY_REMOTE ; \
  		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
- 		echo ...... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
+ 		echo .... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
  		$(DOCKER) login $(PIPELINE_MANIFEST_REMOTE_REPO) -u $(DOCKER_USER) -p $(DOCKER_PASS) ; \
- 		echo ...... Pushing to $$QUAY_REMOTE ; \
+ 		echo .... Pushing to $$QUAY_REMOTE ; \
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
  	else \
- 		echo .... Image is not on OpenShift CI ; \
+ 		echo .. Image is not on OpenShift CI ; \
  	fi
 
 .PHONY: pipeline-manifest/_snapshot-staging
