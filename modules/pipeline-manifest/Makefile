@@ -1,3 +1,5 @@
+DOCKER := $(shell which docker 2> /dev/null)
+
 # GITHUB_USER containing '@' char must be escaped with '%40'
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
@@ -42,6 +44,9 @@ PIPELINE_MANIFEST_COMPONENT_TAG ?= $(PIPELINE_MANIFEST_COMPONENT_VERSION)-$(PIPE
 PIPELINE_STAGE ?= integration
 
 PM_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
+PM_IMAGE_REMOTE_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]
+PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
+PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
 PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.["image-name"])
@@ -181,6 +186,33 @@ pipeline-manifest/_promote: %_promote: %_clone
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Promote from $(PROMOTE_FROM) to $(PROMOTE_TO)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push
 	
+.PHONY: pipeline-manifest/_osci_to_quay
+# Copy image from OpenShift CI registry to quay.io
+pipeline-manifest/_osci_to_quay:
+	$(call assert-set,DOCKER_USER)
+	$(call assert-set,DOCKER_PASS)
+	@echo Copy OpenShift CI image to Quay
+	@echo .. Getting image remote for component $(PIPELINE_MANIFEST_COMPONENT)
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
+	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
+	@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA
+	@echo .. Image remote is ; cat IMAGE_REMOTE
+	@if grep '^registry\.svc\.ci\.openshift\.org/open-cluster-management$$' IMAGE_REMOTE ; \
+	then \
+		echo .. Copying from OpenShift CI to Quay ; \
+		OSCI_REMOTE="`cat IMAGE_REMOTE`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
+		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
+		echo .... Pulling $$OSCI_REMOTE ; \
+ 		$(DOCKER) pull $$OSCI_REMOTE ; \
+ 		echo .... Retagging to $$QUAY_REMOTE ; \
+ 		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
+ 		echo .... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
+ 		$(DOCKER) login $(PIPELINE_MANIFEST_REMOTE_REPO) -u $(DOCKER_USER) -p $(DOCKER_PASS) ; \
+ 		echo .... Pushing to $$QUAY_REMOTE ; \
+ 		$(DOCKER) push "$$QUAY_REMOTE" ; \
+ 	else \
+ 		echo .. Image is not on OpenShift CI ; \
+ 	fi
 
 .PHONY: pipeline-manifest/_snapshot-staging
 # Stage snapshot of current repo.
