@@ -193,6 +193,7 @@ pipeline-manifest/_osci_to_quay:
 	$(call assert-set,DOCKER_PASS)
 	@echo Copy OpenShift CI image to Quay
 	@echo .. Getting manifest fields for component $(PIPELINE_MANIFEST_COMPONENT)
+	@echo .... manifest file is at $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
 	@echo .... image-remote is ; cat IMAGE_REMOTE
 	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
