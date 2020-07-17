@@ -188,7 +188,7 @@ pipeline-manifest/_promote: %_promote: %_clone
 	
 .PHONY: pipeline-manifest/_osci_to_quay
 # Copy image from OpenShift CI registry to quay.io
-pipeline-manifest/_osci_to_quay:
+pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 	$(call assert-set,DOCKER_USER)
 	$(call assert-set,DOCKER_PASS)
 	@echo Copy OpenShift CI image to Quay
