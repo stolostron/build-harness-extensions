@@ -45,6 +45,7 @@ PIPELINE_STAGE ?= integration
 
 PM_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
 PM_IMAGE_REMOTE_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]
+PM_IMAGE_REMOTE_UPDATE ?= [ .[] | (select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]) |= "$(PIPELINE_MANIFEST_REMOTE_REPO)" ]
 PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
 PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
 PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
@@ -195,11 +196,11 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 	@echo .. Getting manifest fields for component $(PIPELINE_MANIFEST_COMPONENT)
 	@echo .... manifest file is at $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
-	@echo .... image-remote is ; cat IMAGE_REMOTE
+	@echo .... image-remote is `cat IMAGE_REMOTE`
 	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
-	@echo .... image-version is ; cat IMAGE_VERSION
+	@echo .... image-version is `cat IMAGE_VERSION`
 	@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA
-	@echo .... git-sha is ; cat GIT_SHA
+	@echo .... git-sha is `cat GIT_SHA`
 	@if grep '^registry\.svc\.ci\.openshift\.org/open-cluster-management$$' IMAGE_REMOTE ; \
 	then \
 		echo .. Copying from OpenShift CI to Quay ; \
@@ -213,6 +214,8 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		$(DOCKER) login $(PIPELINE_MANIFEST_REMOTE_REPO) -u $(DOCKER_USER) -p $(DOCKER_PASS) ; \
  		echo .... Pushing to $$QUAY_REMOTE ; \
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
+		echo .... Updating image-remote field for $(PIPELINE_MANIFEST_COMPONENT) in $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json to $(PIPELINE_MANIFEST_REMOTE_REPO) ; \
+	    @$(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
  	else \
  		echo .. Image is not on OpenShift CI ; \
  	fi
