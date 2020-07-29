@@ -215,7 +215,7 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		echo .... Pushing to $$QUAY_REMOTE ; \
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
 		echo .... Updating image-remote field for $(PIPELINE_MANIFEST_COMPONENT) in $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json to $(PIPELINE_MANIFEST_REMOTE_REPO) ; \
-	    @$(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
+	    $(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
  	else \
  		echo .. Image is not on OpenShift CI ; \
  	fi
