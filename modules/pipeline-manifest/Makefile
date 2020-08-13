@@ -267,3 +267,9 @@ pipeline-manifest/_get_latest_manifest:
 # Postprocessing steps
 pipeline-manifest/_postprocess: %_postprocess:
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
+
+.PHONY: pipeline-manifest/build-index
+# Build bundle and index images out of a hybrid of decorated manifest files
+pipeline-manifest/build-index: %build-index:
+	@$(shell $(SELF) jq/install > /dev/null)
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION)
