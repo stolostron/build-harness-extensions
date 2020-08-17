@@ -11,113 +11,118 @@ CLUSTERPOOL_HOST_NAMESPACE ?= clusterpool
 # Namespace where the Hive pods reside on the cluster indciated in CLUSTERPOOL_HOST_API, usually "hive"
 CLUSTERPOOL_HIVE_NAMESPACE ?= hive
 
+.PHONY: clusterpool/_init
+## Install the oc cli and log in to the ClusterPool Host cluster
+clusterpool/_init:
+	${SELF} oc/install
+	${SELF} oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API}
 
 .PHONY: clusterpool/create-image-set
-clusterpool/create-image-set:
+clusterpool/create-image-set: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/delete-image-set
-clusterpool/delete-image-set:
+clusterpool/delete-image-set: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/create-cluster-pool
-clusterpool/create-cluster-pool:
+clusterpool/create-cluster-pool: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/delete-cluster-pool
-clusterpool/delete-cluster-pool:
+clusterpool/delete-cluster-pool: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/list-cluster-pools
-clusterpool/list-cluster-pools:
+clusterpool/list-cluster-pools: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/create-aws-creds
 ## Requires various credentials env vars specific to this cloud platform
-clusterpool/create-aws-creds:
+clusterpool/create-aws-creds: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/create-azure-creds
 ## Requires various credentials env vars specific to this cloud platform
-clusterpool/create-azure-creds:
+clusterpool/create-azure-creds: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/create-gcp-creds
 ## Requires various credentials env vars specific to this cloud platform
-clusterpool/create-gcp-creds:
+clusterpool/create-gcp-creds: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/delete-creds
 ## Takes in a CREDS_SECRET_NAME variable
-clusterpool/delete-creds:
+clusterpool/delete-creds: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/create-claim
 ## Takes in a CLUSTERPOOL variable - the name of the clusterpool to create a claim on
-clusterpool/create-claim:
+clusterpool/create-claim: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/verify-claim
 ## Takes in a CLUSTER_CLAIM variable - the name of the claim to validate - and validates that the claim was fulfilled
-clusterpool/verify-claim:
+clusterpool/verify-claim: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/delete-claim
 ## Takes in a CLUSTER_ClAIM variable - the name of the claim to delete
-clusterpool/delete-claim:
+clusterpool/delete-claim: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusetrpool/checkout
 ## takes in a CLUSTER_ClAIM variable - the name of the claim to create
-clusetrpool/checkout:
+clusetrpool/checkout: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/checkin
 ## Takes in a CLUSTER_ClAIM variable - the name of the claim to delete
-clusterpool/checkin:
+clusterpool/checkin: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/get-cluster-kubeconfig
 ## Takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-kubeconfig:
+clusterpool/get-cluster-kubeconfig: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/get-cluster-credentials
 ## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-credentials:
+clusterpool/get-cluster-credentials: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/get-cluster-api
 ## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-api:
+clusterpool/get-cluster-api: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/get-cluster-console
 ## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-console:
+clusterpool/get-cluster-console: %_init
 	echo unimplemented
 	exit 1
 
 .PHONY: clusterpool/get-cluster-metadata
 ## takes in a CLUSTER_CLAIM variable and a METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
-clusterpool/get-cluster-metadata:
+clusterpool/get-cluster-metadata: %_init
 	echo unimplemented
 	exit 1
 
