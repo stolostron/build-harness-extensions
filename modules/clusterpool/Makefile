@@ -160,78 +160,82 @@ clusterpool/aws/create-creds: %aws/create-creds: %_init
 .PHONY: clusterpool/azure/create-creds
 ## Requires various credentials env vars specific to this cloud platform
 clusterpool/azure/create-creds: %azure/create-creds %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/gcp/create-creds
 ## Requires various credentials env vars specific to this cloud platform
 clusterpool/gcp/create-creds: %gcp/create-creds: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/delete-creds
 ## Takes in a CREDS_SECRET_NAME variable
 clusterpool/delete-creds: %delete-creds: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/create-claim
-## Takes in a CLUSTERPOOL variable - the name of the clusterpool to create a claim on
+## Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
 clusterpool/create-claim: %create-claim: %_init
-	echo unimplemented
-	exit 1
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	$(call assert-set,CLUSTERPOOL_NAME)
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	@sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" ${BUILD_HARNESS_EXTENSIONS_PATH}/modules/clusterpool/templates/clusterclaim.yaml.template > clusterclaim.yaml
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat clusterclaim.yaml; fi
+	@cat clusterclaim.yaml | kubectl apply -f -
 
 .PHONY: clusterpool/verify-claim
-## Takes in a CLUSTER_CLAIM variable - the name of the claim to validate - and validates that the claim was fulfilled
+## Takes in a CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
 clusterpool/verify-claim: %verify-claim: %_init
-	echo unimplemented
-	exit 1
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@oc get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json > clusterclaim.namespace.yaml
+	@jq -r [.status.conditions[0].type][] clusterclaim.namespace.yaml
 
 .PHONY: clusterpool/delete-claim
-## Takes in a CLUSTER_ClAIM variable - the name of the claim to delete
+## Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
 clusterpool/delete-claim: %delete-claim: %_init
-	echo unimplemented
-	exit 1
+	@$(SELF) oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
 
 .PHONY: clusetrpool/checkout
-## takes in a CLUSTER_ClAIM variable - the name of the claim to create
+## takes in a CLUSTER_CLAIM variable - the name of the claim to create
 clusetrpool/checkout: %checkout: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/checkin
-## Takes in a CLUSTER_ClAIM variable - the name of the claim to delete
+## Takes in a CLUSTER_CLAIM variable - the name of the claim to delete
 clusterpool/checkin: %checkin: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/get-cluster-kubeconfig
-## Takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
+## Takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/get-cluster-credentials
-## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
+## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-credentials: %get-cluster-credentials: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/get-cluster-api
-## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
+## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-api: %get-cluster-api: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/get-cluster-console
-## takes in a CLUSTER_ClAIM variable - the name of the claim to get creds from
+## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-console: %get-cluster-console: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
 .PHONY: clusterpool/get-cluster-metadata
 ## takes in a CLUSTER_CLAIM variable and a METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
 clusterpool/get-cluster-metadata: %get-cluster-metadata: %_init
-	echo unimplemented
-	exit 1
+	@echo unimplemented
+	@exit 1
 
