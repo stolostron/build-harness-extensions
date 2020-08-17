@@ -1,15 +1,21 @@
+#---Login/Host-cluster related env vars---#
+
 # API URL of the cluster running the target clusterpool, used in oc login, so port :6443 is required
 CLUSTERPOOL_HOST_API ?=
-
 # Access credentials used to log in to cluster indciated in CLUSTERPOOL_HOST_API
 CLUSTERPOOL_HOST_USER ?=
 CLUSTERPOOL_HOST_PASS ?=
-
 # Namespace where Hive ClusterPool resources reside
 CLUSTERPOOL_HOST_NAMESPACE ?= clusterpool
-
 # Namespace where the Hive pods reside on the cluster indciated in CLUSTERPOOL_HOST_API, usually "hive"
 CLUSTERPOOL_HIVE_NAMESPACE ?= hive
+
+
+#---ClusterImageSet-related env vars---#
+
+# Name of the ClusterImageSet to create
+CLUSTERPOOL_IMAGESET_NAME ?=
+CLUSTERPOOL_IMAGESET_RELEASE_IMAGE ?=
 
 .PHONY: clusterpool/_init
 ## Install the oc cli and log in to the ClusterPool Host cluster
@@ -19,13 +25,15 @@ clusterpool/_init: %_init:
 
 .PHONY: clusterpool/create-image-set
 clusterpool/create-image-set: %create-image-set: %_init
-	echo unimplemented
-	exit 1
+	@sed -e "s;__CLUSTERPOOL_IMAGESET_NAME__;${CLUSTERPOOL_IMAGESET_NAME};g" \
+		-e "s;__CLUSTERPOOL_IMAGESET_RELEASE_IMAGE__;${CLUSTERPOOL_IMAGESET_RELEASE_IMAGE};g" \
+		${BUILD_HARNESS_EXTENSIONS_PATH}/modules/clusterpool/templates/clusterimageset.yaml.template \
+		> .${CLUSTERPOOL_IMAGESET_NAME}.clusterimageset.yaml
+	@${SELF} oc/command OC_COMMAND="apply -f .${CLUSTERPOOL_IMAGESET_NAME}.clusterimageset.yaml -n ${CLUSTERPOOL_HIVE_NAMESPACE}"
 
 .PHONY: clusterpool/delete-image-set
 clusterpool/delete-image-set: %delete-image-set: %_init
-	echo unimplemented
-	exit 1
+	@${SELF} oc/command OC_COMMAND="delete clusterimageset ${CLUSTERPOOL_IMAGESET_NAME} -n ${CLUSTERPOOL_HIVE_NAMESPACE}"
 
 .PHONY: clusterpool/create-cluster-pool
 clusterpool/create-cluster-pool: %create-cluster-pool: %_init
