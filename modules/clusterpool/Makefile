@@ -41,6 +41,8 @@ CLUSTERPOOL_GCP_REGION ?= us-east-1
 CLUSTERPOOL_AWS_CRED_NAME ?= aws-creds
 CLUSTERPOOL_AZURE_CRED_NAME ?= azure-creds
 CLUSTERPOOL_GCP_CRED_NAME ?= gcp-creds
+CLUSTERPOOL_PULL_SECRET_NAME ?= clusterpool-pull-secret
+CLUSTERPOOL_PULL_SECRET_FILE ?= ${BUILD_HARNESS_EXTENSIONS_PATH}/pull-secret.txt
 
 # AWS
 CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID ?= $(echo -n ${AWS_ACCESS_KEY_ID} | base64 -w 0)
@@ -65,6 +67,7 @@ clusterpool/_init: %_init:
 	@${SELF} oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API}
 
 .PHONY: clusterpool/create-image-set
+## Takes as input an imageset name and release image and creates a ClusterImageSet.  
 clusterpool/create-image-set: %create-image-set: %_init
 	$(call assert-set,CLUSTERPOOL_IMAGESET_NAME)
 	$(call assert-set,CLUSTERPOOL_IMAGESET_RELEASE_IMAGE)
@@ -76,12 +79,14 @@ clusterpool/create-image-set: %create-image-set: %_init
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HIVE_NAMESPACE} -f .${CLUSTERPOOL_IMAGESET_NAME}.clusterimageset.yaml"
 
 .PHONY: clusterpool/delete-image-set
+## Takes as input the name of an imageset and deletes said imageset
 clusterpool/delete-image-set: %delete-image-set: %_init
 	$(call assert-set,CLUSTERPOOL_IMAGESET_NAME)
 	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="delete clusterimageset  -n ${CLUSTERPOOL_HIVE_NAMESPACE} ${CLUSTERPOOL_IMAGESET_NAME}"
 
 .PHONY: clusterpool/aws/create-clusterpool
+## Create a clusterpool on AWS
 clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -104,6 +109,7 @@ clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.aws.clusterpool.yaml"
 
 .PHONY: clusterpool/azure/create-clusterpool
+## Create a cluserpool on Azure
 clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -127,6 +133,7 @@ clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.az.clusterpool.yaml"
 
 .PHONY: clusterpool/gcp/create-clusterpool
+## Create a clusterpool on GCP
 clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -149,17 +156,20 @@ clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.gcp.clusterpool.yaml"
 
 .PHONY: clusterpool/delete-clusterpool
+## Delete a clusterpool pointed to in CLUSTERPOOL_NAME (any platform)
 clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="delete clusterpool -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_NAME}"
 
 .PHONY: clusterpool/list-clusterpools
+## List all clusterpools in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterpools: %list-clusterpools: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="get clusterpools -n ${CLUSTERPOOL_HOST_NAMESPACE}"
 
 .PHONY: clusterpool/aws/create-creds
-## Requires various credentials env vars specific to this cloud platform
+## Create a hive credentials secret for AWS with input credentials
 clusterpool/aws/create-creds: %aws/create-creds: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	$(call assert-set,CLUSTERPOOL_AWS_CRED_NAME)
@@ -174,12 +184,14 @@ clusterpool/aws/create-creds: %aws/create-creds: %_init
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_AWS_CRED_NAME}.aws.creds.yaml"
 
 .PHONY: clusterpool/aws/delete-creds
-## Takes in a CREDS_SECRET_NAME variable
+## Deletes the secret CLUSTERPOOL_AWS_CRED_NAME
 clusterpool/aws/delete-creds: %aws/delete-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_AWS_CRED_NAME)
 	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_AWS_CRED_NAME}"
 
 .PHONY: clusterpool/azure/create-creds
-## Requires various credentials env vars specific to this cloud platform
+## Create a hive credentials secret for Azue with input credentials
 clusterpool/azure/create-creds: %azure/create-creds: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	$(call assert-set,CLUSTERPOOL_AZURE_SUBSCRIPTION_ID)
@@ -196,19 +208,36 @@ clusterpool/azure/create-creds: %azure/create-creds: %_init
 	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_AZURE_CRED_NAME} --from-file=osServicePrincipal.json -n ${CLUSTERPOOL_HOST_NAMESPACE}"
 
 .PHONY: clusterpool/azure/delete-creds
-## Takes in a CREDS_SECRET_NAME variable
+## Deletes the secret CLUSTERPOOL_AZURE_CRED_NAME
 clusterpool/azure/delete-creds: %azure/delete-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_AZURE_CRED_NAME)
 	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_AZURE_CRED_NAME}"
 
 .PHONY: clusterpool/gcp/create-creds
-## Requires various credentials env vars specific to this cloud platform
+## Create a hive credentials secret for GCP with input credentials
 clusterpool/gcp/create-creds: %gcp/create-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_GCP_CRED_NAME)
+	$(call assert-set,CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE)
 	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_GCP_CRED_NAME} --from-file=${CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE} -n ${CLUSTERPOOL_HOST_NAMESPACE}"
 
 .PHONY: clusterpool/gcp/delete-creds
-## Takes in a CREDS_SECRET_NAME variable
+## Deletes the secret CLUSTERPOOL_GCP_CRED_NAME
 clusterpool/gcp/delete-creds: %gcp/delete-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_GCP_CRED_NAME)
 	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_GCP_CRED_NAME}"
+
+.PHONY: clusterpool/create-pull-secret
+## Create an OCP pull secret for use in clusterpools
+clusterpool/create-pull-secret: %create-pull-secret: %_init
+	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_PULL_SECRET_NAME} --from-file=.dockerconfigjson=${CLUSTERPOOL_PULL_SECRET_FILE} --type=kubernetes.io/dockerconfigjson --namespace ${CLUSTERPOOL_HIVE_NAMESPACE}"
+
+.PHONY: clusterpool/delete-pull-secret
+## Delete an OCP pull secret
+clusterpool/delete-pull-secret: %delete-pull-secret: %_init
+	@${SELF} oc/command OC_COMMAND="delete secret ${CLUSTERPOOL_PULL_SECRET_NAME} --namespace ${CLUSTERPOOL_HIVE_NAMESPACE}"
 
 .PHONY: clusterpool/create-claim
 ## Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
