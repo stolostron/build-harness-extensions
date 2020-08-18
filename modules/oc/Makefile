@@ -13,18 +13,19 @@ OC_CLUSTER_URL ?=
 OC_LOGIN_OPTIONS ?= --insecure-skip-tls-verify=true
 OC_COMMAND ?=
 OC_LOGGED_IN ?= $(OC_DEST_PATH)/.oc_cli_logged_in
+OC_FORCE_LOGIN ?= 
 
 .PHONY: oc/install
 ## Install the oc cli
 oc/install: %install:
-	@[ -x $(OC) ] || ( wget -O ${OC_TAR_PATH} ${OC_SOURCE_URL} && \
+	@[ -x $(OC) ] || ( curl -X GET ${OC_SOURCE_URL} -o ${OC_TAR_PATH} && \
 	tar -xf ${OC_TAR_PATH} -C ${OC_DEST_PATH} && \
 	rm -f ${OC_TAR_PATH} )
 
 .PHONY: oc/login
 ## Login to the OC Environment
 oc/login: %login: %install
-	@[ -e $(OC_LOGGED_IN) ] || ( $(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN) )
+	@if [ ! -e $(OC_LOGGED_IN) ] || [ ! -z "$(OC_FORCE_LOGIN)" ]; then $(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); fi;
 
 .PHONY: oc/command
 ## Run $(OC_COMMAND) from CLI
