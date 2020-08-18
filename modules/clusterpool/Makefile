@@ -36,13 +36,24 @@ CLUSTERPOOL_AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME ?=
 # AWS
 CLUSTERPOOL_GCP_BASE_DOMAIN ?=
 CLUSTERPOOL_GCP_REGION ?= us-east-1
-CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID ?= $(echo -n ${AWS_ACCESS_KEY_ID} | base64 -w 0)
-CLUSTERPOOL_ENCODED_AWS_SECRET_ACCESS_KEY ?= $(echo -n ${AWS_SECRET_ACCESS_KEY} | base64 -w 0)
 
 #---Cluster Credentials-related env vars---#
 CLUSTERPOOL_AWS_CRED_NAME ?= aws-creds
 CLUSTERPOOL_AZURE_CRED_NAME ?= azure-creds
 CLUSTERPOOL_GCP_CRED_NAME ?= gcp-creds
+
+# AWS
+CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID ?= $(echo -n ${AWS_ACCESS_KEY_ID} | base64 -w 0)
+CLUSTERPOOL_ENCODED_AWS_SECRET_ACCESS_KEY ?= $(echo -n ${AWS_SECRET_ACCESS_KEY} | base64 -w 0)
+
+# Azure
+CLUSTERPOOL_AZURE_SUBSCRIPTION_ID ?= ${AZURE_SUBSCRIPTION_ID}
+CLUSTERPOOL_AZURE_CLIENT_ID ?= ${AZURE_SERVICE_PRINCIPAL_CLIENT_ID}
+CLUSTERPOOL_AZURE_CLIENT_SECRET ?= ${AZURE_SERVICE_PRINCIPAL_CLIENT_SECRET}
+CLUSTERPOOL_AZURE_TENNANT_ID ?= ${AZURE_TENANT_ID}
+
+# GCP
+CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE ?= ${HOME}/.gcp/osServiceAccount.json
 
 .PHONY: clusterpool/_init
 ## Install the oc cli and log in to the ClusterPool Host cluster
@@ -70,8 +81,8 @@ clusterpool/delete-image-set: %delete-image-set: %_init
 	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="delete clusterimageset  -n ${CLUSTERPOOL_HIVE_NAMESPACE} ${CLUSTERPOOL_IMAGESET_NAME}"
 
-.PHONY: clusterpool/aws/create-cluster-pool
-clusterpool/aws/create-cluster-pool: %aws/create-cluster-pool: %_init
+.PHONY: clusterpool/aws/create-clusterpool
+clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	$(call assert-set,CLUSTERPOOL_AWS_BASE_DOMAIN)
@@ -92,8 +103,8 @@ clusterpool/aws/create-cluster-pool: %aws/create-cluster-pool: %_init
 		>> .${CLUSTERPOOL_NAME}.aws.clusterpool.yaml
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.aws.clusterpool.yaml"
 
-.PHONY: clusterpool/azure/create-cluster-pool
-clusterpool/azure/create-cluster-pool: %azure/create-cluster-pool: %_init
+.PHONY: clusterpool/azure/create-clusterpool
+clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	$(call assert-set,CLUSTERPOOL_AZURE_BASE_DOMAIN)
@@ -115,8 +126,8 @@ clusterpool/azure/create-cluster-pool: %azure/create-cluster-pool: %_init
 		>> .${CLUSTERPOOL_NAME}.az.clusterpool.yaml
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.az.clusterpool.yaml"
 
-.PHONY: clusterpool/gcp/create-cluster-pool
-clusterpool/gcp/create-cluster-pool: %gcp/create-cluster-pool: %_init
+.PHONY: clusterpool/gcp/create-clusterpool
+clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	$(call assert-set,CLUSTERPOOL_GCP_BASE_DOMAIN)
@@ -137,43 +148,67 @@ clusterpool/gcp/create-cluster-pool: %gcp/create-cluster-pool: %_init
 		>> .${CLUSTERPOOL_NAME}.gcp.clusterpool.yaml
 	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_NAME}.gcp.clusterpool.yaml"
 
-.PHONY: clusterpool/delete-cluster-pool
-clusterpool/delete-cluster-pool: %delete-cluster-pool: %_init
+.PHONY: clusterpool/delete-clusterpool
+clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@${SELF} oc/command OC_COMMAND="delete -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_NAME}"
+	@${SELF} oc/command OC_COMMAND="delete clusterpool -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_NAME}"
 
-.PHONY: clusterpool/list-cluster-pools
-clusterpool/list-cluster-pools: %list-cluster-pools: %_init
+.PHONY: clusterpool/list-clusterpools
+clusterpool/list-clusterpools: %list-clusterpools: %_init
 	@${SELF} oc/command OC_COMMAND="get clusterpools -n ${CLUSTERPOOL_HOST_NAMESPACE}"
 
 .PHONY: clusterpool/aws/create-creds
 ## Requires various credentials env vars specific to this cloud platform
 clusterpool/aws/create-creds: %aws/create-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_AWS_CRED_NAME)
+	$(call assert-set,CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID)
+	$(call assert-set,CLUSTERPOOL_ENCODED_AWS_SECRET_ACCESS_KEY)
 	@sed -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;${CLUSTERPOOL_HOST_NAMESPACE};g" \
 		-e "s;__CLUSTERPOOL_AWS_CRED_NAME__;${CLUSTERPOOL_AWS_CRED_NAME};g" \
 		-e "s;__ENCODED_AWS_ACCESS_KEY_ID__;${CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID};g" \
 		-e "s;__ENCODED_AWS_SECRET_ACCESS_KEY__;${CLUSTERPOOL_ENCODED_AWS_SECRET_ACCESS_KEY};g" \
 		${BUILD_HARNESS_EXTENSIONS_PATH}/modules/clusterpool/templates/creds.aws.yaml.template \
 		> .${CLUSTERPOOL_AWS_CRED_NAME}.aws.creds.yaml
+	@${SELF} oc/command OC_COMMAND="apply -n ${CLUSTERPOOL_HOST_NAMESPACE} -f .${CLUSTERPOOL_AWS_CRED_NAME}.aws.creds.yaml"
+
+.PHONY: clusterpool/aws/delete-creds
+## Takes in a CREDS_SECRET_NAME variable
+clusterpool/aws/delete-creds: %aws/delete-creds: %_init
+	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_AWS_CRED_NAME}"
 
 .PHONY: clusterpool/azure/create-creds
 ## Requires various credentials env vars specific to this cloud platform
-clusterpool/azure/create-creds: %azure/create-creds %_init
-	@echo unimplemented
-	@exit 1
+clusterpool/azure/create-creds: %azure/create-creds: %_init
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	$(call assert-set,CLUSTERPOOL_AZURE_SUBSCRIPTION_ID)
+	$(call assert-set,CLUSTERPOOL_AZURE_CLIENT_ID)
+	$(call assert-set,CLUSTERPOOL_AZURE_CLIENT_SECRET)
+	$(call assert-set,CLUSTERPOOL_AZURE_TENNANT_ID)
+	$(call assert-set,CLUSTERPOOL_AZURE_CRED_NAME)
+	@sed -e "s;__AZURE_SUBSCRIPTION_ID__;${CLUSTERPOOL_AZURE_SUBSCRIPTION_ID};g" \
+		-e "s;__AZURE_CLIENT_ID__;${CLUSTERPOOL_AZURE_CLIENT_ID};g" \
+		-e "s;__AZURE_CLIENT_SECRET__;${CLUSTERPOOL_AZURE_CLIENT_SECRET};g" \
+		-e "s;__AZURE_TENANT_ID__;${CLUSTERPOOL_AZURE_TENNANT_ID};g" \
+		${BUILD_HARNESS_EXTENSIONS_PATH}/modules/clusterpool/templates/creds.azure.osServicePrincipal.json.tempate \
+		> osServicePrincipal.json
+	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_AZURE_CRED_NAME} --from-file=osServicePrincipal.json -n ${CLUSTERPOOL_HOST_NAMESPACE}"
+
+.PHONY: clusterpool/azure/delete-creds
+## Takes in a CREDS_SECRET_NAME variable
+clusterpool/azure/delete-creds: %azure/delete-creds: %_init
+	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_AZURE_CRED_NAME}"
 
 .PHONY: clusterpool/gcp/create-creds
 ## Requires various credentials env vars specific to this cloud platform
 clusterpool/gcp/create-creds: %gcp/create-creds: %_init
-	@echo unimplemented
-	@exit 1
+	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_GCP_CRED_NAME} --from-file=${CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE} -n ${CLUSTERPOOL_HOST_NAMESPACE}"
 
-.PHONY: clusterpool/delete-creds
+.PHONY: clusterpool/gcp/delete-creds
 ## Takes in a CREDS_SECRET_NAME variable
-clusterpool/delete-creds: %delete-creds: %_init
-	@echo unimplemented
-	@exit 1
+clusterpool/gcp/delete-creds: %gcp/delete-creds: %_init
+	@${SELF} oc/command OC_COMMAND="delete secret -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_GCP_CRED_NAME}"
 
 .PHONY: clusterpool/create-claim
 ## Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
