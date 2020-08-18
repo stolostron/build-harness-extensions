@@ -63,8 +63,8 @@ clusterpool/_init: %_init:
 	$(call assert-set,CLUSTERPOOL_HOST_USER)
 	$(call assert-set,CLUSTERPOOL_HOST_PASS)
 	$(call assert-set,CLUSTERPOOL_HOST_API)
-	@${SELF} oc/install
-	@${SELF} oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API} OC_FORCE_LOGIN="true"
+	@${SELF} -s oc/install
+	@${SELF} -s oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API} OC_FORCE_LOGIN="true"
 
 .PHONY: clusterpool/create-image-set
 ## Takes as input an imageset name and release image and creates a ClusterImageSet.  
@@ -250,7 +250,7 @@ clusterpool/create-claim: %create-claim: %_init
 	@cat clusterclaim.yaml | kubectl apply -f -
 
 .PHONY: clusterpool/verify-claim
-## Takes in a CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
+## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
 clusterpool/verify-claim: %verify-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@oc get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json > clusterclaim.namespace.yaml
@@ -262,44 +262,45 @@ clusterpool/delete-claim: %delete-claim: %_init
 	@$(SELF) oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
 
 .PHONY: clusetrpool/checkout
-## takes in a CLUSTER_CLAIM variable - the name of the claim to create
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to create
 clusetrpool/checkout: %checkout: %_init
 	@echo unimplemented
 	@exit 1
 
 .PHONY: clusterpool/checkin
-## Takes in a CLUSTER_CLAIM variable - the name of the claim to delete
+## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to delete
 clusterpool/checkin: %checkin: %_init
 	@echo unimplemented
 	@exit 1
 
 .PHONY: clusterpool/get-cluster-kubeconfig
-## Takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
+## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
 	@echo unimplemented
 	@exit 1
 
 .PHONY: clusterpool/get-cluster-credentials
-## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-credentials: %get-cluster-credentials: %_init
 	@echo unimplemented
 	@exit 1
 
 .PHONY: clusterpool/get-cluster-api
-## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-api: %get-cluster-api: %_init
-	@echo unimplemented
-	@exit 1
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.apiURL'"
 
 .PHONY: clusterpool/get-cluster-console
-## takes in a CLUSTER_CLAIM variable - the name of the claim to get creds from
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-console: %get-cluster-console: %_init
-	@echo unimplemented
-	@exit 1
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.webConsoleURL'"
 
 .PHONY: clusterpool/get-cluster-metadata
-## takes in a CLUSTER_CLAIM variable and a METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable and a METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
 clusterpool/get-cluster-metadata: %get-cluster-metadata: %_init
 	@echo unimplemented
 	@exit 1
-
