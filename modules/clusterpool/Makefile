@@ -232,11 +232,16 @@ clusterpool/gcp/delete-creds: %gcp/delete-creds: %_init
 .PHONY: clusterpool/create-pull-secret
 ## Create an OCP pull secret for use in clusterpools
 clusterpool/create-pull-secret: %create-pull-secret: %_init
+	$(call assert-set,CLUSTERPOOL_PULL_SECRET_NAME)
+	$(call assert-set,CLUSTERPOOL_PULL_SECRET_FILE)
+	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="create secret generic ${CLUSTERPOOL_PULL_SECRET_NAME} --from-file=.dockerconfigjson=${CLUSTERPOOL_PULL_SECRET_FILE} --type=kubernetes.io/dockerconfigjson --namespace ${CLUSTERPOOL_HIVE_NAMESPACE}"
 
 .PHONY: clusterpool/delete-pull-secret
 ## Delete an OCP pull secret
 clusterpool/delete-pull-secret: %delete-pull-secret: %_init
+	$(call assert-set,CLUSTERPOOL_PULL_SECRET_NAME)
+	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
 	@${SELF} oc/command OC_COMMAND="delete secret ${CLUSTERPOOL_PULL_SECRET_NAME} --namespace ${CLUSTERPOOL_HIVE_NAMESPACE}"
 
 .PHONY: clusterpool/create-claim
