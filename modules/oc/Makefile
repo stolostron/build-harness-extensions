@@ -14,6 +14,7 @@ OC_LOGIN_OPTIONS ?= --insecure-skip-tls-verify=true
 OC_COMMAND ?=
 OC_LOGGED_IN ?= $(OC_DEST_PATH)/.oc_cli_logged_in
 OC_FORCE_LOGIN ?= 
+OC_SILENT_LOGIN ?=
 
 .PHONY: oc/install
 ## Install the oc cli
@@ -25,7 +26,13 @@ oc/install: %install:
 .PHONY: oc/login
 ## Login to the OC Environment
 oc/login: %login: %install
-	@if [ ! -e $(OC_LOGGED_IN) ] || [ ! -z "$(OC_FORCE_LOGIN)" ]; then $(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); fi;
+	@if [ ! -z "$(OC_FORCE_LOGIN)" ] || [ ! -e "$(OC_LOGGED_IN)" ]; then \
+		if [ ! -z "$(OC_SILENT_LOGIN)" ]; then \
+			$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) > /dev/null && touch $(OC_LOGGED_IN); \
+		else \
+			$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); \
+		fi; \
+	fi;
 
 .PHONY: oc/command
 ## Run $(OC_COMMAND) from CLI

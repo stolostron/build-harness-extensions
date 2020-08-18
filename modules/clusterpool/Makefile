@@ -64,7 +64,8 @@ clusterpool/_init: %_init:
 	$(call assert-set,CLUSTERPOOL_HOST_PASS)
 	$(call assert-set,CLUSTERPOOL_HOST_API)
 	@${SELF} -s oc/install
-	@${SELF} -s oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API} OC_FORCE_LOGIN="true"
+	@${SELF} -s oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API} \
+		OC_FORCE_LOGIN="true" OC_SILENT_LOGIN="true"
 
 .PHONY: clusterpool/create-image-set
 ## Takes as input an imageset name and release image and creates a ClusterImageSet.  
