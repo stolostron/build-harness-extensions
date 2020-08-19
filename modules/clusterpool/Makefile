@@ -305,15 +305,17 @@ clusterpool/checkin: %checkin: %_init
 
 .PHONY: clusterpool/get-cluster-kubeconfig
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
-	@echo unimplemented
-	@exit 1
+clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_namespace
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat .adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o yaml"
 
 .PHONY: clusterpool/get-cluster-username
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-username: %get-cluster-username: %_init
-	@echo unimplemented
-	@exit 1
+clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo username:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | jq -r '.data.username'"
 
 .PHONY: clusterpool/get-cluster-password
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
