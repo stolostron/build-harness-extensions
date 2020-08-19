@@ -71,6 +71,13 @@ clusterpool/_init: %_init:
 	@${SELF} -s oc/login OC_CLUSTER_USER=${CLUSTERPOOL_HOST_USER} OC_CLUSTER_PASS=${CLUSTERPOOL_HOST_PASS} OC_CLUSTER_URL=${CLUSTERPOOL_HOST_API} \
 		OC_FORCE_LOGIN="true" OC_SILENT_LOGIN="true"
 
+.PHONY: clusterpool/_init_namespace
+## Query the namespace and stash it in .namespace in the current working directory
+clusterpool/_init_namespace:
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+
 .PHONY: clusterpool/create-image-set
 ## Takes as input an imageset name and release image and creates a ClusterImageSet.  
 clusterpool/create-image-set: %create-image-set: %_init
@@ -269,7 +276,7 @@ clusterpool/verify-claim: %verify-claim: %_init
 .PHONY: clusterpool/delete-claim
 ## Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
 clusterpool/delete-claim: %delete-claim: %_init
-	@$(SELF) oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
+	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
 
 .PHONY: clusetrpool/checkout
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to create
@@ -289,24 +296,27 @@ clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
 	@echo unimplemented
 	@exit 1
 
-.PHONY: clusterpool/get-cluster-credentials
+.PHONY: clusterpool/get-cluster-username
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-credentials: %get-cluster-credentials: %_init
+clusterpool/get-cluster-username: %get-cluster-username: %_init
 	@echo unimplemented
 	@exit 1
 
+.PHONY: clusterpool/get-cluster-password
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
+clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo password:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | jq -r '.data.password'"
+
 .PHONY: clusterpool/get-cluster-api
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-api: %get-cluster-api: %_init
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+clusterpool/get-cluster-api: %get-cluster-api: %_init %_init_namespace
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.apiURL'"
 
 .PHONY: clusterpool/get-cluster-console
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
-clusterpool/get-cluster-console: %get-cluster-console: %_init
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+clusterpool/get-cluster-console: %get-cluster-console: %_init %_init_namespace
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.webConsoleURL'"
 
 .PHONY: clusterpool/get-cluster-metadata
