@@ -57,6 +57,10 @@ CLUSTERPOOL_AZURE_TENNANT_ID ?= ${AZURE_TENANT_ID}
 # GCP
 CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE ?= ${HOME}/.gcp/osServiceAccount.json
 
+
+#---Clusterpool List-related env vars---#
+CLUSTERPOOL_LIST_ARGUMENTS ?= 
+
 .PHONY: clusterpool/_init
 ## Install the oc cli and log in to the ClusterPool Host cluster
 clusterpool/_init: %_init:
@@ -167,7 +171,7 @@ clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 ## List all clusterpools in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterpools: %list-clusterpools: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@${SELF} oc/command OC_COMMAND="get clusterpools -n ${CLUSTERPOOL_HOST_NAMESPACE}"
+	@${SELF} oc/command OC_COMMAND="get clusterpools -n ${CLUSTERPOOL_HOST_NAMESPACE} ${CLUSTERPOOL_LIST_ARGUMENTS}"
 
 .PHONY: clusterpool/aws/create-creds
 ## Create a hive credentials secret for AWS with input credentials
