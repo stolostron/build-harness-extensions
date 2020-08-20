@@ -25,6 +25,7 @@ CLUSTERPOOL_IMAGESET_RELEASE_IMAGE ?=
 # Universal
 CLUSTERPOOL_NAME ?=
 CLUSTERPOOL_SIZE ?= 1
+CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 5
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -271,9 +272,9 @@ clusterpool/delete-pull-secret: %delete-pull-secret: %_init
 	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
 	@$(SELF) oc/command OC_COMMAND="delete secret $(CLUSTERPOOL_PULL_SECRET_NAME) --namespace $(CLUSTERPOOL_HIVE_NAMESPACE)"
 
-.PHONY: clusterpool/create-claim
-## Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
-clusterpool/create-claim: %create-claim: %_init
+.PHONY: clusterpool/_create-claim
+# Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
+clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -281,28 +282,27 @@ clusterpool/create-claim: %create-claim: %_init
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat clusterclaim.yaml; fi
 	@cat clusterclaim.yaml | kubectl apply -f -
 
-.PHONY: clusterpool/verify-claim
-## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
-clusterpool/verify-claim: %verify-claim: %_init %_init_namespace
+.PHONY: clusterpool/_verify-claim
+# Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
+clusterpool/_verify-claim: %_verify-claim: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@cat .status.condition
 
-.PHONY: clusterpool/delete-claim
-## Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
-clusterpool/delete-claim: %delete-claim: %_init
+.PHONY: clusterpool/_delete-claim
+# Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
+clusterpool/_delete-claim: %_delete-claim: %_init
 	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
 
-.PHONY: clusetrpool/checkout
-## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to create
-clusetrpool/checkout: %checkout: %_init
-	@echo unimplemented
-	@exit 1
+.PHONY: clusterpool/checkout
+## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to wait for successful cluster checkout
+clusterpool/checkout: %checkout:
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/checkout-poll.sh $(CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES)
 
 .PHONY: clusterpool/checkin
-## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to delete
+## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to check back in
 clusterpool/checkin: %checkin: %_init
-	@echo unimplemented
-	@exit 1
+	@$(SELF) -s clusterpool/_delete-claim
 
 .PHONY: clusterpool/get-cluster-kubeconfig
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
