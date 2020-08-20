@@ -78,8 +78,10 @@ clusterpool/_init: %_init:
 ## Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json | jq -r '.spec.namespace'" > .namespace
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; fi
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json"  > .ClusterClaim.json
+	@jq -r '.spec.namespace' .ClusterClaim.json > .namespace
+	@jq -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
 
 .PHONY: clusterpool/deploy-hive
 ## Takes as input a branch for the hive project and deploys hive onto the target cluster
@@ -281,10 +283,9 @@ clusterpool/create-claim: %create-claim: %_init
 
 .PHONY: clusterpool/verify-claim
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
-clusterpool/verify-claim: %verify-claim: %_init
+clusterpool/verify-claim: %verify-claim: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@oc get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json > clusterclaim.namespace.yaml
-	@jq -r [.status.conditions[0].type][] clusterclaim.namespace.yaml
+	@cat .status.condition
 
 .PHONY: clusterpool/delete-claim
 ## Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
