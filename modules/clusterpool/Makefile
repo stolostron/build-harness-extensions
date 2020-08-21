@@ -79,7 +79,7 @@ clusterpool/_init: %_init:
 ## Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json"  > .ClusterClaim.json
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@jq -r '.spec.namespace' .ClusterClaim.json > .namespace
 	@jq -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
