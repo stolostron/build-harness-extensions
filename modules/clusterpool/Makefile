@@ -1,4 +1,4 @@
-#---Login/Host-cluster related env vars---#
+ #---Login/Host-cluster related env vars---#
 # API URL of the cluster running the target clusterpool, used in oc login, so port :6443 is required
 CLUSTERPOOL_HOST_API ?=
 # Access credentials used to log in to cluster indciated in CLUSTERPOOL_HOST_API
@@ -40,6 +40,7 @@ CLUSTERPOOL_AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME ?=
 CLUSTERPOOL_GCP_BASE_DOMAIN ?=
 CLUSTERPOOL_GCP_REGION ?= us-east-1
 
+
 #---Cluster Credentials-related env vars---#
 # Overarching
 CLUSTERPOOL_AWS_CRED_NAME ?= aws-creds
@@ -65,24 +66,29 @@ CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE ?= $(HOME)/.gcp/osServiceAccount.json
 #---Clusterpool List-related env vars---#
 CLUSTERPOOL_LIST_ARGUMENTS ?= 
 
+# Convenience to just call bare jq executable
+JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
+
 .PHONY: clusterpool/_init
-## Install the oc cli and log in to the ClusterPool Host cluster
+# Install jq and oc cli and log in to the ClusterPool Host cluster
 clusterpool/_init: %_init:
 	$(call assert-set,CLUSTERPOOL_HOST_USER)
 	$(call assert-set,CLUSTERPOOL_HOST_PASS)
 	$(call assert-set,CLUSTERPOOL_HOST_API)
+	@$(SELF) -s jq/install 2>&1 > /dev/null
 	@$(SELF) -s oc/install
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(CLUSTERPOOL_HOST_USER) OC_CLUSTER_PASS=$(CLUSTERPOOL_HOST_PASS) OC_CLUSTER_URL=$(CLUSTERPOOL_HOST_API) \
 		OC_FORCE_LOGIN="true" OC_SILENT_LOGIN="true"
 
 .PHONY: clusterpool/_init_namespace
-## Query the namespace and stash it in .namespace in the current working directory
+# Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
-	@jq -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@jq -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
+	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
+	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
+	@rm .ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
 ## Takes as input a branch for the hive project and deploys hive onto the target cluster
@@ -291,6 +297,7 @@ clusterpool/_verify-claim: %_verify-claim: %_init %_init_namespace
 .PHONY: clusterpool/_delete-claim
 # Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
 clusterpool/_delete-claim: %_delete-claim: %_init
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
 
 .PHONY: clusterpool/checkout
@@ -302,41 +309,64 @@ clusterpool/checkout: %checkout:
 .PHONY: clusterpool/checkin
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to check back in
 clusterpool/checkin: %checkin: %_init
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s clusterpool/_delete-claim
 
 .PHONY: clusterpool/get-cluster-kubeconfig
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_namespace
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat .adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
 	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o yaml"
+	@rm .namespace .adminKubeconfigSecretRef
 
 .PHONY: clusterpool/get-cluster-username
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo username:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | jq -r '.data.username'"
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.username'"
+	@rm .namespace .adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-password
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo password:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | jq -r '.data.password'"
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.password'"
+	@rm .namespace .adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-api
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-api: %get-cluster-api: %_init %_init_namespace
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.apiURL'"
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].status.apiURL'"
+	@rm .namespace
 
 .PHONY: clusterpool/get-cluster-console
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-console: %get-cluster-console: %_init %_init_namespace
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | jq -r '.items[].status.webConsoleURL'"
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].status.webConsoleURL'"
+	@rm .namespace
 
 .PHONY: clusterpool/get-cluster-metadata
-## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable and a METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
-clusterpool/get-cluster-metadata: %get-cluster-metadata: %_init
-	@echo unimplemented
-	@exit 1
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable and a CLUSTERPOOL_METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
+clusterpool/get-cluster-metadata: %get-cluster-metadata:
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	$(call assert-set,CLUSTERPOOL_METADATA_FILE)
+	@$(SELF) -s clusterpool/get-cluster-username > .un
+	@$(SELF) -s clusterpool/get-cluster-password > .pw
+	@$(SELF) -s clusterpool/get-cluster-api > .api
+	@$(SELF) -s clusterpool/get-cluster-console > .con
+	@echo "{}" > gc1.json
+	@$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json
+	@$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json
+	@$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json
+	@$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > $(CLUSTERPOOL_METADATA_FILE)
+	@rm -f .un .pw .api .con gc1.json .namespace
+	@cat $(CLUSTERPOOL_METADATA_FILE)
+
