@@ -31,7 +31,6 @@ oc/install: %install:
 		fi \
 	fi;
 
-
 .PHONY: oc/login
 ## Login to the OC Environment
 oc/login: %login: %install
