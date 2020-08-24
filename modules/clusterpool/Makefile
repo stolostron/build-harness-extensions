@@ -76,9 +76,8 @@ clusterpool/_init: %_init:
 	$(call assert-set,CLUSTERPOOL_HOST_PASS)
 	$(call assert-set,CLUSTERPOOL_HOST_API)
 	@$(SELF) -s jq/install 2>&1 > /dev/null
-	@$(SELF) -s oc/install
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(CLUSTERPOOL_HOST_USER) OC_CLUSTER_PASS=$(CLUSTERPOOL_HOST_PASS) OC_CLUSTER_URL=$(CLUSTERPOOL_HOST_API) \
-		OC_FORCE_LOGIN="true" OC_SILENT_LOGIN="true"
+		OC_FORCE_LOGIN="true" OC_SILENT="true"
 
 .PHONY: clusterpool/_init_namespace
 # Query the namespace and stash it in .namespace in the current working directory
@@ -327,7 +326,7 @@ clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo username:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.username'"
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.username' | base64 -d"
 	@rm .namespace .adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-password
@@ -336,7 +335,7 @@ clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo password:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.password'"
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.password' | base64 -d"
 	@rm .namespace .adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-api
