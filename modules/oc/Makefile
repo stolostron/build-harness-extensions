@@ -14,7 +14,7 @@ OC_LOGIN_OPTIONS ?= --insecure-skip-tls-verify=true
 OC_COMMAND ?=
 OC_LOGGED_IN ?= $(OC_DEST_PATH)/.oc_cli_logged_in
 OC_FORCE_LOGIN ?= 
-OC_SILENT ?=
+OC_SILENT ?= true
 
 .PHONY: oc/install
 ## Install the oc cli
