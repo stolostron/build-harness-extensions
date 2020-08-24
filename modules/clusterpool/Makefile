@@ -317,7 +317,7 @@ clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_names
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat .adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o yaml"
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o json | jq -r .data.kubeconfig | base64 -d"
 	@rm .namespace .adminKubeconfigSecretRef
 
 .PHONY: clusterpool/get-cluster-username
