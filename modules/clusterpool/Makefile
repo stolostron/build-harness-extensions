@@ -315,7 +315,7 @@ clusterpool/checkin: %checkin: %_init
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat .adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
 	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 	@rm .namespace .adminKubeconfigSecretRef
@@ -324,7 +324,7 @@ clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_names
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo username:; fi
 	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.username' | base64 -d"
 	@rm .namespace .adminPasswordSecretRef
@@ -333,7 +333,7 @@ clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo password:; fi
 	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.password' | base64 -d"
 	@rm .namespace .adminPasswordSecretRef
@@ -342,14 +342,14 @@ clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-api: %get-cluster-api: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].status.apiURL'"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.status.apiURL'"
 	@rm .namespace
 
 .PHONY: clusterpool/get-cluster-console
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-console: %get-cluster-console: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].status.webConsoleURL'"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.status.webConsoleURL'"
 	@rm .namespace
 
 .PHONY: clusterpool/get-cluster-basedomain
