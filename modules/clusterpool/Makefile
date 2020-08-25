@@ -352,6 +352,17 @@ clusterpool/get-cluster-console: %get-cluster-console: %_init %_init_namespace
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment -n `cat .namespace` -o json | $(JQ) -r '.items[].status.webConsoleURL'"
 	@rm .namespace
 
+.PHONY: clusterpool/get-cluster-basedomain
+## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get a basedomain from
+clusterpool/get-cluster-basedomain: %get-cluster-basedomain: %_init %_init_namespace
+	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" | $(JQ) -rj '.metadata.name' > .name
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -rj '.spec.baseDomain'" > .bd
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "ClusterDeployment name:"; cat .name; fi
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "baseDomain:"; cat .bd; fi
+	@echo "`cat .name`.`cat .bd`"
+	@rm .namespace
+
 .PHONY: clusterpool/get-cluster-metadata
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable and a CLUSTERPOOL_METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
 clusterpool/get-cluster-metadata: %get-cluster-metadata:
@@ -361,11 +372,13 @@ clusterpool/get-cluster-metadata: %get-cluster-metadata:
 	@$(SELF) -s clusterpool/get-cluster-password > .pw
 	@$(SELF) -s clusterpool/get-cluster-api > .api
 	@$(SELF) -s clusterpool/get-cluster-console > .con
+	@$(SELF) -s clusterpool/get-cluster-basedomain > .bd
 	@echo "{}" > gc1.json
 	@$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json
+	@$(JQ) --arg basedomain `cat .bd` '. + {basedomain: $$basedomain}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > $(CLUSTERPOOL_METADATA_FILE)
-	@rm -f .un .pw .api .con gc1.json .namespace
+	@rm -f .un .pw .api .con .bd gc1.json .namespace
 	@cat $(CLUSTERPOOL_METADATA_FILE)
 
