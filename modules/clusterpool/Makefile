@@ -297,7 +297,7 @@ clusterpool/_verify-claim: %_verify-claim: %_init %_init_namespace
 # Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
 clusterpool/_delete-claim: %_delete-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM)"
+	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM) -n $(CLUSTERPOOL_HOST_NAMESPACE)"
 
 .PHONY: clusterpool/checkout
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to wait for successful cluster checkout
