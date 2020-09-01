@@ -269,7 +269,29 @@ pipeline-manifest/_postprocess: %_postprocess:
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
 
 .PHONY: pipeline-manifest/build-index
-# Build bundle and index images out of a hybrid of decorated manifest files
+## Build bundle and index images out of a hybrid of decorated manifest files
 pipeline-manifest/build-index: %build-index:
 	@$(shell $(SELF) jq/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION)
+
+.PHONY: pipeline-manifest/_mirror-index
+# Mirror downstream acm-d and create custom registry/index
+pipeline-manifest/_mirror-index: %mirror-index:
+	$(call assert-set,PIPELINE_MANIFEST_RELEASE_VERSION)
+	$(call assert-set,PIPELINE_MANIFEST_ADVISORY_ID)
+	$(call assert-set,PIPELINE_MANIFEST_MIRROR_ORG)
+	$(call assert-set,PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
+	brew hello
+	@if [ -d ashdod ];  \
+	then cd ashdod; $(GIT) pull --quiet; \
+	else $(GIT) clone -b master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
+	fi
+	@if [ -d release ];  \
+	then cd release; $(GIT) checkout release-$(PIPELINE_MANIFEST_RELEASE_VERSION); $(GIT) pull --quiet; \
+	else $(GIT) clone -b release-$(PIPELINE_MANIFEST_RELEASE_VERSION) git@github.com:open-cluster-management/release.git release; \
+	fi
+	cd ashdod; python3 -u ashdod/main.py --advisory_id $(PIPELINE_MANIFEST_ADVISORY_ID) --org $(PIPELINE_MANIFEST_MIRROR_ORG) | tee ../.ashdod_output
+	cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $$3}' | tee .acm_operator_bundle_tag
+	cd release; tools/downstream-testing/build-catalog.sh `cat ../.acm_operator_bundle_tag` $(PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
+	#rm .ashdod_output .acm_operator_bundle_tag
+
