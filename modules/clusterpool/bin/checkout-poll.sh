@@ -6,14 +6,14 @@ CLUSTERPOOL_WAIT_MINUTES=$1
 RETRIES=$(( 2*CLUSTERPOOL_WAIT_MINUTES ))
 
 make clusterpool/_create-claim
-make clusterpool/_verify-claim  > .verifyStatus
+make clusterpool/_verify-claim -s  > .verifyStatus
 if [ "`cat .verifyStatus`" = "ClusterClaimed" ]; then cat .verifyStatus; else
 	if [ "`cat .verifyStatus`" = "NoClusters" ]; then
 		echo Waiting $CLUSTERPOOL_WAIT_MINUTES minutes for cluster availability...
 		for (( i=1; i<=$RETRIES; i++ ))
 		do
 			sleep 30
-			make clusterpool/_verify-claim > .verifyStatus
+			make clusterpool/_verify-claim -s > .verifyStatus
 			cat .verifyStatus
 			if [ "`cat .verifyStatus`" = "ClusterClaimed" ]; then exit 0; fi
 		done
