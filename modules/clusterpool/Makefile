@@ -133,6 +133,7 @@ clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_BASE_DOMAIN__;$(CLUSTERPOOL_AWS_BASE_DOMAIN);g" \
 		-e "s;__CLUSTERPOOL_IMAGESET_NAME__;$(CLUSTERPOOL_IMAGESET_NAME);g" \
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
+		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
 		> .$(CLUSTERPOOL_NAME).aws.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_AWS_CRED_NAME__;$(CLUSTERPOOL_AWS_CRED_NAME);g" \
@@ -156,6 +157,7 @@ clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_BASE_DOMAIN__;$(CLUSTERPOOL_AZURE_BASE_DOMAIN);g" \
 		-e "s;__CLUSTERPOOL_IMAGESET_NAME__;$(CLUSTERPOOL_IMAGESET_NAME);g" \
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
+		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
 		> .$(CLUSTERPOOL_NAME).az.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_AZURE_CREDS_NAME__;$(CLUSTERPOOL_AZURE_CRED_NAME);g" \
@@ -180,6 +182,7 @@ clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_BASE_DOMAIN__;$(CLUSTERPOOL_GCP_BASE_DOMAIN);g" \
 		-e "s;__CLUSTERPOOL_IMAGESET_NAME__;$(CLUSTERPOOL_IMAGESET_NAME);g" \
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
+		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
 		> .$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_GCP_CREDS_NAME__;$(CLUSTERPOOL_GCP_CRED_NAME);g" \
@@ -268,7 +271,7 @@ clusterpool/create-pull-secret: %create-pull-secret: %_init
 	$(call assert-set,CLUSTERPOOL_PULL_SECRET_NAME)
 	$(call assert-set,CLUSTERPOOL_PULL_SECRET_FILE)
 	$(call assert-set,CLUSTERPOOL_HIVE_NAMESPACE)
-	@$(SELF) oc/command OC_COMMAND="create secret generic $(CLUSTERPOOL_PULL_SECRET_NAME) --from-file=.dockerconfigjson=$(CLUSTERPOOL_PULL_SECRET_FILE) --type=kubernetes.io/dockerconfigjson --namespace $(CLUSTERPOOL_HIVE_NAMESPACE)"
+	@$(SELF) oc/command OC_COMMAND="create secret generic $(CLUSTERPOOL_PULL_SECRET_NAME) --from-file=.dockerconfigjson=$(CLUSTERPOOL_PULL_SECRET_FILE) --type=kubernetes.io/dockerconfigjson --namespace $(CLUSTERPOOL_HOST_NAMESPACE)"
 
 .PHONY: clusterpool/delete-pull-secret
 ## Delete an OCP pull secret
