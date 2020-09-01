@@ -20,11 +20,11 @@ if [ "`cat .verifyStatus`" = "ClusterClaimed" ]; then cat .verifyStatus; else
 	else
 		echo Unknown claim status `cat .verifyStatus` - exiting
 		# Unknown claim state - delete it
-		clusterpool/_delete-claim
+		make clusterpool/_delete-claim
 		exit 1
 	fi
 	echo Claim provision timed out - exiting
 	# We never got our claim satisfied - delete it
-	clusterpool/_delete-claim
+	make clusterpool/_delete-claim
 	exit 1
 fi
