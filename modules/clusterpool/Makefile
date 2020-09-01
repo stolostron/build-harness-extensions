@@ -286,9 +286,9 @@ clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > clusterclaim.yaml
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat clusterclaim.yaml; fi
-	@cat clusterclaim.yaml | kubectl apply -f -
+	@sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
+	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
 
 .PHONY: clusterpool/_verify-claim
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
