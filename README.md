@@ -1,18 +1,21 @@
-# OpenShift Install
+## Extensions to `build-harness`
 
-The OpenShift installer `openshift-install` makes it easy to get a cluster
-running on the public cloud or your local infrastructure.
+This repo is structured just like `build-harness`, and is pulled in via:
 
-To learn more about installing OpenShift, visit [docs.openshift.com](https://docs.openshift.com)
-and select the version of OpenShift you are using.
+```BUILD_HARNESS_EXTENSIONS_PATH```
 
-## Installing the tools
+In order to use the build harness and extensions, make yourself a [token](https://github.com/settings/tokens) that at least has `repo` access, and add the following to your `Makefile`:
 
-After extracting this archive, you can move the `openshift-install` binary
-to a location on your PATH such as `/usr/local/bin`, or keep it in a temporary
-directory and reference it via `./openshift-install`.
+```
+# GITHUB_USER containing '@' char must be escaped with '%40'
+GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
+GITHUB_TOKEN ?=
 
-## License
+-include $(shell [ -f ".build-harness-bootstrap" ] || curl --fail -sSL -o .build-harness-bootstrap -H "Authorization: token $(GITHUB_TOKEN)" -H "Accept: application/vnd.github.v3.raw" "https://raw.github.com/open-cluster-management/build-harness-extensions/master/templates/Makefile.build-harness-bootstrap"; echo .build-harness-bootstrap)
+```
 
-OpenShift is licensed under the Apache Public License 2.0. The source code for this
-program is [located on github](https://github.com/openshift/installer).
+Some OSes seem to have trouble with the V3 API for github - here is an alternate invocation that uses the V4 API:
+```
+-include $(shell [ -f ".build-harness-bootstrap" ] || curl --fail -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions-test/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
+
+```
