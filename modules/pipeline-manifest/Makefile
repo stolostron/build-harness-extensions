@@ -82,14 +82,20 @@ pipeline-manifest/_sort: %_sort:
 # Clone the configured pipeline manifest repo
 pipeline-manifest/_clone: %_clone:
 	@$(shell $(SELF) jq/install > /dev/null)
-	@if [ -d $(PIPELINE_MANIFEST_DIR) ];  \
-	then $(SELF) -s pipeline-manifest/_pull; \
-	else $(GIT) clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
+	@echo Starting _clone target
+	@if [ -d $(PIPELINE_MANIFEST_DIR) ]; then \
+	    echo Calling _pull target ; \
+	    $(SELF) -s pipeline-manifest/_pull; \
+	else \
+		echo .. "$(GIT) clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR)" ; \
+	    $(GIT) clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
 	fi
 
 .PHONY: pipeline-manifest/_pull
 # Pull the configured pipeline manifest repo
 pipeline-manifest/_pull: %_pull:
+	@echo Starting _pull target
+	@echo .. "cd $(PIPELINE_MANIFEST_DIR); $(GIT) pull --quiet"
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) pull --quiet
 
 .PHONY: pipeline-manifest/_push
@@ -192,7 +198,7 @@ pipeline-manifest/_promote: %_promote: %_clone
 pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 	$(call assert-set,DOCKER_USER)
 	$(call assert-set,DOCKER_PASS)
-	@echo Copy OpenShift CI image to Quay
+	@echo Starting _osci_to_quay target to copy OpenShift CI image to Quay
 	@echo .. Getting manifest fields for component $(PIPELINE_MANIFEST_COMPONENT)
 	@echo .... manifest file is at $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
@@ -216,6 +222,8 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
 		echo .... Updating image-remote field for $(PIPELINE_MANIFEST_COMPONENT) in $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json to $(PIPELINE_MANIFEST_REMOTE_REPO) ; \
 	    $(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
+		$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > NEW_IMAGE_REMOTE ; \
+        echo .... New image-remote field is `cat NEW_IMAGE_REMOTE` ; \
  	else \
  		echo .. Image is not on OpenShift CI ; \
  	fi
@@ -240,21 +248,32 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 .PHONY: pipeline-manifest/_snapshot
 # Create snapshot of current repo.
 pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
+	@echo Starting _snapshot target
+	@echo .. "cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)"
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
+	@echo .. "cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json"
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
+	@echo .. "cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) snapshot of $(TAG) for $(PIPELINE_MANIFEST_COMPONENT)" --quiet"
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) snapshot of $(TAG) for $(PIPELINE_MANIFEST_COMPONENT)" --quiet
+	@echo .. "cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet"
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
 # Create sha-based manifest (validates as it goes, fails if all images are not present)
 pipeline-manifest/_validate-tag: %_validate-tag:
+	@echo Starting _validate-tag target
+	@echo .. "$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp"
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
+	@echo .. "cat out.tmp"
 	@cat out.tmp
 
 .PHONY: pipeline-manifest/_retag
 # Validate and retag all images or git repos identified in manifest
 pipeline-manifest/_retag: %_retag:
+	@echo Starting _retag target
+	@echo .. "python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)"
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
+	@echo .. "python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)"
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
 
 .PHONY: pipeline-manifest/_get_latest_manifest
@@ -266,6 +285,8 @@ pipeline-manifest/_get_latest_manifest:
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
 pipeline-manifest/_postprocess: %_postprocess:
+	@echo Starting _postprocess target
+	@echo .. "$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)"
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/postprocess.sh $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(TAG) $(ENDPOINT) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION)
 
 .PHONY: pipeline-manifest/build-index
