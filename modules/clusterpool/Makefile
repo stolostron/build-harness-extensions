@@ -198,9 +198,9 @@ clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@$(SELF) oc/command OC_COMMAND="delete clusterpool -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_NAME)"
 
-.PHONY: clusterpool/list-clusterclaim
+.PHONY: clusterpool/list-clusterclaims
 ## List all clusterclaims in the CLUSTERPOOL_HOST_NAMESPACE
-clusterpool/list-clusterpools: %list-clusterpools: %_init
+clusterpool/list-clusterclaims: %list-clusterclaims: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get clusterclaim -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
 	
