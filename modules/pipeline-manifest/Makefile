@@ -95,8 +95,12 @@ pipeline-manifest/_clone: %_clone:
 # Pull the configured pipeline manifest repo
 pipeline-manifest/_pull: %_pull:
 	@echo Starting _pull target
+	@echo .. image-remote for $(PIPELINE_MANIFEST_COMPONENT) before pull
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@echo .. "cd $(PIPELINE_MANIFEST_DIR); $(GIT) pull --quiet"
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) pull --quiet
+	@echo .. image-remote for $(PIPELINE_MANIFEST_COMPONENT) before pull
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/_push
 # Push the configured pipeline manifest repo
@@ -221,9 +225,9 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		echo .... Pushing to $$QUAY_REMOTE ; \
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
 		echo .... Updating image-remote field for $(PIPELINE_MANIFEST_COMPONENT) in $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json to $(PIPELINE_MANIFEST_REMOTE_REPO) ; \
-	    $(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
+		$(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json ; \
 		$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > NEW_IMAGE_REMOTE ; \
-        echo .... New image-remote field is `cat NEW_IMAGE_REMOTE` ; \
+		echo .... New image-remote field is `cat NEW_IMAGE_REMOTE` ; \
  	else \
  		echo .. Image is not on OpenShift CI ; \
  	fi
@@ -262,8 +266,12 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 # Create sha-based manifest (validates as it goes, fails if all images are not present)
 pipeline-manifest/_validate-tag: %_validate-tag:
 	@echo Starting _validate-tag target
+	@echo .. image-remote for $(PIPELINE_MANIFEST_COMPONENT) before decorate-manifest.sh
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@echo .. "$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp"
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
+	@echo .. image-remote for $(PIPELINE_MANIFEST_COMPONENT) after decorate-manifest.sh
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 	@echo .. "cat out.tmp"
 	@cat out.tmp
 
