@@ -216,12 +216,6 @@ clusterpool/list-clusterimagesets: %list-clusterimagesets: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get clusterimageset $(CLUSTERPOOL_LIST_ARGUMENTS)"
 
-.PHONY: clusterpool/list-clusterdeployments
-## List all clusterimagesets in the CLUSTERPOOL_HOST_NAMESPACE
-clusterpool/list-clusterdeployments: %list-clusterdeployments: %_init
-	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) -s oc/command OC_COMMAND="get clusterdeployments --all-namespaces $(CLUSTERPOOL_LIST_ARGUMENTS)"
-
 .PHONY: clusterpool/aws/create-creds
 ## Create a hive credentials secret for AWS with input credentials
 clusterpool/aws/create-creds: %aws/create-creds: %_init
