@@ -15,6 +15,7 @@ OC_COMMAND ?=
 OC_LOGGED_IN ?= $(OC_DEST_PATH)/.oc_cli_logged_in
 OC_FORCE_LOGIN ?= 
 OC_SILENT ?= true
+OC_VENDORIZED_KUBECONFIG=$(OC_DEST_PATH)/kubeconfig
 
 .PHONY: oc/install
 ## Install the oc cli
@@ -36,16 +37,16 @@ oc/install: %install:
 oc/login: %login: %install
 	@if [ ! -z "$(OC_FORCE_LOGIN)" ] || [ ! -e "$(OC_LOGGED_IN)" ]; then \
 		if [ ! -z "$(OC_SILENT)" ]; then \
-			$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) > /dev/null && touch $(OC_LOGGED_IN); \
+			KUBECONFIG=$(OC_VENDORIZED_KUBECONFIG) $(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) > /dev/null && touch $(OC_LOGGED_IN); \
 		else \
-			$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); \
+			KUBECONFIG=$(OC_VENDORIZED_KUBECONFIG) $(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); \
 		fi; \
 	fi;
 
 .PHONY: oc/command
 ## Run $(OC_COMMAND) from CLI
 oc/command: %command: %install %login
-	$(OC) $(OC_COMMAND) 
+	KUBECONFIG=$(OC_VENDORIZED_KUBECONFIG) $(OC) $(OC_COMMAND) 
 	@if [ "$(OC_COMMAND)" = "logout" ]; \
 	then rm -f $(OC_LOGGED_IN); \
 	fi
