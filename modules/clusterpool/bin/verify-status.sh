@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 NAMESPACE=`jq -r '.spec.namespace' $1`
 CONDITIONS=`jq -r '.status.conditions[]? | select(.type=="Pending").status' $1`
 REASON=`jq -r '.status.conditions[]? | select(.type=="Pending").reason' $1`
