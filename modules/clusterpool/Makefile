@@ -1,4 +1,4 @@
- #---Login/Host-cluster related env vars---#
+#---Login/Host-cluster related env vars---#
 # API URL of the cluster running the target clusterpool, used in oc login, so port :6443 is required
 CLUSTERPOOL_HOST_API ?=
 # Access credentials used to log in to cluster indciated in CLUSTERPOOL_HOST_API
@@ -25,7 +25,7 @@ CLUSTERPOOL_IMAGESET_RELEASE_IMAGE ?=
 # Universal
 CLUSTERPOOL_NAME ?=
 CLUSTERPOOL_SIZE ?= 1
-CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 5
+CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 10
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -85,7 +85,7 @@ clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json > .status.condition
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
 	@rm .ClusterClaim.json
 
@@ -301,6 +301,7 @@ clusterpool/_create-claim: %_create-claim: %_init
 	@sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
+	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
 
 .PHONY: clusterpool/_verify-claim
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
