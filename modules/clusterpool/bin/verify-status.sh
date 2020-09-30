@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # input:
 #   $1 - ClusterClaim json
@@ -11,13 +11,13 @@ CD_HIB_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Hibernating") | 
 CD_HIB_REASON=`jq -r '.status.conditions[]? | select(.type=="Hibernating") | .reason' $2`
 CD_UNR_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Unreachable") | .status' $2`
 CD_UNR_REASON=`jq -r '.status.conditions[]? | select(.type=="Unreachable") | .reason' $2`
-#echo namespace: "$NAMESPACE"
-#echo cc_pend_condition: "$CC_PEND_CONDITION"
-#echo cd_pend_reason: "$CC_PEND_REASON"
-#echo cd_hib_condition: "$CD_HIB_CONDITION"
-#echo cd_hib_reason: "$CD_HIB_REASON"
-#echo cd_unr_condition: "$CD_UNR_CONDITION"
-#echo cd_unr_reason: "$CD_UNR_REASON"
+echo namespace: "$NAMESPACE"
+echo cc_pend_condition: "$CC_PEND_CONDITION"
+echo cd_pend_reason: "$CC_PEND_REASON"
+echo cd_hib_condition: "$CD_HIB_CONDITION"
+echo cd_hib_reason: "$CD_HIB_REASON"
+echo cd_unr_condition: "$CD_UNR_CONDITION"
+echo cd_unr_reason: "$CD_UNR_REASON"
 if [ ! "$NAMESPACE" = "null" -a "$CC_PEND_CONDITION" = "False" -a "$CD_HIB_CONDITION" = "False" -a "$CD_UNR_CONDITION" = "False" ]; then
         echo ClusterReady > .verifyStatus;
         else
