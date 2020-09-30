@@ -18,7 +18,7 @@ echo cd_hib_condition: "$CD_HIB_CONDITION"
 echo cd_hib_reason: "$CD_HIB_REASON"
 echo cd_unr_condition: "$CD_UNR_CONDITION"
 echo cd_unr_reason: "$CD_UNR_REASON"
-if [ ! "$NAMESPACE" = "null" -a "$CC_PEND_CONDITION" = "False" -a "$CD_HIB_CONDITION" = "False" -a "$CD_UNR_CONDITION" = "False" ]; then
+if [[ ! "$NAMESPACE" = "null" && "$CC_PEND_CONDITION" = "False" && "$CD_HIB_CONDITION" = "False" && "$CD_UNR_CONDITION" = "False" ]]; then
         echo ClusterReady > .verifyStatus;
         else
         echo ClusterNotReady - [Pending: $CC_PEND_CONDITION:$CC_PEND_REASON] [Hibernating: $CD_HIB_CONDITION:$CD_HIB_REASON] [Unreachable: $CD_UNR_CONDITION:$CD_UNR_REASON] > .verifyStatus
