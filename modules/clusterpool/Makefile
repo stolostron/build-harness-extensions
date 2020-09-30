@@ -84,6 +84,8 @@ clusterpool/_init: %_init:
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
+	@echo ClusterClaim.json:
+	@cat .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
 	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
 	@rm .ClusterClaim.json
