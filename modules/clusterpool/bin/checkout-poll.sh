@@ -13,6 +13,7 @@ echo calling create-claim
 make clusterpool/_create-claim
 echo calling gather-status
 make clusterpool/_gather-status
+echo back from gather-status
 
 if [ "`cat .verifyStatus`" = "ClusterReady" ]; then cat .verifyStatus; else
 	if [ ! "`cat .verifyStatus`" = "ClusterReady" ]; then
