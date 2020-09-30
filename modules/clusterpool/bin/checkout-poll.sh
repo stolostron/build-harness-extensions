@@ -9,11 +9,8 @@ fi
 # We retry on 30-second intervals (plus query overhead...)
 RETRIES=$(( 2*$CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ))
 
-echo calling create-claim
 make clusterpool/_create-claim
-echo calling gather-status
 make clusterpool/_gather-status
-echo back from gather-status
 
 if [ "`cat .verifyStatus`" = "ClusterReady" ]; then cat .verifyStatus; else
 	if [ ! "`cat .verifyStatus`" = "ClusterReady" ]; then
