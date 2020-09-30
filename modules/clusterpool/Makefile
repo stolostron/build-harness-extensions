@@ -83,12 +83,10 @@ clusterpool/_init: %_init:
 # Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@echo enter _init_namespace
 	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@echo ClusterClaim.json:
 	@cat .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@echo exit _init_namespace
 	@rm .ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
@@ -309,7 +307,7 @@ clusterpool/_create-claim: %_create-claim: %_init
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and gathers relevant information
 clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@echo "{}" > .ClusterDeployment.json
 	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null
 	@echo Cluster Deployment.json:
