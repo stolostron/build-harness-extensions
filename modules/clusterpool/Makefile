@@ -83,10 +83,12 @@ clusterpool/_init: %_init:
 # Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
+	@echo enter _init_namespace
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@echo ClusterClaim.json:
 	@cat .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
+	@echo exit _init_namespace
 	@rm .ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
