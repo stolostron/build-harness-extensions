@@ -1,16 +1,25 @@
-#!/bin/bash
+#!/bin/sh
+
+# input:
+#   $1 - ClusterClaim json
+#   $2 - ClusterDeployment json
+
 NAMESPACE=`jq -r '.spec.namespace' $1`
-CONDITIONS=`jq -r '.status.conditions[]? | select(.type=="Pending").status' $1`
-REASON=`jq -r '.status.conditions[]? | select(.type=="Pending").reason' $1`
-#echo value: "$NAMESPACE"
-#echo conditions: "$CONDITIONS"
-if [ ! "$NAMESPACE" = "null" ]; then
-        if [ ! "$CONDITIONS" = "True" ]; then
-                if [ ! "$CONDITIONS" = "" ]; then
-                        echo $REASON; else
-                        echo "Failed - "$REASON
-                fi ; else
-		echo "Failed - "$REASON
-        fi ; else
-	echo "No namespace - "$REASON
+CC_PEND_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Pending").status' $1`
+CC_PEND_REASON=`jq -r '.status.conditions[]? | select(.type=="Pending").reason' $1`
+CD_HIB_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Hibernating") | .status' $2`
+CD_HIB_REASON=`jq -r '.status.conditions[]? | select(.type=="Hibernating") | .reason' $2`
+CD_UNR_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Unreachable") | .status' $2`
+CD_UNR_REASON=`jq -r '.status.conditions[]? | select(.type=="Unreachable") | .reason' $2`
+#echo namespace: "$NAMESPACE"
+#echo cc_pend_condition: "$CC_PEND_CONDITION"
+#echo cd_pend_reason: "$CC_PEND_REASON"
+#echo cd_hib_condition: "$CD_HIB_CONDITION"
+#echo cd_hib_reason: "$CD_HIB_REASON"
+#echo cd_unr_condition: "$CD_UNR_CONDITION"
+#echo cd_unr_reason: "$CD_UNR_REASON"
+if [ ! "$NAMESPACE" = "null" -a "$CC_PEND_CONDITION" = "False" -a "$CD_HIB_CONDITION" = "False" -a "$CD_UNR_CONDITION" = "False" ]; then
+        echo ClusterReady > .verifyStatus;
+        else
+        echo ClusterNotReady - [Pending: $CC_PEND_CONDITION:$CC_PEND_REASON] [Hibernating: $CD_HIB_CONDITION:$CD_HIB_REASON] [Unreachable: $CD_UNR_CONDITION:$CD_UNR_REASON] > .verifyStatus
 fi

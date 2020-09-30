@@ -85,7 +85,7 @@ clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json > .status.condition
+	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
 	@rm .ClusterClaim.json
 
@@ -303,11 +303,13 @@ clusterpool/_create-claim: %_create-claim: %_init
 	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
 	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
 
-.PHONY: clusterpool/_verify-claim
-# Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and reports the status of the claim
-clusterpool/_verify-claim: %_verify-claim: %_init %_init_namespace
+.PHONY: clusterpool/_gather-status
+# Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and gathers relevant information
+clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@cat .status.condition
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
+	@if [ ! "`cat .namespace`" = "null" ]; then $(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null; else echo "{}" > .ClusterDeployment.json; fi
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json .ClusterDeployment.json
 
 .PHONY: clusterpool/_delete-claim
 # Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM

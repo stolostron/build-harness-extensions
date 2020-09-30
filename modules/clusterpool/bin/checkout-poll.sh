@@ -7,19 +7,20 @@ if [ "$CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES" = "" ]; then CLUSTERPOOL_CHECKOUT_T
 fi
 
 # We retry on 30-second intervals (plus query overhead...)
-RETRIES=$(( 2*CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ))
+RETRIES=$(( 2*$CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ))
 
 make clusterpool/_create-claim
-make clusterpool/_verify-claim -s  > .verifyStatus
-if [ "`cat .verifyStatus`" = "ClusterClaimed" ]; then cat .verifyStatus; else
-	if [ ! "`cat .verifyStatus`" = "ClusterClaimed" ]; then
+make clusterpool/_gather-status
+if [ "`cat .verifyStatus`" = "ClusterReady" ]; then cat .verifyStatus; else
+	if [ ! "`cat .verifyStatus`" = "ClusterReady" ]; then
 		echo Waiting $CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES minutes for cluster availability...
+		cat .verifyStatus
 		for (( i=1; i<=$RETRIES; i++ ))
 		do
 			sleep 30
-			make clusterpool/_verify-claim -s > .verifyStatus
+			make clusterpool/_gather-status
 			cat .verifyStatus
-			if [ "`cat .verifyStatus`" = "ClusterClaimed" ]; then exit 0; fi
+			if [ "`cat .verifyStatus`" = "ClusterReady" ]; then exit 0; fi
 		done
 	else
 		echo Unknown claim status `cat .verifyStatus` - exiting
