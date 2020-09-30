@@ -311,8 +311,8 @@ clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@echo "{}" > .ClusterDeployment.json
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null
-	@echo Cluster Deployment json:
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null
+	@echo Cluster Deployment.json:
 	@cat .ClusterDeployment.json
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json .ClusterDeployment.json
 
