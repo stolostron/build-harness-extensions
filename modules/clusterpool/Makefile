@@ -87,7 +87,6 @@ clusterpool/_init_namespace:
 	@echo ClusterClaim.json:
 	@cat .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
 	@rm .ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
@@ -311,6 +310,8 @@ clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@echo "{}" > .ClusterDeployment.json
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null
+	@echo Cluster Deployment json:
+	@cat .ClusterDeployment.json
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json .ClusterDeployment.json
 
 .PHONY: clusterpool/_delete-claim
