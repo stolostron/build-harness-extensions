@@ -86,7 +86,6 @@ clusterpool/_init_namespace:
 	@$(SELF) -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
 	@$(JQ) -r '.status.conditions[].reason' .ClusterClaim.json > .status.condition
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo namespace:; cat .namespace; echo condition:; cat .status.condition; fi
 	@rm .ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
