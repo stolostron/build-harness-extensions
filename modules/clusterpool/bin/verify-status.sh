@@ -4,6 +4,12 @@
 #   $1 - ClusterClaim json
 #   $2 - ClusterDeployment json
 
+echo verify-status.sh entry
+echo ClusterClaim json:
+cat $1
+echo ClusterDeployment json:
+cat $2
+
 NAMESPACE=`jq -r '.spec.namespace' $1`
 CC_PEND_CONDITION=`jq -r '.status.conditions[]? | select(.type=="Pending").status' $1`
 CC_PEND_REASON=`jq -r '.status.conditions[]? | select(.type=="Pending").reason' $1`
@@ -23,3 +29,4 @@ if [[ ! "$NAMESPACE" = "null" && "$CC_PEND_CONDITION" = "False" && "$CD_HIB_COND
         else
         echo ClusterNotReady - [Pending: $CC_PEND_CONDITION:$CC_PEND_REASON] [Hibernating: $CD_HIB_CONDITION:$CD_HIB_REASON] [Unreachable: $CD_UNR_CONDITION:$CD_UNR_REASON] > .verifyStatus
 fi
+echo verify-status.sh exit
