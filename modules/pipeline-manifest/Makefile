@@ -44,8 +44,7 @@ PIPELINE_MANIFEST_COMPONENT_TAG ?= $(PIPELINE_MANIFEST_COMPONENT_VERSION)-$(PIPE
 PIPELINE_STAGE ?= integration
 
 PM_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
-PM_IMAGE_REMOTE_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]
-PM_IMAGE_REMOTE_UPDATE ?= [ .[] | (select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote"]) |= "$(PIPELINE_MANIFEST_REMOTE_REPO)" ]
+PM_IMAGE_REMOTE_SRC_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote-src"]
 PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
 PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
 PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
@@ -195,34 +194,32 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 	$(call assert-set,DOCKER_USER)
 	$(call assert-set,DOCKER_PASS)
 	@echo Starting _osci_to_quay target to copy OpenShift CI image to Quay
-	@echo .. Getting manifest fields for component $(PIPELINE_MANIFEST_COMPONENT)
+	@echo .. Getting image-remote-src field for component $(PIPELINE_MANIFEST_COMPONENT)
 	@echo .... manifest file is at $(PIPELINE_MANIFEST_FILE_NAME).json
-	@$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE
-	@echo .... image-remote is `cat IMAGE_REMOTE`
-	@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION
-	@echo .... image-version is `cat IMAGE_VERSION`
-	@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA
-	@echo .... git-sha is `cat GIT_SHA`
-	@if grep '^registry\.svc\.ci\.openshift\.org/open-cluster-management$$' IMAGE_REMOTE ; \
+	@$(JQ) -r '$(PM_IMAGE_REMOTE_SRC_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_REMOTE_SRC
+	@echo .... image-remote-src is `cat IMAGE_REMOTE_SRC`
+	@if grep '^null$$' IMAGE_REMOTE_SRC ; \
 	then \
+ 		echo .... image does not need to be copied from OpenShift CI ; \
+ 	else \
+ 		echo .... image needs to be copied from OpenShift CI ; \
+		@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION ; \
+		@echo .... image-version is `cat IMAGE_VERSION` ; \
+		@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA ; \
+		@echo .... git-sha is `cat GIT_SHA` ; \
 		echo .. Copying from OpenShift CI to Quay ; \
-		OSCI_REMOTE="`cat IMAGE_REMOTE`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
-		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
+		OSCI_REMOTE="`cat IMAGE_REMOTE_SRC`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
 		echo .... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
+		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
  		echo .... Retagging to $$QUAY_REMOTE ; \
  		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
  		echo .... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
  		$(DOCKER) login $(PIPELINE_MANIFEST_REMOTE_REPO) -u $(DOCKER_USER) -p $(DOCKER_PASS) ; \
  		echo .... Pushing to $$QUAY_REMOTE ; \
  		$(DOCKER) push "$$QUAY_REMOTE" ; \
-		echo .... Updating image-remote field for $(PIPELINE_MANIFEST_COMPONENT) in $(PIPELINE_MANIFEST_FILE_NAME).json to $(PIPELINE_MANIFEST_REMOTE_REPO) ; \
-		$(JQ) '$(PM_IMAGE_REMOTE_UPDATE)' $(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_FILE_NAME).json ; \
-		$(JQ) -r '$(PM_IMAGE_REMOTE_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > NEW_IMAGE_REMOTE ; \
-		echo .... New image-remote field is `cat NEW_IMAGE_REMOTE` ; \
- 	else \
- 		echo .. Image is not on OpenShift CI ; \
  	fi
+	@echo .. Finished _osci_to_quay target
 
 .PHONY: pipeline-manifest/_snapshot-staging
 # Stage snapshot of current repo.
