@@ -203,10 +203,10 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		echo .... image does not need to be copied from OpenShift CI ; \
  	else \
  		echo .... image needs to be copied from OpenShift CI ; \
-		@$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION ; \
-		@echo .... image-version is `cat IMAGE_VERSION` ; \
-		@$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA ; \
-		@echo .... git-sha is `cat GIT_SHA` ; \
+		$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION ; \
+		echo .... image-version is `cat IMAGE_VERSION` ; \
+		$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA ; \
+		echo .... git-sha is `cat GIT_SHA` ; \
 		echo .. Copying from OpenShift CI to Quay ; \
 		OSCI_REMOTE="`cat IMAGE_REMOTE_SRC`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
 		echo .... Pulling $$OSCI_REMOTE ; \
