@@ -285,4 +285,5 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 	$(call assert-set,PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
 	$(call assert-set,PIPELINE_MANIFEST_REDHAT_USER)
 	$(call assert-set,PIPELINE_MANIFEST_REDHAT_TOKEN)
+	@$(shell $(SELF) jq/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh 
