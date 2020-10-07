@@ -22,7 +22,7 @@ fi
 # Mirror the images we explicitly build
 echo Mirroring main images...
 cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
-cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $$3}' | tee .acm_operator_bundle_tag
+cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
 
 # Find the prior bundles to include
 echo Locating upgrade bundles...
@@ -32,7 +32,7 @@ rm .extrabs
 curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/acm-operator-bundle/tags/list | jq -r '[.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))] | sort_by(.)[]'| xargs -L1 -I'{}' echo "-B registry.redhat.io/rhacm2/acm-operator-bundle:{}" >> .extrabs
 export COMPUTED_UPGRADE_BUNDLES=`cat .extrabs`
 echo Adding upgrade bundles:
-cat .extrabs
+echo $COMPUTED_UPGRADE_BUNDLES
 
 # Build the catalog
 cd release; tools/downstream-testing/build-catalog.sh `cat ../.acm_operator_bundle_tag` $PIPELINE_MANFIEST_INDEX_IMAGE_TAG; cd ..
