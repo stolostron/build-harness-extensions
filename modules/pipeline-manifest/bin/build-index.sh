@@ -46,6 +46,8 @@ for k in $(jq -c '.[]' $delta_file.json); do
     eval "make pipeline-manifest/_sort PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_DIR=."
 done
 
+eval "make pipeline-manifest/_retag TAG=$PIPELINE_MANIFEST_NEW_INDEX_TAG PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_GIT_BRANCH=unset_nonsense PIPELINE_MANIFEST_RELEASE_VERSION=$Z_RELEASE_VERSION"
+
 # Image remanipulation section
 EO_JQUERY="jq -r '(.[] | select (.[\"image-name\"] == \"endpoint-operator\") | .[\"image-version\"])' $base_file.json"
 EO_RELEASE=`eval $EO_JQUERY`
