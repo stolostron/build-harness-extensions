@@ -274,7 +274,7 @@ pipeline-manifest/_postprocess: %_postprocess:
 ## Build bundle and index images out of a hybrid of decorated manifest files
 pipeline-manifest/build-index: %build-index:
 	@$(shell $(SELF) jq/install > /dev/null)
-	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION)
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION) $(PIPELINE_MANIFEST_NEW_CANARY_TAG)
 
 .PHONY: pipeline-manifest/_mirror-index
 # Mirror downstream acm-d and create custom registry/index
