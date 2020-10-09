@@ -46,6 +46,7 @@ for k in $(jq -c '.[]' $delta_file.json); do
     eval "make pipeline-manifest/_sort PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_DIR=."
 done
 
+# Retag every image so we can also test using canary infrastructure
 eval "make pipeline-manifest/_retag TAG=$PIPELINE_MANIFEST_NEW_INDEX_TAG PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_GIT_BRANCH=unset_nonsense PIPELINE_MANIFEST_RELEASE_VERSION=$Z_RELEASE_VERSION"
 
 # Image remanipulation section
