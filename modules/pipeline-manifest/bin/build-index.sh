@@ -8,6 +8,7 @@
 #   $5 - name of the delta image tags (to be created; i.e. 2.1.0-DEVELOPER-2020-08-12-06-21-22)
 #   $6 - Z release version (i.e. 1.0.1, 2.0.1)
 #   $7 - Release version (i.e. 2.0, 2.1)
+#   $8 - Retag all images [true|false]; must be "true" to actually do the work, default is "false"
 #
 # Requires:
 #   $GITHUB_USER - GitHub user (needs access to open-cluster-management stuffs)
@@ -23,6 +24,7 @@ PIPELINE_MANIFEST_INCOMING_EO_TAG=$4
 PIPELINE_MANIFEST_NEW_INDEX_TAG=$5
 Z_RELEASE_VERSION=$6
 RELEASE_VERSION=$7
+RETAGIT=$8
 
 # For each component in the delta manifest file, replace what's in the base manifest file
 for k in $(jq -c '.[]' $delta_file.json); do
@@ -45,6 +47,11 @@ for k in $(jq -c '.[]' $delta_file.json); do
     eval "jq $json_string $base_file.json > tmp; mv tmp $base_file.json"
     eval "make pipeline-manifest/_sort PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_DIR=."
 done
+
+# Retag every image so we can also test using canary infrastructure
+if [ "$RETAGIT" == "true" ]; then \
+    eval "make pipeline-manifest/_retag TAG=$PIPELINE_MANIFEST_NEW_INDEX_TAG PIPELINE_MANIFEST_FILE_NAME=$base_file PIPELINE_MANIFEST_GIT_BRANCH=unset_nonsense PIPELINE_MANIFEST_RELEASE_VERSION=$Z_RELEASE_VERSION"
+fi;
 
 # Image remanipulation section
 EO_JQUERY="jq -r '(.[] | select (.[\"image-name\"] == \"endpoint-operator\") | .[\"image-version\"])' $base_file.json"
