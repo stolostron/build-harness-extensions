@@ -26,6 +26,7 @@ CLUSTERPOOL_IMAGESET_RELEASE_IMAGE ?=
 CLUSTERPOOL_NAME ?=
 CLUSTERPOOL_SIZE ?= 1
 CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 10
+CLUSTERPOOL_LIFETIME ?=
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -296,13 +297,15 @@ clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
+	@if [ -n "$(CLUSTERPOOL_LIFETIME)" ]; then \
+		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" -e "s;__CLUSTERPOOL_LIFETIME__;$(CLUSTERPOOL_LIFETIME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; else \
+		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
 	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
 
 .PHONY: clusterpool/_gather-status
-# Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to validate - and gathers relevant information
+# Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to check - and gathers relevant information about it
 clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
