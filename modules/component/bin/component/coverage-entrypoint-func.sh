@@ -1,3 +1,11 @@
+#!/bin/bash
+# These functions help to trap a signal, kill the child process and post the code coverage files to an AWS bucket.
+# These functions are intended to run in a POD.
+
+
+# This function etrieves the parameters to access the AWS S3 bucket.
+# The parameters are stored in a secret aws-s3-coverage in the open-cluster-management namespace.
+# It uses the POD internal hostname to connect with kube and so must run in a POD.
 function getAWSParams() {
     APISERVER=https://kubernetes.default.svc
     SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount
@@ -24,12 +32,14 @@ function getAWSParams() {
     fi
 }
 
+# Caclustate the HMAC SHA256 for AWS requests.
 function hmac_sha256 {
   key="$1"
   data="$2"
   printf         '%s' "$data" | openssl dgst -sha256 -hex -mac HMAC -macopt "${key}"     2>/dev/null | sed 's/^.* //'
 }
 
+# Upload a file to AWS S3
 function put_aws {
     fileLocal=$1
     fileRemote="$2"
@@ -43,23 +53,28 @@ function put_aws {
     date=$(date -u +"%Y%m%d")
     amzDate=$(date -u +%Y%m%dT%H%M%SZ)
 
+    #Generate AWS request
     httpReq='PUT'
     authType='AWS4-HMAC-SHA256'
     service="s3"
     baseUrl=".${service}.amazonaws.com"
+
+    #Set contentType field
     if hash file 2>/dev/null; then
-    contentType="$(file -b --mime-type "${fileLocal}")"
+        contentType="$(file -b --mime-type "${fileLocal}")"
     else
-    contentType='application/octet-stream'
+        contentType='application/octet-stream'
     fi
 
+    #Calculate the payload hash
     if [ -f "${fileLocal}" ]; then
-    payloadHash=$(openssl dgst -sha256 -hex < "${fileLocal}" 2>/dev/null | sed 's/^.* //')
+        payloadHash=$(openssl dgst -sha256 -hex < "${fileLocal}" 2>/dev/null | sed 's/^.* //')
     else
-    echo "File not found: '${fileLocal}'"
-    exit 1
+        echo "File not found: '${fileLocal}'"
+        exit 1
     fi
 
+    #Generate the canonicalRequets
     dateKey=$(hmac_sha256 key:"AWS4$awsSecretAccessKey" $date)
     dateRegionKey=$(hmac_sha256 hexkey:$dateKey $awsRegion)
     dateRegionServiceKey=$(hmac_sha256 hexkey:$dateRegionKey ${service})
@@ -81,8 +96,10 @@ x-amz-storage-class:${storageClass}
 ${headerList}
 ${payloadHash}"
 
+    #Generate the canonical request hash
     canonicalRequestHash=$(printf '%s' "${canonicalRequest}" | openssl dgst -sha256 -hex 2>/dev/null | sed 's/^.* //')
 
+    #Generate the signature
     stringToSign="\
 ${authType}
 ${amzDate}
@@ -91,6 +108,7 @@ ${canonicalRequestHash}"
 
     signature=$(hmac_sha256 "hexkey:${signingKey}" "${stringToSign}")
 
+    #Execute the request
     curl -s -L --proto-redir =https -X "${httpReq}" -T "${fileLocal}" \
     -H "Content-Type: ${contentType}" \
     -H "Host: ${awsBucketName}${baseUrl}" \
@@ -102,13 +120,24 @@ ${canonicalRequestHash}"
     "https://${awsBucketName}${baseUrl}/${fileRemote}"
 }
 
+# Trap a signal and call the provided function
+# Parameter 1: The signal number (ie: 15)
+# Parameter 2: The function to call
+# Extra parameters are passed as parameters of the function.
 trap_with_arg() {
     func="$1" ; shift
     sig=$1
     trap "$func $*" "$sig"
 }
 
+# This function traps a signal and upload the file in a AWS S3 bucket
+# Parameter 1: The signal to use while killed the child process
+# Parameter 2: The PID of the child process
+# Parameter 3: The file name in the AWS s3 bucket
+# Parameter 4: The location path of the file to upload
+
 func_trap() {
+    # Get the AWS information
     getAWSParams
     trap=$1
     pid="$2"
@@ -124,11 +153,13 @@ func_trap() {
     echo "AWS_BUCKET_FOLDER="$awsBucketFolder
     echo "AWS_REGION="$awsRegion
 
+    #Generate the coverage data
     echo "Save coverage data... "$filePath
     kill -$trap $pid
     wait_data $filePath
     cat $filePath
     if [ -n "$awsBucketName" ]; then
+       #Upload the coverage data
        remoteFile=$fileName
        if [ -n "$awsBucketFolder" ]; then
           remoteFile=$awsBucketFolder/$fileName
@@ -137,6 +168,7 @@ func_trap() {
     fi
 }
 
+# This function wait if the coverage data are posted in the POD.
 wait_data() {
    n="10"
     while [ $n != 0 ]; do
