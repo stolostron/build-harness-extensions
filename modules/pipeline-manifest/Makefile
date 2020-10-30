@@ -242,15 +242,15 @@ pipeline-manifest/_snapshot-staging: %_snapshot-staging: %_clone
 # Create snapshot of current repo.
 pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 	@cp $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)
-	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
+	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json; $(GIT) add $(PIPELINE_MANIFEST_SNAPSHOT_FOLDER)/$(PIPELINE_MANIFEST_FILE_NAME)-instrumented-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) commit -am "Added $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) snapshot of $(TAG) for $(PIPELINE_MANIFEST_COMPONENT)" --quiet
 	@cd $(PIPELINE_MANIFEST_DIR); $(GIT) push --quiet
 
 .PHONY: pipeline-manifest/_validate-tag
 # Create sha-based manifest (validates as it goes, fails if all images are not present)
 pipeline-manifest/_validate-tag: %_validate-tag:
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
-	@echo .. "cat out.tmp"
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_FILE_NAME)-instrumented-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json > out.tmp
+	@echo .. "output from _validate-tag process:"
 	@cat out.tmp
 
 .PHONY: pipeline-manifest/_retag
