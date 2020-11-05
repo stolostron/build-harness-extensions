@@ -9,7 +9,7 @@
 #  5. Build our catalog and push it
 
 # Get logged into brew, update/check out the repos we need
-echo Preparing environment...
+echo Preparing environment for release $Z_RELEASE_VERSION...
 OC=$BUILD_HARNESS_PATH/vendor/oc
 rm -rf /tmp/acm-custom-registry
 brew hello
@@ -23,8 +23,12 @@ if [ -d release ];  \
 fi
 
 # Mirror the images we explicitly build
-echo Mirroring main images...
+echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
 cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
+if [[ ! -s .ashdod_output ]]; then
+  echo No output from ashdod\; aborting
+  exit 1
+fi
 cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
 
 # Mirror the openshift images we depend on
