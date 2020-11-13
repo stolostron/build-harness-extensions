@@ -40,12 +40,16 @@ oc/login: %login: %install
 			if [ ! -z "$(OC_CLUSTER_TOKEN)" ]; then \
 				$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) --token=$(OC_CLUSTER_TOKEN) > /dev/null && touch $(OC_LOGGED_IN); \
 			else \
+				if [ -z "$(OC_CLUSTER_USER)" ]; then echo OC_CLUSTER_USER unset;  exit 1; fi; \
+				if [ -z "$(OC_CLUSTER_PASS)" ]; then echo OC_CLUSTER_PASS unset;  exit 1; fi; \
 				$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) > /dev/null && touch $(OC_LOGGED_IN); \
 			fi; \
 		else \
 			if [ ! -z "$(OC_CLUSTER_TOKEN)" ]; then \
 				$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) --token=$(OC_CLUSTER_TOKEN) && touch $(OC_LOGGED_IN); \
 			else \
+				if [ -z "$(OC_CLUSTER_USER)" ]; then echo OC_CLUSTER_USER unset;  exit 1; fi; \
+				if [ -z "$(OC_CLUSTER_PASS)" ]; then echo OC_CLUSTER_PASS unset;  exit 1; fi; \
 				$(OC) login $(OC_CLUSTER_URL) $(OC_LOGIN_OPTIONS) -u $(OC_CLUSTER_USER) -p $(OC_CLUSTER_PASS) && touch $(OC_LOGGED_IN); \
 			fi; \
 		fi; \
