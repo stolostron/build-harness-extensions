@@ -4,6 +4,7 @@ CLUSTERPOOL_HOST_API ?=
 # Access credentials used to log in to cluster indciated in CLUSTERPOOL_HOST_API
 CLUSTERPOOL_HOST_USER ?=
 CLUSTERPOOL_HOST_PASS ?=
+CLUSTERPOOL_HOST_TOKEN ?=
 # Namespace where Hive ClusterPool resources reside
 CLUSTERPOOL_HOST_NAMESPACE ?= clusterpool
 # Namespace where the Hive pods reside on the cluster indciated in CLUSTERPOOL_HOST_API, usually "hive"
@@ -73,12 +74,10 @@ JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 .PHONY: clusterpool/_init
 # Install jq and oc cli and log in to the ClusterPool Host cluster
 clusterpool/_init: %_init:
-	$(call assert-set,CLUSTERPOOL_HOST_USER)
-	$(call assert-set,CLUSTERPOOL_HOST_PASS)
 	$(call assert-set,CLUSTERPOOL_HOST_API)
 	@$(SELF) -s jq/install 2>&1 > /dev/null
-	@$(SELF) -s oc/login OC_CLUSTER_USER=$(CLUSTERPOOL_HOST_USER) OC_CLUSTER_PASS=$(CLUSTERPOOL_HOST_PASS) OC_CLUSTER_URL=$(CLUSTERPOOL_HOST_API) \
-		OC_FORCE_LOGIN="true" OC_SILENT="true"
+	@$(SELF) -s oc/login OC_CLUSTER_USER=$(CLUSTERPOOL_HOST_USER) OC_CLUSTER_PASS=$(CLUSTERPOOL_HOST_PASS) OC_CLUSTER_TOKEN=$(CLUSTERPOOL_HOST_TOKEN) \
+		OC_CLUSTER_URL=$(CLUSTERPOOL_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
 
 .PHONY: clusterpool/_init_namespace
 # Query the namespace and stash it in .namespace in the current working directory
