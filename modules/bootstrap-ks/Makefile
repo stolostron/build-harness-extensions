@@ -1,4 +1,4 @@
-bootstrap-ks#---Hive Deploy Params---#
+#-- bootstrap-ks Params---#
 BOOTSTRAP_KS_REPO ?= https://${GITHUB_TOKEN}@github.com/open-cluster-management/bootstrap-ks.git
 BOOTSTRAP_KS_BRANCH ?= master
 BOOTSTRAP_KS_DEPLOY_DIR ?= .bootstrap-ks/
