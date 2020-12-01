@@ -37,16 +37,16 @@ bootstrap-ks/aks/create-cluster: %aks/create-cluster: % aks/install
 bootstrap-ks/aks/get-cluster-name: %aks/get-cluster-name: % aks/install
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 
-.PHONY: bootstrap-ks/aks/delete-cluster
-## Delete AKS cluster
-bootstrap-ks/aks/delete-cluster: %aks/delete-cluster: % aks/install
-	$(call assert-set,AZURE_USER)
-	$(call assert-set,AZURE_PASS)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./destroy.sh *.json; cd ../..;
-
-.PHONY: bootstrap-ks/clean
+#.PHONY: bootstrap-ks/aks/delete-cluster
+### Delete AKS cluster
+#bootstrap-ks/aks/delete-cluster: %aks/delete-cluster: % aks/install
+#	$(call assert-set,AZURE_USER)
+#	$(call assert-set,AZURE_PASS)
+#	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./destroy.sh *.json; cd ../..;
+#
+#.PHONY: bootstrap-ks/clean
 ## Clean up all bootstrap-ks resources
-bootstrap-ks/clean: %clean:
-	ifeq ($(shell test -d $(BOOTSTRAP_KS_DIR) && echo -n yes),yes)
-		@rm -rf $(BOOTSTRAP_KS_DIR)
-	endif
+#bootstrap-ks/clean: %clean:
+#	ifeq ($(shell test -d $(BOOTSTRAP_KS_DIR) && echo -n yes),yes)
+#		@rm -rf $(BOOTSTRAP_KS_DIR)
+#	endif
