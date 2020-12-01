@@ -23,7 +23,7 @@ bootstrap-ks/_init: %_init:
 
 .PHONY: bootstrap-ks/aks/install
 ## Install *ks
-bootstrap-ks/install: %aks/install: % _init
+bootstrap-ks/aks/install: %aks/install: % _init
 	@$(shell $(SELF) jq/install > /dev/null)
 	@git clone --single-branch --branch $(BOOTSTRAP_KS_BRANCH) $(BOOTSTRAP_KS_REPO)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./start.sh; cd ../..;
@@ -39,7 +39,7 @@ bootstrap-ks/aks/create-cluster: %aks/create-cluster: % aks/install
 .PHONY: bootstrap-ks/aks/get-cluster-name
 ## Get AKS cluster name
 bootstrap-ks/aks/get-cluster-name: %aks/get-cluster-name: % aks/install
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat ${CLUSTER_NAME}-*.json | jq -r .CLUSTER_NAME; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat $(CLUSTER_NAME)-*.json | jq -r .CLUSTER_NAME; cd ../..;
 
 .PHONY: bootstrap-ks/aks/delete-cluster
 ## Delete AKS cluster
