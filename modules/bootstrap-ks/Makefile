@@ -36,6 +36,11 @@ bootstrap-ks/aks/create-cluster: %aks/create-cluster: % aks/install
 	$(call assert-set,AZURE_PASS)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh; cd ../..;
 
+.PHONY: bootstrap-ks/aks/get-cluster-name
+## Get AKS cluster name
+bootstrap-ks/aks/get-cluster-name: %aks/get-cluster-name: % aks/install
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat ${CLUSTER_NAME}-*.json | jq -r .CLUSTER_NAME; cd ../..;
+
 .PHONY: bootstrap-ks/aks/delete-cluster
 ## Delete AKS cluster
 bootstrap-ks/aks/delete-cluster: %aks/delete-cluster: % aks/install
