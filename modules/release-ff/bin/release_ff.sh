@@ -2,8 +2,12 @@
 
 set -e
 
-MASTER=master
 RELEASE_FF_BRANCH=$1
+RELEASE_MAIN_BRANCH=$2
+if [[ -z "$RELEASE_MAIN_BRANCH" ]]
+then
+  RELEASE_MAIN_BRANCH=master
+fi
 
 if [[ -z "$RELEASE_FF_BRANCH" ]]
 then
@@ -12,7 +16,7 @@ then
 fi
 
 rm -rf repo-copy
-git clone -b ${MASTER} $(git remote get-url origin) repo-copy
+git clone -b ${RELEASE_MAIN_BRANCH} $(git remote get-url origin) repo-copy
 cd repo-copy
 if ! git checkout -b ${RELEASE_FF_BRANCH} origin/${RELEASE_FF_BRANCH}
 then
@@ -20,6 +24,6 @@ then
   git checkout -b ${RELEASE_FF_BRANCH}
   git push origin ${RELEASE_FF_BRANCH}
 else
-  git merge --ff-only ${MASTER}
+  git merge --ff-only ${RELEASE_MAIN_BRANCH}
   git push
 fi
