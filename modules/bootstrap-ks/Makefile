@@ -17,24 +17,24 @@ bootstrap-ks/_init: %_init:
 	@cd bootstrap-ks
 
 
-.PHONY: bootstrap-ks/aks/install
+.PHONY: bootstrap-ks/aks-install
 ## Install *ks
-bootstrap-ks/aks/install: %aks/install: % _init
+bootstrap-ks/aks-install: %aks-install: %_init
 	@$(shell $(SELF) jq/install > /dev/null)
 	@git clone --single-branch --branch $(BOOTSTRAP_KS_BRANCH) $(BOOTSTRAP_KS_REPO)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./start.sh; cd ../..;
 	@./install.sh
 
-.PHONY: bootstrap-ks/aks/create-cluster
+.PHONY: bootstrap-ks/aks-create-cluster
 ## Create AKS cluster
-bootstrap-ks/aks/create-cluster: %aks/create-cluster: % aks/install
+bootstrap-ks/aks-create-cluster: %aks-create-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh; cd ../..;
 
-.PHONY: bootstrap-ks/aks/get-cluster-name
+.PHONY: bootstrap-ks/aks-get-cluster-name
 ## Get AKS cluster name
-bootstrap-ks/aks/get-cluster-name: %aks/get-cluster-name: % aks/install
+bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name:
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 
 #.PHONY: bootstrap-ks/aks/delete-cluster
