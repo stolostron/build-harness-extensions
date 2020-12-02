@@ -1,7 +1,7 @@
 #-- bootstrap-ks Params---#
 BOOTSTRAP_KS_REPO ?= https://${GITHUB_TOKEN}@github.com/open-cluster-management/bootstrap-ks.git
 BOOTSTRAP_KS_BRANCH ?= master
-BOOTSTRAP_KS_DEPLOY_DIR ?= .bootstrap-ks/
+BOOTSTRAP_KS_DEPLOY_DIR ?= bootstrap-ks
 
 CLUSTER_NAME_PREFIX ?= canary
 
@@ -14,16 +14,13 @@ bootstrap-ks/_init: %_init:
 	$(call assert-set,GITHUB_TOKEN)
 	@$(SELF) -s jq/install 2>&1 > /dev/null
 	@git clone --single-branch --branch $(BOOTSTRAP_KS_BRANCH) $(BOOTSTRAP_KS_REPO)
-	@cd bootstrap-ks
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)
 
 
 .PHONY: bootstrap-ks/aks-install
 ## Install *ks
 bootstrap-ks/aks-install: %aks-install: %_init
-	@$(shell $(SELF) jq/install > /dev/null)
-	@git clone --single-branch --branch $(BOOTSTRAP_KS_BRANCH) $(BOOTSTRAP_KS_REPO)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./start.sh; cd ../..;
-	@./install.sh
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./install.sh; cd ../..;
 
 .PHONY: bootstrap-ks/aks-create-cluster
 ## Create AKS cluster
