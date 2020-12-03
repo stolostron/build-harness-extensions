@@ -38,6 +38,11 @@ bootstrap-ks/_init: %_init:
 		cd $(BOOTSTRAP_KS_DEPLOY_DIR); fi
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
+	echo "--- Hub Nodes:"	
+	@$(SELF) -s oc/command OC_COMMAND="get nodes"
+
+
+
 #	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) OC_CLUSTER_TOKEN=$(BOOTSTRAP_KS_HOST_TOKEN) \
 #		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
 
@@ -90,7 +95,7 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 ## Get gke cluster name
 bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
 	#@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
-	BOOTSTRAP_KS_GKE_CLUSTERNAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
