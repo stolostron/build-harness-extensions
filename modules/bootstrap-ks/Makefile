@@ -93,8 +93,8 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 
 .PHONY: bootstrap-ks/gke-get-cluster-name
 ## Get gke cluster name
-bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ls -alh; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
+bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
