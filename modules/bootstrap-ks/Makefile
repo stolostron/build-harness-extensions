@@ -20,6 +20,8 @@ CLUSTER_NAME_PREFIX ?= canary
 BOOTSTRAP_KS_AKS_CLUSTERNAME ?=
 BOOTSTRAP_KS_GKE_CLUSTERNAME ?=
 
+GKE_CLUSTER_NAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
+QUERY_GKE_CLUSTER_NAME = $(eval THE_GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME))
 
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
@@ -92,7 +94,7 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
 	ls -alh $(BOOTSTRAP_KS_DEPLOY_DIR)/gke;
 	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME
-	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME >NAME.txt
+	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME >NAME.txt; cat NAME.txt
 
 	$(eval NOW = $(shell date))
 	@echo NOW is $(NOW) $(THE_NAME)
@@ -106,6 +108,9 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(eval TEST_NAME2 := $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/NAME.txt))
 	@echo TEST_NAME2 is $(TEST_NAME2)
 
+	echo "new test"
+	$(GET_GKE_CLUSTER_NAME)
+	echo "result - $(THE_GKE_CLUSTER_NAME)"
 
 	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
 	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
