@@ -97,11 +97,11 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
 	@echo GKE cluster name is ${BOOTSTRAP_KS_GKE_CLUSTERNAME}
 
-	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
+	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 = $$(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
 	@echo GKE cluster name 2 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_2)
 	@echo GKE cluster name 2 is ${BOOTSTRAP_KS_GKE_CLUSTERNAME_2}
 
-	BOOTSTRAP_KS_GKE_CLUSTERNAME_3 = $(shell cd $$(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
+	BOOTSTRAP_KS_GKE_CLUSTERNAME_3 = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
 	@echo GKE cluster name 3 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_3)
 	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).kubeconfig"
 	@$(SELF) oc/command OC_COMMAND="label secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) bootstrap-ks=true"
