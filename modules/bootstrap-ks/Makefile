@@ -94,7 +94,7 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME
 	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/*.json | jq -r .CLUSTER_NAME))
 	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
-	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_3 = $(shell cd $$(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
+	BOOTSTRAP_KS_GKE_CLUSTERNAME_3 = $(shell cd $$(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
 	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
 	@echo GKE cluster name 2 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_2)
 	@echo GKE cluster name 3 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_3)
