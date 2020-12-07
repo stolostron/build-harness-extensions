@@ -92,12 +92,19 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
 	ls -alh $(BOOTSTRAP_KS_DEPLOY_DIR)/gke;
 	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME
+	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME >NAME.txt
 
 	$(eval NOW = $(shell date))
 	@echo NOW is $(NOW) $(THE_NAME)
 
 	$(eval NOW2 := $(shell date))
 	@echo NOW2 is $(NOW2)
+
+	$(eval TEST_NAME = $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/NAME.txt))
+	@echo TEST_NAME is $(TEST_NAME)
+
+	$(eval TEST_NAME2 := $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/NAME.txt))
+	@echo TEST_NAME2 is $(TEST_NAME2)
 
 
 	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
