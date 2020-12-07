@@ -38,8 +38,7 @@ bootstrap-ks/_init: %_init:
 		cd $(BOOTSTRAP_KS_DEPLOY_DIR); fi
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
-	echo "--- Hub Nodes:"
-	@$(SELF) -s oc/command OC_COMMAND="get nodes"
+
 
 
 
@@ -59,7 +58,8 @@ bootstrap-ks/aks-install: %aks-install: %_init
 bootstrap-ks/aks-create-cluster: %aks-create-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh; \
+	  KS_CLUSTER_NAME=`cat *.json | jq -r .CLUSTER_NAME`; \
 
 #oc create secret generic cahl-ihx22-eks --from-file=json=cahl-ihx22-eks.json --from-file=kubeconfig=cahl-ihx22-eks.kubeconfig
 #export BUILD_HARNESS_ARCH ?= $(shell uname -m | sed 's/x86_64/amd64/g')
@@ -89,12 +89,28 @@ bootstrap-ks/gke-install: %gke-install: %_init
 bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh;
+	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
+	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
+	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).kubeconfig"
+	@$(SELF) oc/command OC_COMMAND="label secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) bootstrap-ks=true"
 
 .PHONY: bootstrap-ks/gke-get-cluster-name
 ## Get gke cluster name
 bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
+#	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
+	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
+	@echo $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
+
+.PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
+## Get gke cluster kubeconfig
+bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %gke-install
+#	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
+	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTERNAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	@$(SELF) oc/command OC_COMMAND="get secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
