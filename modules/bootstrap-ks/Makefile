@@ -91,7 +91,7 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_PROJECT_ID)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
 	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
-	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
+	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 := $(shell (cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME)))
 	@ls -alh $(BOOTSTRAP_KS_DEPLOY_DIR)/gke;
 	@echo GKE cluster name is ${BOOTSTRAP_KS_GKE_CLUSTERNAME}
 	@echo GKE cluster name 2 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_2)
