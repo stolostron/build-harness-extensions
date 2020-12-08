@@ -136,10 +136,10 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %aks-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
-	@if [ ! -z $(BOOTSTRAP_KS_GKE_JSON_FILE) ]; then \
-   	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./destroy.sh ${BOOTSTRAP_KS_GKE_JSON_FILE}; \
+	@if [ ! -z "$(BOOTSTRAP_KS_GKE_JSON_FILE)" ]; then \
+   	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; ./destroy.sh ${BOOTSTRAP_KS_GKE_JSON_FILE}; \
 	else \
-		@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./destroy.sh *.json; \
+		@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; ./destroy.sh *.json; \
 	fi;
 
 
