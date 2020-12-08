@@ -109,8 +109,9 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	@echo TEST_NAME2 is $(TEST_NAME2)
 
 	echo "new test"
-	$(GET_GKE_CLUSTER_NAME)
-	echo "result - $(THE_GKE_CLUSTER_NAME)"
+	echo "result before - $(THE_GKE_CLUSTER_NAME)"
+	$(QUERY_GKE_CLUSTER_NAME)
+	echo "result after - $(THE_GKE_CLUSTER_NAME)"
 
 	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
 	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
