@@ -17,11 +17,12 @@ BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 
 CLUSTER_NAME_PREFIX ?= canary
 
-BOOTSTRAP_KS_AKS_CLUSTERNAME ?=
-BOOTSTRAP_KS_GKE_CLUSTERNAME ?=
+#BOOTSTRAP_KS_AKS_CLUSTER_NAME ?=
+BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
 
-GKE_CLUSTER_NAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
-QUERY_GKE_CLUSTER_NAME = $(eval THE_GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME))
+
+#GKE_CLUSTER_NAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
+#QUERY_GKE_CLUSTER_NAME = $(eval THE_GKE_CLUSTER_NAME=$(GKE_CLUSTER_NAME))
 
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
@@ -91,55 +92,45 @@ bootstrap-ks/gke-install: %gke-install: %_init
 bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
-	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
-	ls -alh $(BOOTSTRAP_KS_DEPLOY_DIR)/gke;
-	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME
-	cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME >NAME.txt; cat NAME.txt
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
 
-	$(eval NOW = $(shell date))
-	@echo NOW is $(NOW) $(THE_NAME)
-	@sleep 5
-
-	$(eval NOW2 := $(shell date))
-	@echo NOW2 is $(NOW2)
-
-	$(eval TEST_NAME = $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/NAME.txt))
-	@echo TEST_NAME is $(TEST_NAME)
-
-	$(eval TEST_NAME2 := $(shell cat $(BOOTSTRAP_KS_DEPLOY_DIR)/gke/NAME.txt))
-	@echo TEST_NAME2 is $(TEST_NAME2)
-
-	echo "new test"
-	echo "result before - $(THE_GKE_CLUSTER_NAME)"
-	$(QUERY_GKE_CLUSTER_NAME)
-	echo "result after - $(THE_GKE_CLUSTER_NAME)"
-
-	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
-	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
-	@echo GKE cluster name is ${BOOTSTRAP_KS_GKE_CLUSTERNAME}
-
-	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
-	@echo GKE cluster name 2 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_2)
-	@echo GKE cluster name 2 is ${BOOTSTRAP_KS_GKE_CLUSTERNAME_2}
+#
+#	echo "new test"
+#	echo "result before - $(THE_GKE_CLUSTER_NAME)"
+#	$(QUERY_GKE_CLUSTER_NAME)
+#	echo "result after - $(THE_GKE_CLUSTER_NAME)"
+#
+#	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.json | jq -r .CLUSTER_NAME))
+#	@echo GKE cluster name is $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
+#	@echo GKE cluster name is ${BOOTSTRAP_KS_GKE_CLUSTERNAME}
+#
+#	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME_2 = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME))
+#	@echo GKE cluster name 2 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_2)
+#	@echo GKE cluster name 2 is ${BOOTSTRAP_KS_GKE_CLUSTERNAME_2}
 
 #	BOOTSTRAP_KS_GKE_CLUSTERNAME_3 = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
 #	@echo GKE cluster name 3 is $(BOOTSTRAP_KS_GKE_CLUSTERNAME_3)
 #	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTERNAME).kubeconfig"
 #	@$(SELF) oc/command OC_COMMAND="label secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) bootstrap-ks=true"
 
+.PHONY: bootstrap-ks/gke-save-secret
+## Get gke cluster name
+#bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
+bootstrap-ks/gke-save-secret: %gke-save-secret:
+#	@$(eval BOOTSTRAP_KS_GKE_CLUSTER_NAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
+#	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
+	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
+	@$(SELF) oc/command OC_COMMAND="label secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
+
+
+
+
 .PHONY: bootstrap-ks/gke-get-cluster-name
 ## Get gke cluster name
 #bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
 bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
-#	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
-	echo "new test"
-	echo "result before - $(THE_GKE_CLUSTER_NAME)"
-	$(QUERY_GKE_CLUSTER_NAME)
-	echo "result after - $(THE_GKE_CLUSTER_NAME)"
-
-	$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
-	echo $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
-
+#	@$(eval BOOTSTRAP_KS_GKE_CLUSTER_NAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
+	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 
 
 .PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
@@ -147,11 +138,11 @@ bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
 #bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %gke-install
 bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig:
 #	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
-	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTERNAME)
+	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
 	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
-	@$(SELF) oc/command OC_COMMAND="get secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTERNAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
+	@$(SELF) oc/command OC_COMMAND="get secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
