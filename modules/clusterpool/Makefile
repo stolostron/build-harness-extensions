@@ -28,6 +28,7 @@ CLUSTERPOOL_NAME ?=
 CLUSTERPOOL_SIZE ?= 1
 CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 10
 CLUSTERPOOL_LIFETIME ?=
+CLUSTERPOOL_GROUP_NAME ?= system:mastsers
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -297,8 +298,17 @@ clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@if [ -n "$(CLUSTERPOOL_LIFETIME)" ]; then \
-		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" -e "s;__CLUSTERPOOL_LIFETIME__;$(CLUSTERPOOL_LIFETIME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; else \
-		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" -e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" -e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
+		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
+			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
+			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
+			-e "s;__CLUSTERPOOL_LIFETIME__;$(CLUSTERPOOL_LIFETIME);g" \
+			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; else \
+		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
+			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
+			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
+			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
 	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
