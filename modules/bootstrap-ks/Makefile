@@ -13,7 +13,9 @@ BOOTSTRAP_KS_HOST_TOKEN ?=
 # Namespace where Hive ClusterPool resources reside
 BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 
-
+OC_CLUSTER_USER = BOOTSTRAP_KS_HOST_USER
+OC_CLUSTER_PASS = BOOTSTRAP_KS_HOST_PASS
+OC_CLUSTER_API = BOOTSTRAP_KS_HOST_API
 
 CLUSTER_NAME_PREFIX ?= canary
 
@@ -116,9 +118,10 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 .PHONY: bootstrap-ks/gke-save-secret
 ## Get gke cluster name
 #bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
-bootstrap-ks/gke-save-secret: %gke-save-secret:
+bootstrap-ks/gke-save-secret: %gke-save-secret: %_init
 #	@$(eval BOOTSTRAP_KS_GKE_CLUSTER_NAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
 #	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
+	@$(SELF) oc/command OC_COMMAND="get nodes"
 	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
 	@$(SELF) oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
 
@@ -128,7 +131,7 @@ bootstrap-ks/gke-save-secret: %gke-save-secret:
 .PHONY: bootstrap-ks/gke-get-cluster-name
 ## Get gke cluster name
 #bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
-bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
+bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %_init
 #	@$(eval BOOTSTRAP_KS_GKE_CLUSTER_NAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
 	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 
@@ -136,7 +139,7 @@ bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
 .PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
 ## Get gke cluster kubeconfig
 #bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %gke-install
-bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig:
+bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 #	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
