@@ -18,7 +18,7 @@ BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 CLUSTER_NAME_PREFIX ?= canary
 
 #BOOTSTRAP_KS_AKS_CLUSTER_NAME ?=
-BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
+BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME)
 
 
 #GKE_CLUSTER_NAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
@@ -119,8 +119,8 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 bootstrap-ks/gke-save-secret: %gke-save-secret:
 #	@$(eval BOOTSTRAP_KS_GKE_CLUSTER_NAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
 #	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
-	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
-	@$(SELF) oc/command OC_COMMAND="label secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
+	@$(SELF) oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
 
 
 
@@ -142,7 +142,8 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig:
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
 	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
-	@$(SELF) oc/command OC_COMMAND="get secret -n $(CLUSTERPOOL_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
