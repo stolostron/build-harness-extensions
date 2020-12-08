@@ -147,7 +147,8 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig:
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
-bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %gke-install
+#bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %gke-install
+bootstrap-ks/gke-delete-cluster: %gke-delete-cluster:
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./destroy.sh *.json; cd ../..;
