@@ -146,7 +146,7 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
 	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
-	@$(SELF) oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | jq -r '.data.kubeconfig' | base64 -d"
+	@$(SELF) oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/gke-delete-cluster
 ## Delete gke cluster
