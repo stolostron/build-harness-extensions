@@ -98,6 +98,7 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 
 	$(eval NOW = $(shell date))
 	@echo NOW is $(NOW) $(THE_NAME)
+	@sleep 5
 
 	$(eval NOW2 := $(shell date))
 	@echo NOW2 is $(NOW2)
@@ -128,14 +129,22 @@ bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 
 .PHONY: bootstrap-ks/gke-get-cluster-name
 ## Get gke cluster name
-bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
+#bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %gke-install
+bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name:
 #	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 	@$(eval BOOTSTRAP_KS_GKE_CLUSTERNAME := $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME))
 	@echo $(BOOTSTRAP_KS_GKE_CLUSTERNAME)
 
+	echo "new test"
+	echo "result before - $(THE_GKE_CLUSTER_NAME)"
+	$(QUERY_GKE_CLUSTER_NAME)
+	echo "result after - $(THE_GKE_CLUSTER_NAME)"
+
+
 .PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
 ## Get gke cluster kubeconfig
-bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %gke-install
+#bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %gke-install
+bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig:
 #	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTERNAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
