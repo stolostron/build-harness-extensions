@@ -149,7 +149,7 @@ bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 ## Get EKS cluster kubeconfig
 .PHONY: bootstrap-ks/eks-get-cluster-kubeconfig
 bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
-	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
 	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
@@ -162,8 +162,8 @@ bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
 ##   BOOTSTRAP_KS_EKS_JSON_FILE - path to the json file for the EKS instance
 .PHONY: bootstrap-ks/eks-delete-cluster
 bootstrap-ks/eks-delete-cluster: %eks-delete-cluster: %aks-install
-	$(call assert-set,GCLOUD_CREDS_FILE)
-	$(call assert-set,GCLOUD_PROJECT_ID)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY)
 	@if [ ! -z "$(BOOTSTRAP_KS_EKS_JSON_FILE)" ]; then \
    	cd ${BOOTSTRAP_KS_DEPLOY_DIR}/eks; ./destroy.sh ${BOOTSTRAP_KS_EKS_JSON_FILE}; \
 	else \
