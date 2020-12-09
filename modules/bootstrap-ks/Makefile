@@ -20,6 +20,7 @@ OC_CLUSTER_API = BOOTSTRAP_KS_HOST_API
 CLUSTER_NAME_PREFIX ?= canary
 
 #BOOTSTRAP_KS_AKS_CLUSTER_NAME ?=
+BOOTSTRAP_KS_AKS_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; cat *.json | jq -r .CLUSTER_NAME)
 BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME)
 
 
@@ -44,64 +45,92 @@ bootstrap-ks/_init: %_init:
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
 
-
-
-
-#	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) OC_CLUSTER_TOKEN=$(BOOTSTRAP_KS_HOST_TOKEN) \
-#		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
-
-
 ##======= Azure Kubernetes Service ===========================
 
 ## Install AKS
 .PHONY: bootstrap-ks/aks-install
 bootstrap-ks/aks-install: %aks-install: %_init
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./install.sh; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./install.sh;
 
 .PHONY: bootstrap-ks/aks-create-cluster
 ## Create AKS cluster
 bootstrap-ks/aks-create-cluster: %aks-create-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh; \
-	  KS_CLUSTER_NAME=`cat *.json | jq -r .CLUSTER_NAME`;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh;
+
+## Get AKS cluster name
+.PHONY: bootstrap-ks/aks-save-secret
+bootstrap-ks/aks-save-secret: %aks-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) bootstrap-ks=true"
+
 
 ## Get AKS cluster name
 .PHONY: bootstrap-ks/aks-get-cluster-name
-bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name:
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; cat *.json | jq -r .CLUSTER_NAME; cd ../..;
+bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name: %_init
+	@echo $(BOOTSTRAP_KS_AKS_CLUSTER_NAME)
+
+## Get AKS cluster kubeconfig
+.PHONY: bootstrap-ks/aks-get-cluster-json
+bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
+	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
+
+## Get AKS cluster kubeconfig
+.PHONY: bootstrap-ks/aks-get-cluster-kubeconfig
+bootstrap-ks/aks-get-cluster-kubeconfig: %aks-get-cluster-kubeconfig: %_init
+	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 ## Delete AKS cluster
+##  Default is to assume the file is stored locally when cluster was created.
+## OPTIONAL:
+##   BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the AKS instance
 .PHONY: bootstrap-ks/aks-delete-cluster
 bootstrap-ks/aks-delete-cluster: %aks-delete-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./destroy.sh *.json; cd ../..;
+	@if [ ! -z "$(BOOTSTRAP_KS_AKS_JSON_FILE)" ]; then \
+	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; ./destroy.sh ${BOOTSTRAP_KS_AKS_JSON_FILE}; \
+	else \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; ./destroy.sh *.json; \
+	fi;
+
+
 
 
 ##======= Google Kubernetes Engine ===========================
 
-## Install gks
+## Install GKE
 .PHONY: bootstrap-ks/gke-install
 bootstrap-ks/gke-install: %gke-install: %_init
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./install.sh; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./install.sh;
 
 ## Create gke cluster
 .PHONY: bootstrap-ks/gke-create-cluster
 bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh; cd ../..;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh;
 
 ## Get gke cluster name
 .PHONY: bootstrap-ks/gke-save-secret
 bootstrap-ks/gke-save-secret: %gke-save-secret: %_init
-	@$(SELF) -s oc/command OC_COMMAND="get nodes"
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
 
 
-## Get gke cluster name
+## Get GKE cluster name
 .PHONY: bootstrap-ks/gke-get-cluster-name
 bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
@@ -141,11 +170,3 @@ bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %aks-install
 	else \
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; ./destroy.sh *.json; \
 	fi;
-
-
-#.PHONY: bootstrap-ks/clean
-## Clean up all bootstrap-ks resources
-#bootstrap-ks/clean: %clean:
-#	ifeq ($(shell test -d $(BOOTSTRAP_KS_DIR) && echo -n yes),yes)
-#		@rm -rf $(BOOTSTRAP_KS_DIR)
-#	endif
