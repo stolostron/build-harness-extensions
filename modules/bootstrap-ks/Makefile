@@ -22,6 +22,7 @@ CLUSTER_NAME_PREFIX ?= canary
 #BOOTSTRAP_KS_AKS_CLUSTER_NAME ?=
 BOOTSTRAP_KS_AKS_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; cat *.json | jq -r .CLUSTER_NAME)
 BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/gke; cat *.json | jq -r .CLUSTER_NAME)
+BOOTSTRAP_KS_EKS_CLUSTER_NAME = $(shell cd ${BOOTSTRAP_KS_DEPLOY_DIR}/eks; cat *.json | jq -r .CLUSTER_NAME)
 
 
 #GKE_CLUSTER_NAME = $(shell cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; cat *.json | jq -r .CLUSTER_NAME)
@@ -107,6 +108,67 @@ bootstrap-ks/aks-delete-cluster: %aks-delete-cluster: %aks-install
 	fi;
 
 
+##======= Amazon Elastic Kubernetes Service ===========================
+
+## Install EKS
+.PHONY: bootstrap-ks/eks-install
+bootstrap-ks/eks-install: %eks-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./install.sh;
+
+## Create EKS cluster
+.PHONY: bootstrap-ks/eks-create-cluster
+bootstrap-ks/eks-create-cluster: %eks-create-cluster: %eks-install
+	$(call assert-set,GCLOUD_CREDS_FILE)
+	$(call assert-set,GCLOUD_PROJECT_ID)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./provision.sh;
+
+## Get EKS cluster name
+.PHONY: bootstrap-ks/eks-save-secret
+bootstrap-ks/eks-save-secret: %eks-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) bootstrap-ks=true"
+
+
+## Get EKS cluster name
+.PHONY: bootstrap-ks/eks-get-cluster-name
+bootstrap-ks/eks-get-cluster-name: %eks-get-cluster-name: %_init
+	@echo $(BOOTSTRAP_KS_EKS_CLUSTER_NAME)
+
+
+## Get EKS cluster kubeconfig
+.PHONY: bootstrap-ks/eks-get-cluster-json
+bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
+	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
+
+## Get EKS cluster kubeconfig
+.PHONY: bootstrap-ks/eks-get-cluster-kubeconfig
+bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
+	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+## Delete EKS cluster
+##  Default is to assume the file is stored locally when cluster was created.
+## OPTIONAL:
+##   BOOTSTRAP_KS_EKS_JSON_FILE - path to the json file for the EKS instance
+.PHONY: bootstrap-ks/eks-delete-cluster
+bootstrap-ks/eks-delete-cluster: %eks-delete-cluster: %aks-install
+	$(call assert-set,GCLOUD_CREDS_FILE)
+	$(call assert-set,GCLOUD_PROJECT_ID)
+	@if [ ! -z "$(BOOTSTRAP_KS_EKS_JSON_FILE)" ]; then \
+   	cd ${BOOTSTRAP_KS_DEPLOY_DIR}/eks; ./destroy.sh ${BOOTSTRAP_KS_EKS_JSON_FILE}; \
+	else \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/eks; ./destroy.sh *.json; \
+	fi;
 
 
 ##======= Google Kubernetes Engine ===========================
