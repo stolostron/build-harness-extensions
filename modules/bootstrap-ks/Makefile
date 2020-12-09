@@ -118,7 +118,7 @@ bootstrap-ks/eks-install: %eks-install: %_init
 ## Create EKS cluster
 .PHONY: bootstrap-ks/eks-create-cluster
 bootstrap-ks/eks-create-cluster: %eks-create-cluster: %eks-install
-	$(call assert-set,AWS_ACCESS_KEY)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./provision.sh;
 
