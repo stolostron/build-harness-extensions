@@ -57,7 +57,8 @@ bootstrap-ks/aks-create-cluster: %aks-create-cluster: %aks-install
 	$(call assert-set,AZURE_PASS)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh;
 
-## Get AKS cluster name
+## Save AKS JSON and KUBECONFIG as a secret
+##   You can filter these secrets using --selector=bootstrap-ks=true
 .PHONY: bootstrap-ks/aks-save-secret
 bootstrap-ks/aks-save-secret: %aks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).kubeconfig"
@@ -69,7 +70,7 @@ bootstrap-ks/aks-save-secret: %aks-save-secret: %_init
 bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 
-## Get AKS cluster kubeconfig
+## Get AKS cluster JSON
 .PHONY: bootstrap-ks/aks-get-cluster-json
 bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
@@ -80,7 +81,7 @@ bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 
-## Get AKS cluster kubeconfig
+## Get AKS cluster KUBECONFIG
 .PHONY: bootstrap-ks/aks-get-cluster-kubeconfig
 bootstrap-ks/aks-get-cluster-kubeconfig: %aks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
@@ -119,7 +120,8 @@ bootstrap-ks/eks-create-cluster: %eks-create-cluster: %eks-install
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./provision.sh;
 
-## Get EKS cluster name
+## Save EKS JSON and KUBECONFIG as a secret
+##   You can filter these secrets using --selector=bootstrap-ks=true
 .PHONY: bootstrap-ks/eks-save-secret
 bootstrap-ks/eks-save-secret: %eks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).kubeconfig"
@@ -132,7 +134,7 @@ bootstrap-ks/eks-get-cluster-name: %eks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 
 
-## Get EKS cluster kubeconfig
+## Get EKS cluster JSON
 .PHONY: bootstrap-ks/eks-get-cluster-json
 bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
@@ -143,7 +145,7 @@ bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 
-## Get EKS cluster kubeconfig
+## Get EKS cluster KUBECONFIG
 .PHONY: bootstrap-ks/eks-get-cluster-kubeconfig
 bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
@@ -175,14 +177,15 @@ bootstrap-ks/eks-delete-cluster: %eks-delete-cluster: %aks-install
 bootstrap-ks/gke-install: %gke-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./install.sh;
 
-## Create gke cluster
+## Create GKE cluster
 .PHONY: bootstrap-ks/gke-create-cluster
 bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh;
 
-## Get gke cluster name
+## Save GKE JSON and KUBECONFIG as a secret
+##   You can filter these secrets using --selector=bootstrap-ks=true
 .PHONY: bootstrap-ks/gke-save-secret
 bootstrap-ks/gke-save-secret: %gke-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
@@ -195,7 +198,7 @@ bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 
 
-## Get gke cluster kubeconfig
+## Get GKE cluster JSON
 .PHONY: bootstrap-ks/gke-get-cluster-json
 bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
@@ -206,7 +209,7 @@ bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 
-## Get gke cluster kubeconfig
+## Get GKE cluster KUBECONFIG
 .PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
 bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
@@ -216,7 +219,7 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
-## Delete gke cluster
+## Delete GKE cluster
 ##  Default is to assume the file is stored locally when cluster was created.
 ## OPTIONAL:
 ##   BOOTSTRAP_KS_GKE_JSON_FILE - path to the json file for the GKE instance
@@ -244,7 +247,8 @@ bootstrap-ks/iks-create-cluster: %iks-create-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./provision.sh;
 
-## Get IKS cluster name
+## Save IKS JSON and KUBECONFIG as a secret
+##   You can filter these secrets using --selector=bootstrap-ks=true
 .PHONY: bootstrap-ks/iks-save-secret
 bootstrap-ks/iks-save-secret: %iks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).kubeconfig"
@@ -256,7 +260,7 @@ bootstrap-ks/iks-get-cluster-name: %iks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 
 
-## Get IKS cluster kubeconfig
+## Get IKS cluster JSON
 .PHONY: bootstrap-ks/iks-get-cluster-json
 bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
@@ -267,7 +271,7 @@ bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 
-## Get IKS cluster kubeconfig
+## Get IKS cluster KUBECONFIG
 .PHONY: bootstrap-ks/iks-get-cluster-kubeconfig
 bootstrap-ks/iks-get-cluster-kubeconfig: %iks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
