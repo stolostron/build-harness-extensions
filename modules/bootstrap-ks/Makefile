@@ -246,8 +246,7 @@ bootstrap-ks/iks-install: %iks-install: %_init
 .PHONY: bootstrap-ks/iks-create-cluster
 bootstrap-ks/iks-create-cluster: %iks-create-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
-	export ROKS=false
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./provision.sh;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; export ROKS=false; ./provision.sh;
 
 ## Save IKS JSON and KUBECONFIG as a secret
 ##   You can filter these secrets using --selector=bootstrap-ks=true
@@ -306,8 +305,7 @@ bootstrap-ks/roks-install: %roks-install: %_init
 .PHONY: bootstrap-ks/roks-create-cluster
 bootstrap-ks/roks-create-cluster: %roks-create-cluster: %roks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
-	export ROKS=true
-	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./provision.sh;
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; export ROKS=true; ./provision.sh;
 
 ## Save ROKS JSON and KUBECONFIG as a secret
 ##   You can filter these secrets using --selector=bootstrap-ks=true
