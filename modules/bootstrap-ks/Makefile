@@ -235,7 +235,7 @@ bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %aks-install
 	fi;
 
 
-##======= IBM Cloud Kubernetes Service (IKS) and IBM Red Hat OpenShift Kubernetes Service (ROKS) ===========================
+##======= IBM Cloud Kubernetes Service (IKS) ===========================
 
 ## Install IKS
 .PHONY: bootstrap-ks/iks-install
@@ -246,6 +246,7 @@ bootstrap-ks/iks-install: %iks-install: %_init
 .PHONY: bootstrap-ks/iks-create-cluster
 bootstrap-ks/iks-create-cluster: %iks-create-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
+	export ROKS=false
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./provision.sh;
 
 ## Save IKS JSON and KUBECONFIG as a secret
@@ -260,7 +261,6 @@ bootstrap-ks/iks-save-secret: %iks-save-secret: %_init
 bootstrap-ks/iks-get-cluster-name: %iks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 
-
 ## Get IKS cluster JSON
 .PHONY: bootstrap-ks/iks-get-cluster-json
 bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
@@ -270,7 +270,6 @@ bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
-
 
 ## Get IKS cluster KUBECONFIG
 .PHONY: bootstrap-ks/iks-get-cluster-kubeconfig
@@ -284,15 +283,73 @@ bootstrap-ks/iks-get-cluster-kubeconfig: %iks-get-cluster-kubeconfig: %_init
 
 ## Delete IKS cluster
 ##  Default is to assume the file is stored locally when cluster was created.
-##  ROKS value is used to determine what to delete.  ROKS=true will delete ROKS, else IKS will be deleted
 ## OPTIONAL:
 ##   BOOTSTRAP_KS_IKS_JSON_FILE - path to the json file for the IKS instance
-##   BOOTSTRAP_KS_ROKS_JSON_FILE - path to the json file for the IKS instance
 .PHONY: bootstrap-ks/iks-delete-cluster
-bootstrap-ks/iks-delete-cluster: %iks-delete-cluster: %aks-install
+bootstrap-ks/iks-delete-cluster: %iks-delete-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
-	@if [ "${ROKS}" == "true" ]; then \
+	@if [ ! -z "$(BOOTSTRAP_KS_IKS_JSON_FILE)" ]; then \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh ${BOOTSTRAP_KS_IKS_JSON_FILE}; \
+	else \
+	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh *-iks.json; \
+	fi;
+
+
+##======= IBM Red Hat OpenShift Kubernetes Service (ROKS) ===========================
+
+## Install ROKS
+.PHONY: bootstrap-ks/roks-install
+bootstrap-ks/roks-install: %roks-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./install.sh;
+
+## Create ROKS cluster
+.PHONY: bootstrap-ks/roks-create-cluster
+bootstrap-ks/roks-create-cluster: %roks-create-cluster: %roks-install
+	$(call assert-set,IBMCLOUD_APIKEY)
+	export ROKS=true
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./provision.sh;
+
+## Save ROKS JSON and KUBECONFIG as a secret
+##   You can filter these secrets using --selector=bootstrap-ks=true
+.PHONY: bootstrap-ks/roks-save-secret
+bootstrap-ks/roks-save-secret: %roks-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) bootstrap-ks=true"
+
+## Get ROKS cluster name
+.PHONY: bootstrap-ks/roks-get-cluster-name
+bootstrap-ks/roks-get-cluster-name: %roks-get-cluster-name: %_init
+	@echo $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
+
+## Get ROKS cluster JSON
+.PHONY: bootstrap-ks/roks-get-cluster-json
+bootstrap-ks/roks-get-cluster-json: %roks-get-cluster-json: %_init
+	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
+## Get ROKS cluster KUBECONFIG
+.PHONY: bootstrap-ks/roks-get-cluster-kubeconfig
+bootstrap-ks/roks-get-cluster-kubeconfig: %roks-get-cluster-kubeconfig: %_init
+	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+## Delete ROKS cluster
+##  Default is to assume the file is stored locally when cluster was created.
+## OPTIONAL:
+##   BOOTSTRAP_KS_ROKS_JSON_FILE - path to the json file for the ROKS instance
+.PHONY: bootstrap-ks/roks-delete-cluster
+bootstrap-ks/roks-delete-cluster: %roks-delete-cluster: %roks-install
+	$(call assert-set,IBMCLOUD_APIKEY)
+	@if [ ! -z "$(BOOTSTRAP_KS_ROKS_JSON_FILE)" ]; then \
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh ${BOOTSTRAP_KS_ROKS_JSON_FILE}; \
 	else \
-		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh ${BOOTSTRAP_KS_IKS_JSON_FILE}; \
+	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh *-roks.json; \
 	fi;
