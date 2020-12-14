@@ -47,32 +47,31 @@ bootstrap-ks/_init: %_init:
 ##======= Azure Kubernetes Service ===========================
 
 .PHONY: bootstrap-ks/aks-install
-## Install AKS
+## Install Azure Kubernetes Service (AKS) cluster
 bootstrap-ks/aks-install: %aks-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./install.sh;
 
 .PHONY: bootstrap-ks/aks-create-cluster
-## Create AKS cluster
+## Create Azure Kubernetes Service (AKS) cluster
 bootstrap-ks/aks-create-cluster: %aks-create-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aks; ./provision.sh;
 
 .PHONY: bootstrap-ks/aks-save-secret
-## Save AKS JSON and KUBECONFIG as a secret
-##   You can filter these secrets using --selector=bootstrap-ks=true
+## Save AKS JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/aks-save-secret: %aks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/aks/$(BOOTSTRAP_KS_AKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) bootstrap-ks=true"
 
 
 .PHONY: bootstrap-ks/aks-get-cluster-name
-## Get AKS cluster name
+## Get Azure Kubernetes Service (AKS) cluster name
 bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 
 .PHONY: bootstrap-ks/aks-get-cluster-json
-## Get AKS cluster JSON
+## Get Azure Kubernetes Service (AKS) cluster JSON
 bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -83,7 +82,7 @@ bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 
 
 .PHONY: bootstrap-ks/aks-get-cluster-kubeconfig
-## Get AKS cluster KUBECONFIG
+## Get Azure Kubernetes Service (AKS) cluster KUBECONFIG
 bootstrap-ks/aks-get-cluster-kubeconfig: %aks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -93,10 +92,7 @@ bootstrap-ks/aks-get-cluster-kubeconfig: %aks-get-cluster-kubeconfig: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/aks-delete-cluster
-## Delete AKS cluster
-##   Default is to assume the file is stored locally when cluster was created.
-## OPTIONAL:
-##   BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the AKS instance
+## Delete Azure Kubernetes Service (AKS) cluster. OPTIONAL: BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the AKS instance
 bootstrap-ks/aks-delete-cluster: %aks-delete-cluster: %aks-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
@@ -110,33 +106,32 @@ bootstrap-ks/aks-delete-cluster: %aks-delete-cluster: %aks-install
 ##======= Amazon Elastic Kubernetes Service ===========================
 
 .PHONY: bootstrap-ks/eks-install
-## Install EKS
+## Install Amazon Elastic Kubernetes Service (EKS)
 bootstrap-ks/eks-install: %eks-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./install.sh;
 
 .PHONY: bootstrap-ks/eks-create-cluster
-## Create EKS cluster
+## Create Amazon Elastic Kubernetes Service (EKS) cluster
 bootstrap-ks/eks-create-cluster: %eks-create-cluster: %eks-install
 	$(call assert-set,AWS_ACCESS_KEY_ID)
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/eks; ./provision.sh;
 
 .PHONY: bootstrap-ks/eks-save-secret
-## Save EKS JSON and KUBECONFIG as a secret
-##   You can filter these secrets using --selector=bootstrap-ks=true
+## Save EKS JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/eks-save-secret: %eks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) bootstrap-ks=true"
 
 
 .PHONY: bootstrap-ks/eks-get-cluster-name
-## Get EKS cluster name
+## Get Amazon Elastic Kubernetes Service (EKS) cluster name
 bootstrap-ks/eks-get-cluster-name: %eks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 
 
 .PHONY: bootstrap-ks/eks-get-cluster-json
-## Get EKS cluster JSON
+## Get Amazon Elastic Kubernetes Service (EKS) cluster JSON
 bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -147,7 +142,7 @@ bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 
 
 .PHONY: bootstrap-ks/eks-get-cluster-kubeconfig
-## Get EKS cluster KUBECONFIG
+## Get Amazon Elastic Kubernetes Service (EKS) cluster KUBECONFIG
 bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -157,10 +152,7 @@ bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/eks-delete-cluster
-## Delete EKS cluster
-##  Default is to assume the file is stored locally when cluster was created.
-## OPTIONAL:
-##   BOOTSTRAP_KS_EKS_JSON_FILE - path to the json file for the EKS instance
+## Delete Amazon Elastic Kubernetes Service (EKS) cluster. OPTIONAL: BOOTSTRAP_KS_EKS_JSON_FILE - path to the json file for the EKS instance
 bootstrap-ks/eks-delete-cluster: %eks-delete-cluster: %aks-install
 	$(call assert-set,AWS_ACCESS_KEY_ID)
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
@@ -174,33 +166,32 @@ bootstrap-ks/eks-delete-cluster: %eks-delete-cluster: %aks-install
 ##======= Google Kubernetes Engine ===========================
 
 .PHONY: bootstrap-ks/gke-install
-## Install GKE
+## Install Google Kubernetes Engine (GKE)
 bootstrap-ks/gke-install: %gke-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./install.sh;
 
 .PHONY: bootstrap-ks/gke-create-cluster
-## Create GKE cluster
+## Create Google Kubernetes Engine (GKE) cluster
 bootstrap-ks/gke-create-cluster: %gke-create-cluster: %gke-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/gke; ./provision.sh;
 
 .PHONY: bootstrap-ks/gke-save-secret
-## Save GKE JSON and KUBECONFIG as a secret
-##   You can filter these secrets using --selector=bootstrap-ks=true
+## Save GKE JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/gke-save-secret: %gke-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
 
 
 .PHONY: bootstrap-ks/gke-get-cluster-name
-## Get GKE cluster name
+## Get Google Kubernetes Engine (GKE) cluster name
 bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 
 
 .PHONY: bootstrap-ks/gke-get-cluster-json
-## Get GKE cluster JSON
+## Get Google Kubernetes Engine (GKE) cluster JSON
 bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -211,7 +202,7 @@ bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 
 
 .PHONY: bootstrap-ks/gke-get-cluster-kubeconfig
-## Get GKE cluster KUBECONFIG
+## Get Google Kubernetes Engine (GKE) cluster KUBECONFIG
 bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -221,10 +212,7 @@ bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/gke-delete-cluster
-## Delete GKE cluster
-##  Default is to assume the file is stored locally when cluster was created.
-## OPTIONAL:
-##   BOOTSTRAP_KS_GKE_JSON_FILE - path to the json file for the GKE instance
+## Delete Google Kubernetes Engine (GKE) cluster.  OPTIONAL: BOOTSTRAP_KS_GKE_JSON_FILE - path to the json file for the GKE instance
 bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %aks-install
 	$(call assert-set,GCLOUD_CREDS_FILE)
 	$(call assert-set,GCLOUD_PROJECT_ID)
@@ -238,30 +226,29 @@ bootstrap-ks/gke-delete-cluster: %gke-delete-cluster: %aks-install
 ##======= IBM Cloud Kubernetes Service (IKS) ===========================
 
 .PHONY: bootstrap-ks/iks-install
-## Install IKS
+## Install IBM Cloud Kubernetes Service (IKS)
 bootstrap-ks/iks-install: %iks-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./install.sh;
 
 .PHONY: bootstrap-ks/iks-create-cluster
-## Create IKS cluster
+## Create IBM Cloud Kubernetes Service (IKS) cluster
 bootstrap-ks/iks-create-cluster: %iks-create-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; export ROKS=false; ./provision.sh;
 
 .PHONY: bootstrap-ks/iks-save-secret
-## Save IKS JSON and KUBECONFIG as a secret
-##   You can filter these secrets using --selector=bootstrap-ks=true
+## Save IKS JSON and KUBECONFIG as a secret. You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/iks-save-secret: %iks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) bootstrap-ks=true"
 
 .PHONY: bootstrap-ks/iks-get-cluster-name
-## Get IKS cluster name
+## Get IBM Cloud Kubernetes Service (IKS) cluster name
 bootstrap-ks/iks-get-cluster-name: %iks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 
 .PHONY: bootstrap-ks/iks-get-cluster-json
-## Get IKS cluster JSON
+## Get IBM Cloud Kubernetes Service (IKS) cluster JSON
 bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -271,7 +258,7 @@ bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 .PHONY: bootstrap-ks/iks-get-cluster-kubeconfig
-## Get IKS cluster KUBECONFIG
+## Get IBM Cloud Kubernetes Service (IKS) cluster KUBECONFIG
 bootstrap-ks/iks-get-cluster-kubeconfig: %iks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -281,10 +268,7 @@ bootstrap-ks/iks-get-cluster-kubeconfig: %iks-get-cluster-kubeconfig: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/iks-delete-cluster
-## Delete IKS cluster
-##  Default is to assume the file is stored locally when cluster was created.
-## OPTIONAL:
-##   BOOTSTRAP_KS_IKS_JSON_FILE - path to the json file for the IKS instance
+## Delete IBM Cloud Kubernetes Service (IKS) cluster. OPTIONAL: BOOTSTRAP_KS_IKS_JSON_FILE - path to the json file for the IKS instance
 bootstrap-ks/iks-delete-cluster: %iks-delete-cluster: %iks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
 	@if [ ! -z "$(BOOTSTRAP_KS_IKS_JSON_FILE)" ]; then \
@@ -297,30 +281,29 @@ bootstrap-ks/iks-delete-cluster: %iks-delete-cluster: %iks-install
 ##======= IBM Red Hat OpenShift Kubernetes Service (ROKS) ===========================
 
 .PHONY: bootstrap-ks/roks-install
-## Install ROKS
+## Install IBM Red Hat OpenShift Kubernetes Service (ROKS)
 bootstrap-ks/roks-install: %roks-install: %_init
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; ./install.sh;
 
 .PHONY: bootstrap-ks/roks-create-cluster
-## Create ROKS cluster
+## Create IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster
 bootstrap-ks/roks-create-cluster: %roks-create-cluster: %roks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/iks; export ROKS=true; ./provision.sh;
 
 .PHONY: bootstrap-ks/roks-save-secret
-## Save ROKS JSON and KUBECONFIG as a secret
-##   You can filter these secrets using --selector=bootstrap-ks=true
+## Save ROKS JSON and KUBECONFIG as a secret. You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/roks-save-secret: %roks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) bootstrap-ks=true"
 
 .PHONY: bootstrap-ks/roks-get-cluster-name
-## Get ROKS cluster name
+## Get IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster name
 bootstrap-ks/roks-get-cluster-name: %roks-get-cluster-name: %_init
 	@echo $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
 
 .PHONY: bootstrap-ks/roks-get-cluster-json
-## Get ROKS cluster JSON
+## Get IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster JSON
 bootstrap-ks/roks-get-cluster-json: %roks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -330,7 +313,7 @@ bootstrap-ks/roks-get-cluster-json: %roks-get-cluster-json: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
 .PHONY: bootstrap-ks/roks-get-cluster-kubeconfig
-## Get ROKS cluster KUBECONFIG
+## Get IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster KUBECONFIG
 bootstrap-ks/roks-get-cluster-kubeconfig: %roks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
@@ -340,10 +323,7 @@ bootstrap-ks/roks-get-cluster-kubeconfig: %roks-get-cluster-kubeconfig: %_init
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
 .PHONY: bootstrap-ks/roks-delete-cluster
-## Delete ROKS cluster
-##  Default is to assume the file is stored locally when cluster was created.
-## OPTIONAL:
-##   BOOTSTRAP_KS_ROKS_JSON_FILE - path to the json file for the ROKS instance
+## Delete IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster. OPTIONAL: BOOTSTRAP_KS_ROKS_JSON_FILE - path to the json file for the ROKS instance
 bootstrap-ks/roks-delete-cluster: %roks-delete-cluster: %roks-install
 	$(call assert-set,IBMCLOUD_APIKEY)
 	@if [ ! -z "$(BOOTSTRAP_KS_ROKS_JSON_FILE)" ]; then \
