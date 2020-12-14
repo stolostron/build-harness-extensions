@@ -30,7 +30,7 @@ BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-ro
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 
 .PHONY: bootstrap-ks/_init
-## Install jq and oc cli and log in to the ClusterPool Host cluster
+# Install jq and oc cli and log in to the ClusterPool Host cluster
 bootstrap-ks/_init: %_init:
 	$(call assert-set,GITHUB_TOKEN)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
