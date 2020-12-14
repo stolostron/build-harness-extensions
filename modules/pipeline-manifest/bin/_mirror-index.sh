@@ -57,7 +57,21 @@ echo Locating upgrade bundles...
 docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
 export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 rm .extrabs
-curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/acm-operator-bundle/tags/list | jq -r '[.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))] | sort_by(.)[]'| xargs -L1 -I'{}' echo "-B registry.redhat.io/rhacm2/acm-operator-bundle:{}" >> .extrabs
+
+# 0. Prepare for battle
+TEMPFILE=.extrabs.json
+TEMPFILE2=$TEMPFILE''2
+echo "[]" > $TEMPFILE
+
+# Etract version list, Pull out timestamp
+curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/acm-operator-bundle/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' ./something.sh $TEMPFILE {}
+
+# Sort results
+jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
+
+# Build the extrabs strucutre
+jq -r '.[].version' .extrabs.json | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/acm-operator-bundle:{}" > .extrabs
+
 export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs)
 echo Adding upgrade bundles:
 echo $COMPUTED_UPGRADE_BUNDLES
