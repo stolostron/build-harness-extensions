@@ -11,6 +11,7 @@
 # Get logged into brew, update/check out the repos we need
 echo Preparing environment for release $Z_RELEASE_VERSION...
 OC=$BUILD_HARNESS_PATH/vendor/oc
+BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
 rm -rf /tmp/acm-custom-registry
 brew hello
 if [ -d ashdod ];  \
@@ -63,8 +64,8 @@ TEMPFILE=.extrabs.json
 TEMPFILE2=$TEMPFILE''2
 echo "[]" > $TEMPFILE
 
-# Etract version list, Pull out timestamp
-curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/acm-operator-bundle/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' ./something.sh $TEMPFILE {}
+# Extract version list, Pull out timestamp
+curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/acm-operator-bundle/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE {}
 
 # Sort results
 jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
