@@ -29,6 +29,9 @@ BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-ro
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 
+
+##======= Common  ===========================
+
 .PHONY: bootstrap-ks/_init
 # Install jq and oc cli and log in to the ClusterPool Host cluster
 bootstrap-ks/_init: %_init:
@@ -43,6 +46,28 @@ bootstrap-ks/_init: %_init:
 		cd $(BOOTSTRAP_KS_DEPLOY_DIR); fi
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(BOOTSTRAP_KS_HOST_USER) OC_CLUSTER_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		OC_CLUSTER_URL=$(BOOTSTRAP_KS_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="true"
+
+
+.PHONY: bootstrap-ks/get-cluster-kubeconfig
+## Get *KS cluster KUBECONFIG
+bootstrap-ks/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+.PHONY: bootstrap-ks/delete-secret
+## Delete *KS secret.  You can filter these secrets using --selector=bootstrap-ks=true
+bootstrap-ks/delete-secret: %delete-secret: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
+	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="delete secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME)"
+
 
 ##======= Azure Kubernetes Service ===========================
 
