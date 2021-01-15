@@ -1,6 +1,8 @@
 #-- bootstrap-ks Params---#
 BOOTSTRAP_KS_REPO ?= https://${GITHUB_TOKEN}@github.com/open-cluster-management/bootstrap-ks.git
-BOOTSTRAP_KS_BRANCH ?= master
+#BOOTSTRAP_KS_BRANCH ?= master
+# TEMP - DEBUG - TODO
+BOOTSTRAP_KS_BRANCH ?= cahl-kubeconfig-for-gke-eks
 BOOTSTRAP_KS_DEPLOY_DIR ?= bootstrap-ks
 
 #---Login/Host-cluster related env vars---#
