@@ -52,6 +52,8 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item;do
   if [[ "null" = "$sha_value" ]]
   then
     echo Oh no, can\'t retrieve sha from $url
+    msg="pipeline/quay_retag: :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve sha from $url"
+    make simple-slack/send SLACK_MESSAGE="$msg"
     exit 1
   fi
   echo $item | jq --arg sha_value $sha_value --arg image_key $image_key '. + { "image-digest": $sha_value, "image-key": $image_key }' >> manifest-sha.badjson
@@ -69,6 +71,8 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item;do
     echo $item | jq --arg image_name $nameinstrumented --arg instrumented_value $instrumented_value --arg image_key $image_key '. + { "image-name": $image_name, "image-digest": $instrumented_value, "image-key": $image_key }' >> manifest-instrumented.badjson
   fi
 done
+msg="pipeline/quay_retag: :large_green_circle: Success in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: retrieved sha from $url"
+make simple-slack/send SLACK_MESSAGE="$msg"
 echo Creating $shad_filename file
 jq -s '.' < manifest-sha.badjson > $shad_filename
 rm manifest-sha.badjson 2> /dev/null
