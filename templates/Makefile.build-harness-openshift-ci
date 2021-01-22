@@ -1,6 +1,6 @@
 export SHELL = /bin/bash
-export GITHUB_USER ?=
-export GITHUB_TOKEN ?=
+export GITHUB_USER = acm-cicd%40redhat.com
+export GITHUB_TOKEN := $(shell cat /etc/github/token 2> /dev/null )
 
 export BUILD_HARNESS_ORG ?= open-cluster-management
 export BUILD_HARNESS_PROJECT ?= build-harness
