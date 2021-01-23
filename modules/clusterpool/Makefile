@@ -29,6 +29,7 @@ CLUSTERPOOL_SIZE ?= 1
 CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 10
 CLUSTERPOOL_LIFETIME ?=
 CLUSTERPOOL_GROUP_NAME ?= system:masters
+CLUSTERPOOL_SERVICE_ACCOUNT ?=
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -297,6 +298,7 @@ clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	@$(SELF) -s --no-print-directory oc/command OC_COMMAND="whoami" > .whoami.txt
 	@if [ -n "$(CLUSTERPOOL_LIFETIME)" ]; then \
 		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
 			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
@@ -308,10 +310,19 @@ clusterpool/_create-claim: %_create-claim: %_init
 			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
 			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
 			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
-			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi; \
+	if [ "`cat .whoami.txt | awk -F ':' '{print $$2}'`" == "serviceaccount" ]; then \
+		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;`cat .whoami.txt | awk -F ':' '{print $$4}'`;g" \
+			-e "s;__CLUSTERCLAIM_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; \
+	elif [ -n "$(CLUSTERPOOL_SERVICE_ACCOUNT)" ]; then \
+		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;$(CLUSTERPOOL_SERVICE_ACCOUNT);g" \
+			-e "s;__CLUSTERCLAIM_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
 	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
 	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
+	@rm .whoami.txt
 
 .PHONY: clusterpool/_gather-status
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to check - and gathers relevant information about it
