@@ -290,3 +290,9 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 	@$(shell $(SELF) jq/install > /dev/null)
 	@$(shell $(SELF) oc/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh 
+
+.PHONY: pipeline-manifest/_upgrade-map
+# Calculate the upgrade map for a specified GA version as defined in issue #8709
+pipeline-manifest/_upgrade-map: %_upgrade-map:
+	$(call assert-set,PIPELINE_MANIFEST_UPGRADE_MAP_VERSION)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_upgrade-map.py $(PIPELINE_MANIFEST_UPGRADE_MAP_VERSION) $(PIPELINE_MANIFEST_ORG)
