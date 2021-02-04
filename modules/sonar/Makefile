@@ -34,11 +34,12 @@ sonar/go/openshiftci:
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
-		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
+		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
 	fi
 
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee -a "${ARTIFACT_DIR}/sonar.log"
