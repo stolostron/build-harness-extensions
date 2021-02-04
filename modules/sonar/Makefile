@@ -20,51 +20,51 @@ sonar/go: go/gosec-install
 ## Run SonarCloud analysis for Go on OpenShift CI. This will not be run during local development.
 sonar/go/openshiftci: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
 sonar/go/openshiftci:
-	@echo "Verify sonar token from kube secret has been mounted" | tee "${ARTIFACT_DIR}/sonar.log"
-	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
+	@echo "Verify sonar token from kube secret has been mounted" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
 	
-	@echo "Running go test" | tee "${ARTIFACT_DIR}/sonar.log"
-	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json "${ARTIFACT_DIR}/sonar_gotest.json"
+	@echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"
 	
-	@echo "Running gosec" | tee "${ARTIFACT_DIR}/sonar.log"
-	gosec -fmt sonarqube -no-fail ./... | tee gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
+	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	gosec -fmt sonarqube -no-fail ./... | tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
-	@echo "Starting Sonar Scanner" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "JOB_TYPE=${JOB_TYPE}" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "REPO_OWNER=${REPO_OWNER}" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee "${ARTIFACT_DIR}/sonar.log"
+	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_OWNER}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACT_DIR}/sonar.log"
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee -a "${ARTIFACT_DIR}/sonar.log"
 
 
 .PHONY: sonar/go/openshiftci-post
 ## Run SonarCloud analysis for Go on OpenShift CI as a post-submit job. This will not be run during local development.
 sonar/go/openshiftci-post: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
 sonar/go/openshiftci-post:
-	@echo "Verify sonar token from kube secret has been mounted" | tee "${ARTIFACT_DIR}/sonar.log"
-	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee "${ARTIFACT_DIR}/sonar.log"; exit 1 ; fi
+	@echo "Verify sonar token from kube secret has been mounted" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log"; exit 1 ; fi
 	
-	@echo "Running go test" | tee "${ARTIFACT_DIR}/sonar.log"
-	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee report.json "${ARTIFACTS}/sonar_gotest.json"
+	@echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACTS}/sonar_gotest.json"
 	
-	@echo "Running gosec" | tee "${ARTIFACT_DIR}/sonar.log"
-	gosec -fmt sonarqube -no-fail ./... | tee gosec.json "${ARTIFACTS}/sonar_gosec.json"
+	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	gosec -fmt sonarqube -no-fail ./... | tee -a gosec.json "${ARTIFACTS}/sonar_gosec.json"
 	
-	@echo "Starting Sonar Scanner" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "JOB_TYPE=${JOB_TYPE}" | tee "${ARTIFACT_DIR}/sonar.log"
-	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee "${ARTIFACT_DIR}/sonar.log"
+	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "postsubmit" ]]; then \
 		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee "${ARTIFACTS}/sonar.log"
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug | tee -a "${ARTIFACTS}/sonar.log"
 
 
 # This expects that your code uses Jest to execute tests.
