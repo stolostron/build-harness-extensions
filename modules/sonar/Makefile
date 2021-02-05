@@ -44,7 +44,10 @@ sonar/go/openshiftci:
 		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
 	fi
 	
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+		-Dsonar.organization=open-cluster-management \
+		-Dsonar.host.url=https://sonarcloud.io \
+		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
 .PHONY: sonar/go/openshiftci-post
@@ -69,7 +72,10 @@ sonar/go/openshiftci-post:
 		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
 	fi
 	
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} --debug > >(tee -a "${ARTIFACTS}/sonar.log")
+	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+		-Dsonar.organization=open-cluster-management \
+		-Dsonar.host.url=https://sonarcloud.io \
+		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
 # This expects that your code uses Jest to execute tests.
