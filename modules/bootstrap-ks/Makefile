@@ -15,6 +15,7 @@ BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 
 OC_CLUSTER_USER ?= $(BOOTSTRAP_KS_HOST_USER)
 OC_CLUSTER_PASS ?= $(BOOTSTRAP_KS_HOST_PASS)
+OC_CLUSTER_TOKEN ?= $(BOOTSTRAP_KS_HOST_TOKEN)
 OC_CLUSTER_API ?= $(BOOTSTRAP_KS_HOST_API)
 
 CLUSTER_NAME_PREFIX ?= canary
@@ -37,9 +38,6 @@ JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 bootstrap-ks/_init: %_init:
 	$(call assert-set,GITHUB_TOKEN)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
-#	$(call assert-set,BOOTSTRAP_KS_HOST_TOKEN)
 	@$(SELF) -s jq/install 2>&1 > /dev/null
 	@if [ ! -e "$(BOOTSTRAP_KS_DEPLOY_DIR)" ]; then \
 		git clone --single-branch --branch $(BOOTSTRAP_KS_BRANCH) $(BOOTSTRAP_KS_REPO); \
@@ -49,24 +47,106 @@ bootstrap-ks/_init: %_init:
 
 
 .PHONY: bootstrap-ks/get-cluster-kubeconfig
-## Get *KS cluster KUBECONFIG
+## Get cluster KUBECONFIG from secret
 bootstrap-ks/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-username
+## Get cluster username from secret
+bootstrap-ks/get-cluster-username: %get-cluster-username: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.username | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-password
+## Get cluster password from secret
+bootstrap-ks/get-cluster-password: %get-cluster-password: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.password | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-api
+## Get cluster api from secret
+bootstrap-ks/get-cluster-api: %get-cluster-api: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.api_url | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-console
+## Get cluster console from secret
+bootstrap-ks/get-cluster-console: %get-cluster-console: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.console_url | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-type
+## Get cluster type from secret
+bootstrap-ks/get-cluster-type: %get-cluster-type: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r '.metadata.labels[\"bootstrap-ks-type\"]'"
+
+.PHONY: bootstrap-ks/get-cluster-metadata
+## takes in a BOOTSTRAP_KS_CLUSTER_NAME and host api and extracts credentials for access - outputting into a single JSON and `kubeconfig` file
+bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_METADATA_FILE)
+	@$(SELF) -s bootstrap-ks/get-cluster-type > .ct
+	@$(SELF) -s bootstrap-ks/get-cluster-kubeconfig > $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig
+	@if [[ `cat .ct` == "clusterclaim" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-username > .un; \
+		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
+		$(SELF) -s bootstrap-ks/get-cluster-api > .api; \
+		$(SELF) -s bootstrap-ks/get-cluster-console > .con; fi;
+	@echo "{}" > gc1.json
+	@$(JQ) --arg type `cat .ct` '. + {type: $$type}' gc1.json > .tmp; mv .tmp gc1.json
+	@$(JQ) --arg kubeconfig $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig '. + {kubeconfig: $$kubeconfig}' gc1.json > .tmp; mv .tmp gc1.json
+	@if [[ `cat .ct` == "clusterclaim" ]]; then \
+		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > .tmp; mv .tmp gc1.json; fi;
+	@cat gc1.json > $(BOOTSTRAP_KS_METADATA_FILE)
+	@rm -f .ct .un .pw .api .con gc1.json
+	@cat $(BOOTSTRAP_KS_METADATA_FILE)
 
 .PHONY: bootstrap-ks/delete-secret
 ## Delete *KS secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/delete-secret: %delete-secret: %_init
 	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="delete secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME)"
+
+
+##======= OpenShift ===========================
+
+.PHONY: bootstrap-ks/ocp-save-secret
+## Save OCP metadata and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true --bootstrap-ks-type=ocp
+bootstrap-ks/ocp-save-secret: %ocp-save-secret: %_init
+	$(call assert-set,BOOTSTRAP_KS_OCP_CONSOLE_URL)
+	$(call assert-set,BOOTSTRAP_KS_OCP_API_URL)
+	$(call assert-set,BOOTSTRAP_KS_OCP_USERNAME)
+	$(call assert-set,BOOTSTRAP_KS_OCP_PASSWORD)
+	$(call assert-set,BOOTSTRAP_KS_OCP_KUBECONFIG_FILE)
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
+		--from-file=kubeconfig=$(BOOTSTRAP_KS_OCP_KUBECONFIG_FILE) \
+		--from-literal=username=$(BOOTSTRAP_KS_OCP_USERNAME) \
+		--from-literal=password=$(BOOTSTRAP_KS_OCP_PASSWORD) \
+		--from-literal=api_url=$(BOOTSTRAP_KS_OCP_API_URL) \
+		--from-literal=console_url=$(BOOTSTRAP_KS_OCP_CONSOLE_URL)"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-type=clusterclaim"
 
 
 ##======= Azure Kubernetes Service ===========================
@@ -101,8 +181,6 @@ bootstrap-ks/aks-get-cluster-name: %aks-get-cluster-name: %_init
 bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
@@ -112,8 +190,6 @@ bootstrap-ks/aks-get-cluster-json: %aks-get-cluster-json: %_init
 bootstrap-ks/aks-get-cluster-kubeconfig: %aks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_AKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_AKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
@@ -162,8 +238,6 @@ bootstrap-ks/eks-get-cluster-name: %eks-get-cluster-name: %_init
 bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
@@ -173,8 +247,6 @@ bootstrap-ks/eks-get-cluster-json: %eks-get-cluster-json: %_init
 bootstrap-ks/eks-get-cluster-kubeconfig: %eks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_EKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
@@ -223,8 +295,6 @@ bootstrap-ks/gke-get-cluster-name: %gke-get-cluster-name: %_init
 bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
@@ -234,8 +304,6 @@ bootstrap-ks/gke-get-cluster-json: %gke-get-cluster-json: %_init
 bootstrap-ks/gke-get-cluster-kubeconfig: %gke-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_GKE_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
@@ -281,8 +349,6 @@ bootstrap-ks/iks-get-cluster-name: %iks-get-cluster-name: %_init
 bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
@@ -291,8 +357,6 @@ bootstrap-ks/iks-get-cluster-json: %iks-get-cluster-json: %_init
 bootstrap-ks/iks-get-cluster-kubeconfig: %iks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_IKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
@@ -337,8 +401,6 @@ bootstrap-ks/roks-get-cluster-name: %roks-get-cluster-name: %_init
 bootstrap-ks/roks-get-cluster-json: %roks-get-cluster-json: %_init
 	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
 
@@ -347,8 +409,6 @@ bootstrap-ks/roks-get-cluster-json: %roks-get-cluster-json: %_init
 bootstrap-ks/roks-get-cluster-kubeconfig: %roks-get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_ROKS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
-	$(call assert-set,BOOTSTRAP_KS_HOST_USER)
-	$(call assert-set,BOOTSTRAP_KS_HOST_PASS)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
 
