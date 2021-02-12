@@ -86,6 +86,22 @@ bootstrap-ks/get-cluster-console: %get-cluster-console: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.console_url | base64 -d"
 
+.PHONY: bootstrap-ks/get-cluster-claim
+## Get cluster claim from secret
+bootstrap-ks/get-cluster-claim: %get-cluster-claim: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.clusterclaim | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-claim-namespace
+## Get cluster claim from secret
+bootstrap-ks/get-cluster-claim-namespace: %get-cluster-claim-namespace: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.clusterclaim_namespace | base64 -d"
+
 .PHONY: bootstrap-ks/get-cluster-type
 ## Get cluster type from secret
 bootstrap-ks/get-cluster-type: %get-cluster-type: %_init
@@ -106,6 +122,8 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 		$(SELF) -s bootstrap-ks/get-cluster-username > .un; \
 		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
 		$(SELF) -s bootstrap-ks/get-cluster-api > .api; \
+		$(SELF) -s bootstrap-ks/get-cluster-claim > .cc; \
+		$(SELF) -s bootstrap-ks/get-cluster-claim > .ccns; \
 		$(SELF) -s bootstrap-ks/get-cluster-console > .con; fi;
 	@echo "{}" > gc1.json
 	@$(JQ) --arg type `cat .ct` '. + {type: $$type}' gc1.json > .tmp; mv .tmp gc1.json
@@ -114,10 +132,35 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg clusterclaim `cat .cc` '. + {clusterclaim: $$clusterclaim}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg clusterclaim_namespace `cat .ccns` '. + {clusterclaim_namespace: $$clusterclaim_namespace}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > .tmp; mv .tmp gc1.json; fi;
 	@cat gc1.json > $(BOOTSTRAP_KS_METADATA_FILE)
-	@rm -f .ct .un .pw .api .con gc1.json
+	@rm -f .ct .cc .ccns .un .pw .api .con gc1.json
 	@cat $(BOOTSTRAP_KS_METADATA_FILE)
+
+.PHONY: bootstrap-ks/delete-cluster
+## Delete a target cluster cluster. 
+bootstrap-ks/delete-cluster: %delete-cluster: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s bootstrap-ks/get-cluster-type > .ct
+	@if [[ `cat .ct` == "clusterclaim" ]]; then \
+		$(SELF) bootstrap-ks/clusterclaim-delete-cluster \
+			BOOTSTRAP_KS_CC_NAME=`$(SELF) bootstrap-ks/get-cluster-claim` \
+			BOOTSTRAP_KS_CC_NAMESPACE=`$(SELF) bootstrap-ks/get-cluster-claim-namespace`; \
+	elif [[ `cat .ct` == "aks" ]]; then \
+		$(SELF) boostrap-ks/aks-delete-cluster; \
+	elif [[ `cat .ct` == "eks" ]]; then \
+		$(SELF) boostrap-ks/eks-delete-cluster; \
+	elif [[ `cat .ct` == "iks" ]]; then \
+		$(SELF) boostrap-ks/iks-delete-cluster; \
+	elif [[ `cat .ct` == "roks" ]]; then \
+		$(SELF) boostrap-ks/roks-delete-cluster; \
+	elif [[ `cat .ct` == "gke" ]]; then \
+		$(SELF) boostrap-ks/gke-delete-cluster; \
+	fi;
 
 .PHONY: bootstrap-ks/delete-secret
 ## Delete *KS secret.  You can filter these secrets using --selector=bootstrap-ks=true
@@ -130,24 +173,37 @@ bootstrap-ks/delete-secret: %delete-secret: %_init
 
 ##======= OpenShift ===========================
 
-.PHONY: bootstrap-ks/ocp-save-secret
+.PHONY: bootstrap-ks/clusterclaim-save-secret
 ## Save OCP metadata and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true --bootstrap-ks-type=ocp
-bootstrap-ks/ocp-save-secret: %ocp-save-secret: %_init
-	$(call assert-set,BOOTSTRAP_KS_OCP_CONSOLE_URL)
-	$(call assert-set,BOOTSTRAP_KS_OCP_API_URL)
-	$(call assert-set,BOOTSTRAP_KS_OCP_USERNAME)
-	$(call assert-set,BOOTSTRAP_KS_OCP_PASSWORD)
-	$(call assert-set,BOOTSTRAP_KS_OCP_KUBECONFIG_FILE)
+bootstrap-ks/clusterclaim-save-secret: %clusterclaim-save-secret: %_init
+	$(call assert-set,BOOTSTRAP_KS_CC_CONSOLE_URL)
+	$(call assert-set,BOOTSTRAP_KS_CC_API_URL)
+	$(call assert-set,BOOTSTRAP_KS_CC_USERNAME)
+	$(call assert-set,BOOTSTRAP_KS_CC_PASSWORD)
+	$(call assert-set,BOOTSTRAP_KS_CC_KUBECONFIG_FILE)
+	$(call assert-set,BOOTSTRAP_KS_CC_NAME)
+	$(call assert-set,BOOTSTRAP_KS_CC_NAMESPACE)
 	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
-		--from-file=kubeconfig=$(BOOTSTRAP_KS_OCP_KUBECONFIG_FILE) \
-		--from-literal=username=$(BOOTSTRAP_KS_OCP_USERNAME) \
-		--from-literal=password=$(BOOTSTRAP_KS_OCP_PASSWORD) \
-		--from-literal=api_url=$(BOOTSTRAP_KS_OCP_API_URL) \
-		--from-literal=console_url=$(BOOTSTRAP_KS_OCP_CONSOLE_URL)"
+		--from-file=kubeconfig=$(BOOTSTRAP_KS_CC_KUBECONFIG_FILE) \
+		--from-literal=username=$(BOOTSTRAP_KS_CC_USERNAME) \
+		--from-literal=password=$(BOOTSTRAP_KS_CC_PASSWORD) \
+		--from-literal=api_url=$(BOOTSTRAP_KS_CC_API_URL) \
+		--from-literal=console_url=$(BOOTSTRAP_KS_CC_CONSOLE_URL) \
+		--from-literal=clusterclaim_namespace=$(BOOTSTRAP_KS_CC_NAMESPACE) \
+		--from-literal=clusterclaim=$(BOOTSTRAP_KS_CC_NAME)"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-type=clusterclaim"
 
+
+.PHONY: bootstrap-ks/clusterclaim-delete-cluster
+## Delete the clusterclaim - usually one associated with a clusterclaim-type secret as a pre-req for running bootstrap-ks/delete-secret
+bootstrap-ks/clusterclaim-delete-cluster: %clusterclaim-delete-cluster: %_init
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	$(call assert-set,BOOTSTRAP_KS_CC_NAME)
+	$(call assert-set,BOOTSTRAP_KS_CC_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim -n $(BOOTSTRAP_KS_CC_NAMESPACE) $(BOOTSTRAP_KS_CC_NAME)"
 
 ##======= Azure Kubernetes Service ===========================
 
