@@ -1,5 +1,5 @@
 CURL := $(shell which curl 2> /dev/null)
-YQ_VERSION ?= 3.2.1
+YQ_VERSION ?= v4.5.1
 YQ_URL ?= https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(BUILD_HARNESS_OS)_$(BUILD_HARNESS_ARCH)
 YQ ?= $(BUILD_HARNESS_PATH)/vendor/yq
 
