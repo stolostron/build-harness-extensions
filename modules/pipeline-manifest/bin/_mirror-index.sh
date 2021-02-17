@@ -57,7 +57,7 @@ fi
 
 # Mirror the images we explicitly build
 echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
-cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
+#cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
 if [[ ! -s .ashdod_output ]]; then
   echo No output from ashdod\; aborting
   exit 1
@@ -76,6 +76,7 @@ if [[ "$tempy" = "" ]]; then
 else
   ocwd=$(pwd)
   pushd . && cd $tempy && $OC image extract quay.io/acm-d/acm-operator-bundle:$(cat $ocwd/.acm_operator_bundle_tag) --file=extras/* && popd
+  cp $tempy/$(ls $tempy/) acm-operator-bundle-manifest.json
   cat $tempy/$(ls $tempy/) | jq -rc '.[]' | while IFS='' read item;do
     remote=$(echo $item | jq -r '.["image-remote"]')
     if [[ "registry.redhat.io/openshift4" = "$remote" ]]
