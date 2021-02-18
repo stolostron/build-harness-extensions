@@ -54,10 +54,14 @@ if [ -d release ];  \
     then cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
     else git clone -b release-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:open-cluster-management/release.git release; \
 fi
+if [ -d pipeline ];  \
+    then cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
+    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/pipeline.git pipeline; \
+fi
 
-# Mirror the images we explicitly build
+# Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
 echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
-#cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
+cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
 if [[ ! -s .ashdod_output ]]; then
   echo No output from ashdod\; aborting
   exit 1
