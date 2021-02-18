@@ -5,6 +5,11 @@ CLUSTERPOOL_HOST_API ?=
 CLUSTERPOOL_HOST_USER ?=
 CLUSTERPOOL_HOST_PASS ?=
 CLUSTERPOOL_HOST_TOKEN ?=
+ifdef CLUSTERPOOL_HOST_PROW_KUBE_SECRET
+  CLUSTERPOOL_HOST_USER := ""
+  CLUSTERPOOL_HOST_PASS := ""
+  CLUSTERPOOL_HOST_TOKEN := $(shell cat /etc/$(CLUSTERPOOL_HOST_PROW_KUBE_SECRET)/token)
+endif
 # Namespace where Hive ClusterPool resources reside
 CLUSTERPOOL_HOST_NAMESPACE ?= clusterpool
 # Namespace where the Hive pods reside on the cluster indciated in CLUSTERPOOL_HOST_API, usually "hive"
