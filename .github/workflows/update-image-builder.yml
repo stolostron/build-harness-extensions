@@ -12,6 +12,6 @@ jobs:
         run: |
           git clone "https://${{ secrets.PROW_BOT_TOKEN }}@github.com/open-cluster-management/image-builder.git"
           cd image-builder
-          echo "$GITHUB_REPOSITRY@%GITHUB_SHA" > .trigger-openshift-ci"
+          echo "$GITHUB_REPOSITORY@%GITHUB_SHA" > .trigger-openshift-ci
           git commit -am "update .trigger-openshift-ci" --quiet
           git push --quiet
