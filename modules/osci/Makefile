@@ -45,6 +45,7 @@ OSCI_GIT_MESSAGE ?= Added or Updated $(OSCI_COMPONENT_NAME)
 OSCI_REPLACED_COMPONENT ?=
 OSCI_DELETED_COMPONENT ?=
 
+OSCI_JQ ?= jq
 OSCI_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(OSCI_COMPONENT_NAME)")
 OSCI_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_COMPONENT_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)", "image-remote-src": "$(OSCI_IMAGE_REMOTE_REPO_SRC)"}
 OSCI_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(OSCI_DELETED_COMPONENT)")
@@ -66,7 +67,8 @@ osci/_datetime_gen: %_datetime_gen:
 .PHONY: osci/_sort
 # Parse the configured pipeline manifest repo
 osci/_sort: %_sort:
-	@$(JQ) '$(OSCI_SORT_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp; mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
+	@$(OSCI_JQ) '$(OSCI_SORT_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp
+	@mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
 
 .PHONY: osci/_pull
 # Pull the configured pipeline repo
@@ -112,12 +114,12 @@ osci/_push: %_push: %_clone
 .PHONY: osci/_read_alias
 # Locate the component name in the alias json
 osci/_read_alias: %_read_alias: %_clone
-	@$(JQ) '$(OSCI_MANIFEST_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_IMAGE_ALIAS_FILENAME)
+	@$(OSCI_JQ) '$(OSCI_MANIFEST_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_IMAGE_ALIAS_FILENAME)
 
 .PHONY: osci/_read
 # Parse the configured pipeline manifest repo
 osci/_read: %_read: %_clone
-	@$(JQ) '$(OSCI_MANIFEST_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
+	@$(OSCI_JQ) '$(OSCI_MANIFEST_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
 
 .PHONY: osci/add
 # Add component named $OSCI_COMPONENT_NAME at version $OSCI_COMPONENT_VERSION to the pipeline manifest in stage $OSCI_PIPELINE_STAGE
@@ -131,7 +133,8 @@ osci/_add: %_add:
 	$(call assert-set,OSCI_COMPONENT_VERSION)
 	$(call assert-set,OSCI_COMPONENT_REPO)
 	$(call assert-set,OSCI_COMPONENT_SHA256)
-	@$(JQ) '$(OSCI_ADDITION_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp; mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
+	@$(OSCI_JQ) '$(OSCI_ADDITION_QUERY)' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp
+	@mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
 
 .PHONY: osci/replace
 ## Remove component named $OSCI_REPLACED_COMPONENT and add component named $OSCI_COMPONENT_NAME at version $OSCI_COMPONENT_VERSION in stage $OSCI_PIPELINE_STAGE
@@ -156,7 +159,8 @@ osci/delete: %delete: %_clone %_delete
 # Remove component named $OSCI_DELETED_COMPONENT from $OSCI_PIPELINE_STAGE's manifest pipeline
 osci/_delete: %_delete:
 	$(call assert-set,OSCI_DELETED_COMPONENT)
-	@$(JQ) '[$(OSCI_DELETION_QUERY)]' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp; mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
+	@$(OSCI_JQ) '[$(OSCI_DELETION_QUERY)]' $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME) > tmp
+	@mv tmp $(OSCI_MANIFEST_DIR)/$(OSCI_MANIFEST_FILENAME)
 
 .PHONY: osci/publish
 ## Add or update component $OSCI_COMPONENT_NAME to have version $OSCI_COMPONENT_VERSION in the pipeline manifest in stage $OSCI_PIPELINE_STAGE
