@@ -22,7 +22,7 @@ then
   echo "Using GITHUB_USER and GITHUB_TOKEN for authentication"
   REPO_URL=${REPO_URL/https:\/\//https:\/\/${GITHUB_USER}\:${GITHUB_TOKEN}@}
 fi
-git clone -b ${RELEASE_MAIN_BRANCH} ${REPO_URL} repo-copy
+git clone -b ${RELEASE_MAIN_BRANCH} "${REPO_URL}" repo-copy
 cd repo-copy
 if ! git checkout -b ${RELEASE_FF_BRANCH} origin/${RELEASE_FF_BRANCH}
 then
