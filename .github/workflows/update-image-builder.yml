@@ -12,6 +12,8 @@ jobs:
         run: |
           git clone "https://${{ secrets.PROW_BOT_TOKEN }}@github.com/open-cluster-management/image-builder.git"
           cd image-builder
+          git config --global user.email "acm-cicd@redhat.com"
+          git config --global user.name "ACM CICD"
           echo "$GITHUB_REPOSITORY@$GITHUB_SHA" > .trigger-openshift-ci
           git commit -am "update .trigger-openshift-ci" --quiet
           git push --quiet
