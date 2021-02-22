@@ -25,11 +25,11 @@ sonar/go/openshiftci:
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
 	
 	@echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json")
+	-go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json")
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 	
 	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json")
+	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json")
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
@@ -59,11 +59,11 @@ sonar/go/openshiftci-post:
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log"; exit 1 ; fi
 	
 	@echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACTS}/sonar_gotest.json")
+	-go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACTS}/sonar_gotest.json")
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 	
 	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACTS}/sonar_gosec.json")
+	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACTS}/sonar_gosec.json")
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
