@@ -16,7 +16,13 @@ then
 fi
 
 rm -rf repo-copy
-git clone -b ${RELEASE_MAIN_BRANCH} $(git remote get-url origin) repo-copy
+REPO_URL=$(git remote get-url origin)
+if [[ -n "$GITHUB_USER" && -n "$GITHUB_TOKEN" ]]
+then
+  echo "Using GITHUB_USER and GITHUB_TOKEN for authentication"
+  REPO_URL=${REPO_URL/https:\/\//https:\/\/${GITHUB_USER}\:${GITHUB_TOKEN}@}
+fi
+git clone -b ${RELEASE_MAIN_BRANCH} ${REPO_URL} repo-copy
 cd repo-copy
 if ! git checkout -b ${RELEASE_FF_BRANCH} origin/${RELEASE_FF_BRANCH}
 then
