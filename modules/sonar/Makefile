@@ -21,23 +21,23 @@ sonar/go: go/gosec-install
 sonar/go/openshiftci: SHELL:=/bin/bash
 sonar/go/openshiftci: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/null)"
 sonar/go/openshiftci:
-	@echo "Verify sonar token from kube secret has been mounted" | tee -a "${ARTIFACTS}/sonar.log"
-	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACTS}/sonar.log" ; exit 1 ; fi
+	@echo "Verify sonar token from kube secret has been mounted" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
 	
-	@echo "Running go test" | tee -a "${ARTIFACTS}/sonar.log"
-	-go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACTS}/sonar_gotest.json")
-	@cp coverage.out "${ARTIFACTS}/coverage.out"
+	@echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	-go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} > >(tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json")
+	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 	
-	@echo "Running gosec" | tee -a "${ARTIFACTS}/sonar.log"
-	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACTS}/sonar_gosec.json")
+	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json")
 	
-	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACTS}/sonar.log"
-	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACTS}/sonar.log"
+	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
@@ -47,7 +47,7 @@ sonar/go/openshiftci:
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
 		-Dsonar.organization=open-cluster-management \
 		-Dsonar.host.url=https://sonarcloud.io \
-		--debug > >(tee -a "${ARTIFACTS}/sonar.log")
+		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
 .PHONY: sonar/go/openshiftci-post
