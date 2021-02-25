@@ -107,3 +107,7 @@ fi
 
 # Call make_index with acm
 make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
+
+# Create the downstream-upstream connected manifest
+echo Create the downstream-upstream connected manifest
+python3 -u $BIN_PATH/_generate_downstream_manifest.py
