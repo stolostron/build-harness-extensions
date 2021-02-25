@@ -210,10 +210,10 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 		echo .... git-sha is `cat GIT_SHA` ; \
 		echo .. Copying from OpenShift CI to Quay ; \
 		OSCI_REMOTE="`cat IMAGE_REMOTE_SRC`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
-		SLACK_MESSAGE_PREP="pipeline/quay_retag (_osci_to_quay): :red_circle: Failure in <$$TRAVIS_BUILD_WEB_URL|retag> commit: \`$$TRAVIS_COMMIT_MESSAGE\`: osci push image $$OSCI_REMOTE to quay failed" ; \
 		echo .... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
 		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
+		SLACK_MESSAGE_PREP="pipeline/quay_retag (_osci_to_quay): :red_circle: Failure in <$$TRAVIS_BUILD_WEB_URL|retag> commit: \`$$TRAVIS_COMMIT_MESSAGE\`: osci push image $$OSCI_REMOTE to quay $$QUAY_REMOTE failed" ; \
  		echo .... Retagging to $$QUAY_REMOTE ; \
  		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
  		echo .... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
