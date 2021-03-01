@@ -5,11 +5,11 @@ BOOTSTRAP_KS_DEPLOY_DIR ?= bootstrap-ks
 
 #---Login/Host-cluster related env vars---#
 # API URL of the cluster running the target clusterpool, used in oc login, so port :6443 is required
-BOOTSTRAP_KS_HOST_API ?=
+BOOTSTRAP_KS_HOST_API ?= $(CLUSTERPOOL_HOST_API)
 # Access credentials used to log in to cluster indciated in BOOTSTRAP_KS_HOST_API
-BOOTSTRAP_KS_HOST_USER ?=
-BOOTSTRAP_KS_HOST_PASS ?=
-BOOTSTRAP_KS_HOST_TOKEN ?=
+BOOTSTRAP_KS_HOST_USER ?= $(CLUSTERPOOL_HOST_USER)
+BOOTSTRAP_KS_HOST_PASS ?= $(CLUSTERPOOL_HOST_PASS)
+BOOTSTRAP_KS_HOST_TOKEN ?= $(CLUSTERPOOL_HOST_TOKEN)
 # Namespace where Hive ClusterPool resources reside
 BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 
