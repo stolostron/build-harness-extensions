@@ -35,18 +35,18 @@ sonar/go/prow:
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
-		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log" \
+		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
-	elif [[ "${JOB_TYPE}" == "postsubmit" ]]; then \ 
+	elif [[ "${JOB_TYPE}" == "postsubmit" ]]; then \
 		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
 	else \
-		echo "Invalid JOB_TYPE ${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
-		exit 1
+		echo "Invalid JOB_TYPE ${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		exit 1 ; \
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
@@ -148,18 +148,18 @@ sonar/js/prow:
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
-		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" \
-		echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log" \
+		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		echo "BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "sonar.pullrequest.base=${PULL_BASE_REF}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.key=${PULL_NUMBER}" >> sonar-project.properties ; \
 		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
-	elif [[ "${JOB_TYPE}" == "postsubmit" ]]; then \ 
+	elif [[ "${JOB_TYPE}" == "postsubmit" ]]; then \
 		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
 	else \
-		echo "Invalid JOB_TYPE ${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
-		exit 1
+		echo "Invalid JOB_TYPE ${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
+		exit 1 ; \
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
