@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Execute all the mechanics of creating a custom catalog
 #  1. Make sure we can talk to brew to extract the downstream build contents
@@ -111,3 +112,10 @@ make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-regist
 # Create the downstream-upstream connected manifest
 echo Create the downstream-upstream connected manifest
 python3 -u $BIN_PATH/_generate_downstream_manifest.py
+# Push it to the pipeline repo
+cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
+cd pipeline
+git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
+git pull
+git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
+git push --quiet
