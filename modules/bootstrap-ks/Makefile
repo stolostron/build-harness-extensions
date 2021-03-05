@@ -168,8 +168,8 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 	@$(SELF) -s bootstrap-ks/get-secret-type > .st
 	@if [[ `cat .st` == "clusterclaim" ]]; then \
 		$(SELF) bootstrap-ks/clusterclaim-delete-cluster \
-			BOOTSTRAP_KS_CC_NAME=`$(SELF) bootstrap-ks/get-cluster-claim` \
-			BOOTSTRAP_KS_CC_NAMESPACE=`$(SELF) bootstrap-ks/get-cluster-claim-namespace`; \
+			BOOTSTRAP_KS_CC_NAME=`$(SELF) -s bootstrap-ks/get-cluster-claim` \
+			BOOTSTRAP_KS_CC_NAMESPACE=`$(SELF) -s bootstrap-ks/get-cluster-claim-namespace`; \
 	elif [[ `cat .st` == "aks" ]]; then \
 		$(SELF) boostrap-ks/aks-delete-cluster; \
 	elif [[ `cat .st` == "eks" ]]; then \
