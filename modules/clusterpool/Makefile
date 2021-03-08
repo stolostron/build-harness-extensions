@@ -207,7 +207,7 @@ clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 ## List all clusterclaims in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterclaims: %list-clusterclaims: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) -s oc/command OC_COMMAND="get clusterclaim.hive  -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
+	@$(SELF) -s oc/command OC_COMMAND="get clusterclaim.hive -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
 	
 .PHONY: clusterpool/list-clusterpools
 ## List all clusterpools in the CLUSTERPOOL_HOST_NAMESPACE
