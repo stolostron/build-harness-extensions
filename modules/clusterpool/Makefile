@@ -90,7 +90,7 @@ clusterpool/_init: %_init:
 # Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
 	@rm .ClusterClaim.json
 
@@ -124,7 +124,7 @@ clusterpool/delete-image-set: %delete-image-set: %_init
 	@$(SELF) oc/command OC_COMMAND="delete clusterimageset  -n $(CLUSTERPOOL_HIVE_NAMESPACE) $(CLUSTERPOOL_IMAGESET_NAME)"
 
 .PHONY: clusterpool/aws/create-clusterpool
-## Create a clusterpool on AWS
+## Create a ClusterPool on AWS
 clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -173,7 +173,7 @@ clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_NAME).az.clusterpool.yaml"
 
 .PHONY: clusterpool/gcp/create-clusterpool
-## Create a clusterpool on GCP
+## Create a ClusterPool on GCP
 clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
@@ -197,23 +197,23 @@ clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml"
 
 .PHONY: clusterpool/delete-clusterpool
-## Delete a clusterpool pointed to in CLUSTERPOOL_NAME (any platform)
+## Delete a ClusterPool pointed to in CLUSTERPOOL_NAME (any platform)
 clusterpool/delete-clusterpool: %delete-clusterpool: %_init
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) oc/command OC_COMMAND="delete clusterpool -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_NAME)"
+	@$(SELF) oc/command OC_COMMAND="delete clusterpool.hive -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_NAME)"
 
 .PHONY: clusterpool/list-clusterclaims
 ## List all clusterclaims in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterclaims: %list-clusterclaims: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) -s oc/command OC_COMMAND="get clusterclaim -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
+	@$(SELF) -s oc/command OC_COMMAND="get clusterclaim.hive -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
 	
 .PHONY: clusterpool/list-clusterpools
 ## List all clusterpools in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterpools: %list-clusterpools: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) -s oc/command OC_COMMAND="get clusterpools -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
+	@$(SELF) -s oc/command OC_COMMAND="get clusterpool.hive -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
 
 .PHONY: clusterpool/list-clusterimagesets
 ## List all clusterimagesets in the CLUSTERPOOL_HOST_NAMESPACE
@@ -298,7 +298,7 @@ clusterpool/delete-pull-secret: %delete-pull-secret: %_init
 	@$(SELF) oc/command OC_COMMAND="delete secret $(CLUSTERPOOL_PULL_SECRET_NAME) --namespace $(CLUSTERPOOL_HIVE_NAMESPACE)"
 
 .PHONY: clusterpool/_create-claim
-# Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME clusterpool in the CLUSTERPOOL_HOST_NAMESPACE namespace
+# Creates a cluster claim named CLUSTERPOOL_CLUSTER_CLAIM on the CLUSTERPOOL_NAME ClusterPool in the CLUSTERPOOL_HOST_NAMESPACE namespace
 clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
@@ -333,7 +333,7 @@ clusterpool/_create-claim: %_create-claim: %_init
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to check - and gathers relevant information about it
 clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterClaim $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
 	@if [ ! "`cat .namespace`" = "null" ]; then $(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null; else echo "{}" > .ClusterDeployment.json; fi
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json .ClusterDeployment.json
 
@@ -341,7 +341,7 @@ clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 # Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
 clusterpool/_delete-claim: %_delete-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim $(CLUSTERPOOL_CLUSTER_CLAIM) -n $(CLUSTERPOOL_HOST_NAMESPACE)"
+	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -n $(CLUSTERPOOL_HOST_NAMESPACE)"
 
 .PHONY: clusterpool/checkout
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to wait for successful cluster checkout
