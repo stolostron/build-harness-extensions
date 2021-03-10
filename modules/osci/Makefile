@@ -184,6 +184,7 @@ osci/_publish: %_publish:
 	@echo `date`: Waiting $(OSCI_PUBLISH_DELAY) minutes for post commit images job to finish
 	@sleep $$(( $(OSCI_PUBLISH_DELAY) * 60 ))
 	@echo `date`: Done waiting
+	@cd $(OSCI_MANIFEST_DIR); $(GIT) pull --quiet
 	@if [ -z "$(SELF) -s osci/_read" ]; \
 	then $(SELF) osci/_add; \
 	else $(SELF) osci/_replace OSCI_REPLACED_COMPONENT=$(OSCI_COMPONENT_NAME); \
