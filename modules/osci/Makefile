@@ -34,6 +34,10 @@ OSCI_IMAGE_ALIAS_BASENAME ?= image-alias
 OSCI_IMAGE_ALIAS_FILENAME ?= $(OSCI_IMAGE_ALIAS_BASENAME).json
 OSCI_MANIFEST_SNAPSHOT_DIR ?= snapshots
 
+# How long to wait, in minutes, for the images job to finish before triggering
+# the actual work of the publish job.
+OSCI_PUBLISH_DELAY ?= 5
+
 OSCI_IMAGE_REMOTE_REPO ?= quay.io/open-cluster-management
 OSCI_IMAGE_REMOTE_REPO_SRC ?= $(OSCI_IMAGE_REMOTE_REPO)
 OSCI_IMAGE_REMOTE_REPO_DST ?= $(OSCI_IMAGE_REMOTE_REPO)
@@ -177,9 +181,9 @@ osci/_publish: %_publish:
 	then echo "Component $(OSCI_COMPONENT_NAME) does not have an entry in $(OSCI_MANIFEST_DIR)/$(OSCI_IMAGE_ALIAS_FILENAME)" ; echo "Failing the build." ; exit 1; \
 	else echo "Component $(OSCI_COMPONENT_NAME) has an entry in $(OSCI_MANIFEST_DIR)/$(OSCI_IMAGE_ALIAS_FILENAME)"; \
 	fi
-	@echo Waiting 5 minutes for post commit images job to finish. Starting at `date`
-	@sleep 300
-	@echo Done waiting at `date`
+	@echo `date`: Waiting $(OSCI_PUBLISH_DELAY) minutes for post commit images job to finish
+	@sleep $$(( $(OSCI_PUBLISH_DELAY) * 60 ))
+	@echo `date`: Done waiting
 	@if [ -z "$(SELF) -s osci/_read" ]; \
 	then $(SELF) osci/_add; \
 	else $(SELF) osci/_replace OSCI_REPLACED_COMPONENT=$(OSCI_COMPONENT_NAME); \
