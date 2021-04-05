@@ -47,8 +47,8 @@ make_index () {
 echo Preparing environment for release $Z_RELEASE_VERSION tagged as $PIPELINE_MANFIEST_INDEX_IMAGE_TAG...
 OC=$BUILD_HARNESS_PATH/vendor/oc
 BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
+
 rm -rf /tmp/acm-custom-registry
-brew hello
 if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
     else git clone -b master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
@@ -62,62 +62,71 @@ if [ -d pipeline ];  \
     else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/pipeline.git pipeline; \
 fi
 
-# Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
-echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
-cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
-if [[ ! -s .ashdod_output ]]; then
-  echo No output from ashdod\; aborting
-  exit 1
-fi
+if [[ -z $SKIP_MIRROR ]]; then
+  brew hello
+  # Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
+  echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
+  cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
+  if [[ ! -s .ashdod_output ]]; then
+    echo No output from ashdod\; aborting
+    exit 1
+  fi
 
-echo "acm-operator-bundle tag:"
-cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
-echo "klusterlet-operator-bundle tag:"
-cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
+  echo "acm-operator-bundle tag:"
+  cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
+  echo "klusterlet-operator-bundle tag:"
+  cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
 
-# Mirror the openshift images we depend on
-# Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
-tempy=$(mktemp -d)
-if [[ "$tempy" = "" ]]; then
-  echo Not doing it, no way, no how
+  # Mirror the openshift images we depend on
+  # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
+  tempy=$(mktemp -d)
+  if [[ "$tempy" = "" ]]; then
+    echo Not doing it, no way, no how
+  else
+    ocwd=$(pwd)
+    pushd . && cd $tempy && $OC image extract quay.io/acm-d/acm-operator-bundle:$(cat $ocwd/.acm_operator_bundle_tag) --file=extras/* && popd
+    cp $tempy/$(ls $tempy/) acm-operator-bundle-manifest.json
+    cat $tempy/$(ls $tempy/) | jq -rc '.[]' | while IFS='' read item;do
+      remote=$(echo $item | jq -r '.["image-remote"]')
+      if [[ "registry.redhat.io/openshift4" = "$remote" ]]
+      then
+        name=$(echo $item | jq -r '.["image-name"]')
+        tag=$(echo $item | jq -r '.["image-tag"]')
+        echo oc image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag
+        echo $($OC image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag)
+      fi
+    done
+    rm -rf $tempy
+  fi
 else
-  ocwd=$(pwd)
-  pushd . && cd $tempy && $OC image extract quay.io/acm-d/acm-operator-bundle:$(cat $ocwd/.acm_operator_bundle_tag) --file=extras/* && popd
-  cp $tempy/$(ls $tempy/) acm-operator-bundle-manifest.json
-  cat $tempy/$(ls $tempy/) | jq -rc '.[]' | while IFS='' read item;do
-    remote=$(echo $item | jq -r '.["image-remote"]')
-    if [[ "registry.redhat.io/openshift4" = "$remote" ]]
-    then
-      name=$(echo $item | jq -r '.["image-name"]')
-      tag=$(echo $item | jq -r '.["image-tag"]')
-      echo oc image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag
-      echo $($OC image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag)
-    fi
-  done
-  rm -rf $tempy
+  echo SKIP_MIRROR defined, skipping mirror
 fi
 
-# Do the dance to get our proper quay access
-docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
-export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
+if [[ -z $SKIP_INDEX ]]; then
+  # Do the dance to get our proper quay access
+  docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
+  export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
-# Call make_index with klusterlet, but it only came into being in 2.2
-if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.0" || "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.1" ]]; then echo No klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION;
+  # Call make_index with klusterlet, but it only came into being in 2.2
+  if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.0" || "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.1" ]]; then echo No klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION;
+  else
+    echo klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION
+    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
+  fi
+
+  # Call make_index with acm
+  make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
+
+  # Create the downstream-upstream connected manifest
+  echo Create the downstream-upstream connected manifest
+  python3 -u $BIN_PATH/_generate_downstream_manifest.py
+  # Push it to the pipeline repo
+  cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
+  cd pipeline
+  git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
+  git pull
+  git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
+  git push --quiet
 else
-	echo klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION
-	make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
+  echo SKIP_INDEX defined, skipping index makeage
 fi
-
-# Call make_index with acm
-make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
-
-# Create the downstream-upstream connected manifest
-echo Create the downstream-upstream connected manifest
-python3 -u $BIN_PATH/_generate_downstream_manifest.py
-# Push it to the pipeline repo
-cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
-cd pipeline
-git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
-git pull
-git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
-git push --quiet
