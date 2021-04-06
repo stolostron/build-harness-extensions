@@ -264,7 +264,7 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 		CLUSTERPOOL_HOST_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		CLUSTERPOOL_HOST_TOKEN=$(BOOTSTRAP_KS_HOST_TOKEN) > $(BUILD_HARNESS_PATH)/.co
 	@if [ -n "$(BOOTSTRAP_KS_DEBUG)" ]; then cat $(BUILD_HARNESS_PATH)/.co; cat $(BUILD_HARNESS_PATH)/.ap; fi
-	@$(SELF) oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
 		--from-file=kubeconfig=$(BUILD_HARNESS_PATH)/.kc \
 		--from-literal=username=`cat $(BUILD_HARNESS_PATH)/.un` \
 		--from-literal=password=`cat $(BUILD_HARNESS_PATH)/.pw` \
