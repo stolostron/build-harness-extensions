@@ -266,13 +266,13 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 	@if [ -n "$(BOOTSTRAP_KS_DEBUG)" ]; then cat $(BUILD_HARNESS_PATH)/.co; cat $(BUILD_HARNESS_PATH)/.ap; fi
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
 		--from-file=kubeconfig=$(BUILD_HARNESS_PATH)/.kc \
-		--from-literal=username="`cat $(BUILD_HARNESS_PATH)/.un`" \
-		--from-literal=password="`cat $(BUILD_HARNESS_PATH)/.pw`" \
-		--from-literal=api_url="`cat $(BUILD_HARNESS_PATH)/.ap`" \
-		--from-literal=console_url="`cat $(BUILD_HARNESS_PATH)/.co`" \
+		--from-literal=username=`cat $(BUILD_HARNESS_PATH)/.un` \
+		--from-literal=password=`cat $(BUILD_HARNESS_PATH)/.pw` \
+		--from-literal=api_url=`cat $(BUILD_HARNESS_PATH)/.ap` \
+		--from-literal=console_url=`cat $(BUILD_HARNESS_PATH)/.co` \
 		--from-literal=clusterclaim_namespace=$(BOOTSTRAP_KS_CC_NAMESPACE) \
 		--from-literal=cloud_platform=$(BOOTSTRAP_KS_CLOUD_PLATFORM) \
-		--from-literal=clusterclaim=$(BOOTSTRAP_KS_CC_NAME)
+		--from-literal=clusterclaim=$(BOOTSTRAP_KS_CC_NAME)"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks=false"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-type=ocp"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=clusterclaim"
