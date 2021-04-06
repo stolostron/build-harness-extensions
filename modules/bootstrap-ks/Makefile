@@ -13,6 +13,8 @@ BOOTSTRAP_KS_HOST_TOKEN ?= $(CLUSTERPOOL_HOST_TOKEN)
 # Namespace where Hive ClusterPool resources reside
 BOOTSTRAP_KS_HOST_NAMESPACE ?= clusterpool
 
+BOOTSTRAP_KS_DEBUG ?= $(CLUSTERPOOL_DEBUG)
+
 OC_CLUSTER_USER ?= $(BOOTSTRAP_KS_HOST_USER)
 OC_CLUSTER_PASS ?= $(BOOTSTRAP_KS_HOST_PASS)
 OC_CLUSTER_TOKEN ?= $(BOOTSTRAP_KS_HOST_TOKEN)
@@ -261,6 +263,7 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 		CLUSTERPOOL_HOST_USER=$(BOOTSTRAP_KS_HOST_USER) \
 		CLUSTERPOOL_HOST_PASS=$(BOOTSTRAP_KS_HOST_PASS) \
 		CLUSTERPOOL_HOST_TOKEN=$(BOOTSTRAP_KS_HOST_TOKEN) > $(BUILD_HARNESS_PATH)/.co
+	@if [ -n "$(BOOTSTRAP_KS_DEBUG)" ]; then cat $(BUILD_HARNESS_PATH)/.co; cat $(BUILD_HARNESS_PATH)/.ap; fi
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) \
 		--from-file=kubeconfig=$(BUILD_HARNESS_PATH)/.kc \
 		--from-literal=username=`cat $(BUILD_HARNESS_PATH)/.un` \
@@ -273,7 +276,7 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks=false"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-type=ocp"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=clusterclaim"
-	@rm -f .co .ap .pw .un .kc
+	@rm -f $(BUILD_HARNESS_PATH)/.co $(BUILD_HARNESS_PATH)/.ap $(BUILD_HARNESS_PATH)/.pw $(BUILD_HARNESS_PATH)/.un $(BUILD_HARNESS_PATH)/.kc
 
 
 .PHONY: bootstrap-ks/clusterclaim-delete-cluster
