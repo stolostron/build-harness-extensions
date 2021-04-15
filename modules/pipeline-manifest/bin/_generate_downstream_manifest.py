@@ -20,15 +20,17 @@ build_names = []
 release_manifest = []
 
 def get_upstream_sha(container, sha):
-    #print('looking for container {} with sha {}'.format(container,sha))
+    # print('looking for container {} with sha {}'.format(container,sha))
     req_string = 'http://dist-git.host.prod.eng.bos.redhat.com/cgit/containers/{}/plain/container.yaml?id={}'.format(container,sha)
-    #print (req_string)
+    # print (req_string)
     res = requests.get(
         req_string
     )
-    #print(res.text)
-    result = re.search("ref: (.*)", res.text)
-    return result.group(1)
+    try:
+        result = re.search("ref: (.*)", res.text).group(1)
+    except:
+        result = None
+    return result
 
 def contains_key_val(key, val, return_key, image_alias):
     ret_val = None
@@ -39,18 +41,18 @@ def contains_key_val(key, val, return_key, image_alias):
             except:
                 ret_val = None
             break
-    #print('does key {} have value {} in image_alias?  Here it is: {}'.format(key, val, ret_val))
+    # print('does key {} have value {} in image_alias?  Here it is: {}'.format(key, val, ret_val))
     return ret_val
 
 def get_val(key, my_dict):
-    #print('what value corresponds with key {} in dictionary?'.format(key))
+    # print('what value corresponds with key {} in dictionary?'.format(key))
     ret_val = None
     for element in my_dict:
-        #print("element: {}".format(element))
+        # print("element: {}".format(element))
         if element['image-downstream-name'] == key:
             ret_val = element
             break
-    #print('what value corresponds with key {} in dictionary? {}'.format(key, ret_val))
+    # print('what value corresponds with key {} in dictionary? {}'.format(key, ret_val))
     return ret_val
 
 def get_key_downstream(key, my_dict):
@@ -72,7 +74,7 @@ def get_matching_entry(value, field, my_dict):
         if element[field] == value:
             ret_val = element
             break
-    print('what entry corresponds with value {} in field {} in dictionary? {}'.format(value, field, ret_val))
+    # print('what entry corresponds with value {} in field {} in dictionary? {}'.format(value, field, ret_val))
     return ret_val
 
 def main():
@@ -130,10 +132,10 @@ def main():
         print('ERROR: no {} file found.'.format(release_manifest_filename))
         release_manifest = []
 
-    print('Number of images in upstream manifest: {}'.format(len(manifest)))
-    print('Number of ashdod build images: {}'.format(len(build_names)))
-    print('Number of aliases in image_alias: {}'.format(len(image_alias)))
-    print('Number of images in acm-operator-bundle: {}'.format(len(release_manifest)))
+    print('Number of images in upstream manifest, {}: {}'.format(manifest_filename,len(manifest)))
+    print('Number of ashdod build images, {}: {}'.format(build_name_filename,len(build_names)))
+    print('Number of aliases in image_alias, {}: {}'.format(image_alias_filename,len(image_alias)))
+    print('Number of images in acm-operator-bundle, {}: {}'.format(release_manifest_filename,len(release_manifest)))
 
     for image in manifest:
         downstream_image = contains_key_val('image-name',image['image-name'],'image-downstream',image_alias)
@@ -166,7 +168,10 @@ def main():
                 image['image-downstream-version'] = downstream_image_element['image-downstream-version']
                 image['image-downstream-remote'] = 'quay.io/acm-d'
                 image['image-downstream-digest'] = downstream_image_element['image-downstream-digest']
-                image['git-sha256-taken-downstream'] = upstream_git_sha
+                if upstream_git_sha == None:
+                    print('WARNING: container {} does not have a midstream repo to identify upstream sha.'.format(downstream_image_element['image-downstream-name']))
+                else:
+                    image['git-sha256-taken-downstream'] = upstream_git_sha
             else:
                 # print('downstream image element {} doesn\'t exist in the downstream build.'.format(downstream_image))
                 downstream_image_element = get_key_downstream(downstream_key,release_manifest)
@@ -176,23 +181,22 @@ def main():
                     image['image-downstream-remote'] = 'quay.io/acm-d'
                     image['image-downstream-digest'] = downstream_image_element['image-digest']
                 else:
-                    #print('oh fark, image {} doesn\'t have any entry.'.format(image['image-name']))
+                    # print('oh fark, image {} doesn\'t have any entry.'.format(image['image-name']))
                     pass
         else:
             # print('manifest image {} doesn\'t have an image alias.'.format(image['image-name']))
             pass
         new_manifest.append(image)
-        #print(json.dumps(image,indent=4))
+        # print(json.dumps(image,indent=4))
     # Now we need to pick up the bundle images
     for build in build_names:
         if build['image-downstream-name'].endswith('-operator-bundle'):
             build['image-downstream-remote'] = 'quay.io/acm-d'
             new_manifest.append(build)
     newFileName = 'downstream-'+datestamp+'-'+z_release_version+'.json'
-    #print('newFileName: {}'.format(newFileName))
+    # print('newFileName: {}'.format(newFileName))
     with open(newFileName, 'w') as outfile:
         outfile.write(json.dumps(new_manifest, indent=4))
-    #todo: copy this to pipeline, push it
 
 if __name__ == '__main__':
     main()
