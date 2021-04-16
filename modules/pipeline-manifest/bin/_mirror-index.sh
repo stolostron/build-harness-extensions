@@ -92,8 +92,8 @@ if [[ -z $SKIP_MIRROR ]]; then
       then
         name=$(echo $item | jq -r '.["image-name"]')
         tag=$(echo $item | jq -r '.["image-tag"]')
-        echo oc image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag
-        echo $($OC image mirror --keep-manifest-list=true --filter-by-os=. $remote/$name:$tag quay.io/acm-d/$name:$tag)
+        echo oc image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
+        echo $($OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag)
       fi
     done
     rm -rf $tempy
