@@ -162,6 +162,13 @@ def main():
                 else:
                     downstream_image_decorated=downstream_image+'-rhel7'
                 downstream_image_element = get_val(downstream_image_decorated,build_names)
+            if not downstream_image_element:
+                # Maybe the operator bit isn't swapped?
+                downstream_image_decorated = downstream_image+'-rhel8'
+                downstream_image_element = get_val(downstream_image_decorated,build_names)
+            if not downstream_image_element:
+                # Ok, maybe it doesn't have a suffix at all (looking at you, grafana)?
+                downstream_image_element = get_val(downstream_image,build_names)
             if downstream_image_element:
                 upstream_git_sha = get_upstream_sha(container_name,downstream_image_element['midstream-git-sha256'])
                 image['image-downstream-name'] = downstream_image_element['image-downstream-name']
@@ -173,7 +180,7 @@ def main():
                 else:
                     image['git-sha256-taken-downstream'] = upstream_git_sha
             else:
-                # print('downstream image element {} doesn\'t exist in the downstream build.'.format(downstream_image))
+                print('can\'t find image {} association in the downstream build.'.format(downstream_image))
                 downstream_image_element = get_key_downstream(downstream_key,release_manifest)
                 if (downstream_image_element):
                     image['image-downstream-name'] = downstream_image_element['image-name']
