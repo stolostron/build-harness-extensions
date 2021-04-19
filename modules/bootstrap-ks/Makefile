@@ -88,6 +88,14 @@ bootstrap-ks/get-cluster-console: %get-cluster-console: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.console_url | base64 -d"
 
+.PHONY: bootstrap-ks/get-cluster-basedomain
+## Get cluster basedomain from secret
+bootstrap-ks/get-cluster-basedomain: %get-cluster-basedomain: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.basedomain | base64 -d"
+
 .PHONY: bootstrap-ks/get-cluster-claim
 ## Get cluster claim from secret
 bootstrap-ks/get-cluster-claim: %get-cluster-claim: %_init
@@ -142,6 +150,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
 		$(SELF) -s bootstrap-ks/get-cluster-api > .api; \
 		$(SELF) -s bootstrap-ks/get-cluster-claim > .cc; \
+		$(SELF) -s bootstrap-ks/get-cluster-basedomain > .bd; \
 		$(SELF) -s bootstrap-ks/get-cluster-cloud-platform > .pf; \
 		$(SELF) -s bootstrap-ks/get-cluster-claim > .ccns; \
 		$(SELF) -s bootstrap-ks/get-cluster-console > .con; fi;
@@ -153,6 +162,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg basedomain `cat .bd` '. + {basedomain: $$basedomain}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg clusterclaim `cat .cc` '. + {clusterclaim: $$clusterclaim}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg cloudplatform `cat .pf` '. + {cloud_platform: $$cloudplatform}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg clusterclaim_namespace `cat .ccns` '. + {clusterclaim_namespace: $$clusterclaim_namespace}' gc1.json > .tmp; mv .tmp gc1.json; \
