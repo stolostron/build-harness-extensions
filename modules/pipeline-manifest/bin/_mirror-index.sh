@@ -41,6 +41,14 @@ make_index () {
 	# Build a catalog from bundle
 	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; cd ..
 	rm -rf /tmp/acm-custom-registry
+	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
+		echo Didn\'t get a bonus tag
+	else
+		echo Got at a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		echo docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+	fi
 }
 
 # Get logged into brew, update/check out the repos we need
