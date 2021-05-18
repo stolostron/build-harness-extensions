@@ -112,7 +112,7 @@ osci/_snapshot-staging: %_snapshot-staging: %_clone
 osci/_push: %_push: %_clone
 	@$(SELF) osci/_sort
 	@cd $(OSCI_MANIFEST_DIR); $(GIT) commit -am "$(OSCI_GIT_MESSAGE)" --quiet
-	@cd $(OSCI_MANIFEST_DIR); $(GIT) push --quiet
+	@cd $(OSCI_MANIFEST_DIR); $(GIT) pull --rebase --quiet && $(GIT) push --quiet
 	@$(SELF) osci/_snapshot-staging
 
 .PHONY: osci/_read_alias
