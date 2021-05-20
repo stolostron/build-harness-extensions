@@ -120,6 +120,14 @@ bootstrap-ks/get-cluster-cloud-platform: %get-cluster-cloud-platform: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.cloud_platform | base64 -d"
 
+.PHONY: bootstrap-ks/get-cluster-json
+## Get cluster cloud-platform from secret
+bootstrap-ks/get-cluster-json: %get-cluster-json: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
 .PHONY: bootstrap-ks/get-cluster-type
 ## Get cluster type from secret
 bootstrap-ks/get-cluster-type: %get-cluster-type: %_init
@@ -144,29 +152,35 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	$(call assert-set,BOOTSTRAP_KS_METADATA_FILE)
 	@$(SELF) -s bootstrap-ks/get-cluster-type > .ct
 	@$(SELF) -s bootstrap-ks/get-secret-type > .st
-	@$(SELF) -s bootstrap-ks/get-cluster-kubeconfig > $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig
-	@if [[ `cat .st` == "clusterclaim" ]]; then \
+	if [[ `cat .st` != "aro" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-kubeconfig > $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig; fi;
+	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(SELF) -s bootstrap-ks/get-cluster-username > .un; \
 		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
 		$(SELF) -s bootstrap-ks/get-cluster-api > .api; \
-		$(SELF) -s bootstrap-ks/get-cluster-claim > .cc; \
 		$(SELF) -s bootstrap-ks/get-cluster-basedomain > .bd; \
 		$(SELF) -s bootstrap-ks/get-cluster-cloud-platform > .pf; \
-		$(SELF) -s bootstrap-ks/get-cluster-claim > .ccns; \
 		$(SELF) -s bootstrap-ks/get-cluster-console > .con; fi;
+	@if [[ `cat .st` == "clusterclaim" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-claim > .cc; \
+		$(SELF) -s bootstrap-ks/get-cluster-claim > .ccns; fi;
+	@if [[ `cat .st` == "aro" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-json > ${BOOTSTRAP_KS_METADATA_FILE}.aro.raw.json; fi;
 	@echo "{}" > gc1.json
 	@$(JQ) --arg type `cat .ct` '. + {type: $$type}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg secret_type `cat .st` '. + {secret_type: $$secret_type}' gc1.json > .tmp; mv .tmp gc1.json
-	@$(JQ) --arg kubeconfig $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig '. + {kubeconfig: $$kubeconfig}' gc1.json > .tmp; mv .tmp gc1.json
-	@if [[ `cat .st` == "clusterclaim" ]]; then \
+	if [[ `cat .st` != "aro" ]]; then \
+		$(JQ) --arg kubeconfig $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig '. + {kubeconfig: $$kubeconfig}' gc1.json > .tmp; mv .tmp gc1.json; fi;
+	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg basedomain `cat .bd` '. + {basedomain: $$basedomain}' gc1.json > .tmp; mv .tmp gc1.json; \
-		$(JQ) --arg clusterclaim `cat .cc` '. + {clusterclaim: $$clusterclaim}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg cloudplatform `cat .pf` '. + {cloud_platform: $$cloudplatform}' gc1.json > .tmp; mv .tmp gc1.json; \
-		$(JQ) --arg clusterclaim_namespace `cat .ccns` '. + {clusterclaim_namespace: $$clusterclaim_namespace}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > .tmp; mv .tmp gc1.json; fi;
+	@if [[ `cat .st` == "clusterclaim" ]]; then \
+		$(JQ) --arg clusterclaim `cat .cc` '. + {clusterclaim: $$clusterclaim}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg clusterclaim_namespace `cat .ccns` '. + {clusterclaim_namespace: $$clusterclaim_namespace}' gc1.json > .tmp; mv .tmp gc1.json; fi;
 	@cat gc1.json > $(BOOTSTRAP_KS_METADATA_FILE)
 	@rm -f .ct .st .cc .pf .ccns .un .pw .api .con gc1.json
 	@cat $(BOOTSTRAP_KS_METADATA_FILE)
@@ -307,6 +321,7 @@ bootstrap-ks/clusterclaim-delete-cluster: %clusterclaim-delete-cluster: %_init
 	$(call assert-set,BOOTSTRAP_KS_CC_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="delete clusterclaim -n $(BOOTSTRAP_KS_CC_NAMESPACE) $(BOOTSTRAP_KS_CC_NAME)"
 
+
 ##======= Azure Kubernetes Service ===========================
 
 .PHONY: bootstrap-ks/aks-install
@@ -361,6 +376,62 @@ bootstrap-ks/aks-delete-cluster: %aks-delete-cluster: %aks-install
 	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; ./destroy.sh ${BOOTSTRAP_KS_AKS_JSON_FILE}; \
 	else \
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aks; ./destroy.sh *.json; \
+	fi;
+
+
+##======= Azure Red Hat Openshift ===========================
+
+.PHONY: bootstrap-ks/aro-install
+## Install Azure Red Hat OpenShift (ARO) cluster
+bootstrap-ks/aro-install: %aro-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aro; ./install.sh;
+
+.PHONY: bootstrap-ks/aro-create-cluster
+## Create Azure Red Hat OpenShift (ARO) cluster
+bootstrap-ks/aro-create-cluster: %aro-create-cluster: %aro-install
+	$(call assert-set,AZURE_USER)
+	$(call assert-set,AZURE_PASS)
+	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
+	$(call assert-set,AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME)
+	$(call assert-set,AZURE_BASE_DOMAIN)
+	$(call assert-set,OCP_PULL_SECRET_FILE)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/aro; \
+		CLUSTER_NAME=${BOOTSTRAP_KS_ARO_CLUSTER_NAME} \
+		AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME=${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME} \
+		AZURE_BASE_DOMAIN=${AZURE_BASE_DOMAIN} \
+		OCP_PULL_SECRET_FILE=${OCP_PULL_SECRET_FILE} \
+		./provision.sh;
+
+.PHONY: bootstrap-ks/aro-save-secret
+## Save ARO metadata as a secret.  You can filter these secrets using --selector=bootstrap-ks=true --bootstrap-ks-secret-type=aro
+bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) \
+		-n $(BOOTSTRAP_KS_HOST_NAMESPACE) \
+		--from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json \
+		--from-literal=resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.RESOURCE_GROUP_NAME'` \
+		--from-literal=cluster_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CLUSTER_NAME'` \
+		--from-literal=region=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.REGION'` \
+		--from-literal=azure_subscription_id=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.SUBSCRIPTION'` \
+		--from-literal=cloud_platform=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PLATFORM'` \
+		--from-literal=azure_base_domain_resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME'` \
+		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN'` \
+		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.USERNAME'` \
+		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PASSWORD'` \
+		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CONSOLE_URL'` \
+		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.API_URL'`"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks-type=ocp"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks-secret-type=aro"
+
+.PHONY: bootstrap-ks/aro-delete-cluster
+## Delete Azure Red Hat OpenShift cluster. OPTIONAL: BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the ARO instance
+bootstrap-ks/aro-delete-cluster: %aro-delete-cluster: %aro-install
+	$(call assert-set,AZURE_USER)
+	$(call assert-set,AZURE_PASS)
+	@if [ ! -z "$(BOOTSTRAP_KS_ARO_JSON_FILE)" ]; then \
+	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh ${BOOTSTRAP_KS_ARO_JSON_FILE}; \
+	else \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh *.json; \
 	fi;
 
 
