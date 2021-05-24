@@ -426,6 +426,7 @@ bootstrap-ks/aro-create-cluster: %aro-create-cluster: %aro-install
 .PHONY: bootstrap-ks/aro-save-secret
 ## Save ARO metadata as a secret.  You can filter these secrets using --selector=bootstrap-ks=true --bootstrap-ks-secret-type=aro
 bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
+	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) \
 		-n $(BOOTSTRAP_KS_HOST_NAMESPACE) \
 		--from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json \
@@ -449,11 +450,8 @@ bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
 bootstrap-ks/aro-delete-cluster: %aro-delete-cluster: %aro-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
-	@if [ ! -z "$(BOOTSTRAP_KS_ARO_JSON_FILE)" ]; then \
-	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh ${BOOTSTRAP_KS_ARO_JSON_FILE}; \
-	else \
-		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh *.json; \
-	fi;
+	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
+	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh $(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json;
 
 
 ##======= Amazon Elastic Kubernetes Service ===========================
