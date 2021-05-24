@@ -225,6 +225,8 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 		$(SELF) boostrap-ks/roks-delete-cluster; \
 	elif [[ `cat .st` == "gke" ]]; then \
 		$(SELF) boostrap-ks/gke-delete-cluster; \
+	elif [[ `cat .st` == "aro" ]]; then \
+		$(SELF) boostrap-ks/aro-delete-cluster; \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
