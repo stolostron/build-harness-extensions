@@ -54,7 +54,28 @@ bootstrap-ks/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init
 	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
-	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig" > $(BUILD_HARNESS_PATH)/.tmp_kubeconfig
+	@if [[ `cat ${BUILD_HARNESS_PATH}/.tmp_kubeconfig` == "null" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-username BOOTSTRAP_KS_CLUSTER_NAME=$(BOOTSTRAP_KS_CLUSTER_NAME) BOOTSTRAP_KS_HOST_NAMESPACE=$(BOOTSTRAP_KS_HOST_NAMESPACE) > $(BUILD_HARNESS_PATH)/.kc_un; \
+		$(SELF) -s bootstrap-ks/get-cluster-password BOOTSTRAP_KS_CLUSTER_NAME=$(BOOTSTRAP_KS_CLUSTER_NAME) BOOTSTRAP_KS_HOST_NAMESPACE=$(BOOTSTRAP_KS_HOST_NAMESPACE) > $(BUILD_HARNESS_PATH)/.kc_pw; \
+		$(SELF) -s bootstrap-ks/get-cluster-api BOOTSTRAP_KS_CLUSTER_NAME=$(BOOTSTRAP_KS_CLUSTER_NAME) BOOTSTRAP_KS_HOST_NAMESPACE=$(BOOTSTRAP_KS_HOST_NAMESPACE) > $(BUILD_HARNESS_PATH)/.kc_api; \
+		if [[ "`cat $(BUILD_HARNESS_PATH)/.kc_un`" != "null" && "`cat $(BUILD_HARNESS_PATH)/.kc_pw`" != null && "`cat $(BUILD_HARNESS_PATH)/.kc_api`" != "null" ]]; then \
+			rm -f $(BUILD_HARNESS_PATH)/.tmp_kubeconfig; \
+			$(SELF) -s oc/install &> /dev/null; \
+			KUBECONFIG=$(BUILD_HARNESS_PATH)/.tmp_kubeconfig \
+				$(OC) login "`cat $(BUILD_HARNESS_PATH)/.kc_api`" \
+				--username="`cat $(BUILD_HARNESS_PATH)/.kc_un`" \
+				--password="`cat $(BUILD_HARNESS_PATH)/.kc_pw`" \
+				--insecure-skip-tls-verify=true &> /dev/null; \
+		else \
+			exit 1; \
+		fi; \
+	else \
+		cat $(BUILD_HARNESS_PATH)/.tmp_kubeconfig | base64 -d > $(BUILD_HARNESS_PATH)/.tmp_kc && mv $(BUILD_HARNESS_PATH)/.tmp_kc $(BUILD_HARNESS_PATH)/.tmp_kubeconfig; \
+	fi;
+	@cat $(BUILD_HARNESS_PATH)/.tmp_kubeconfig
+	@rm -f $(BUILD_HARNESS_PATH)/.tmp_kubeconfig $(BUILD_HARNESS_PATH)/.kc_api $(BUILD_HARNESS_PATH)/.kc_pw $(BUILD_HARNESS_PATH)/.kc_un &> /dev/null
+
 
 .PHONY: bootstrap-ks/get-cluster-username
 ## Get cluster username from secret
@@ -152,8 +173,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	$(call assert-set,BOOTSTRAP_KS_METADATA_FILE)
 	@$(SELF) -s bootstrap-ks/get-cluster-type > .ct
 	@$(SELF) -s bootstrap-ks/get-secret-type > .st
-	if [[ `cat .st` != "aro" ]]; then \
-		$(SELF) -s bootstrap-ks/get-cluster-kubeconfig > $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig; fi;
+	@$(SELF) -s bootstrap-ks/get-cluster-kubeconfig > $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig;
 	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(SELF) -s bootstrap-ks/get-cluster-username > .un; \
 		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
@@ -169,8 +189,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	@echo "{}" > gc1.json
 	@$(JQ) --arg type `cat .ct` '. + {type: $$type}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg secret_type `cat .st` '. + {secret_type: $$secret_type}' gc1.json > .tmp; mv .tmp gc1.json
-	if [[ `cat .st` != "aro" ]]; then \
-		$(JQ) --arg kubeconfig $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig '. + {kubeconfig: $$kubeconfig}' gc1.json > .tmp; mv .tmp gc1.json; fi;
+	@$(JQ) --arg kubeconfig $(PWD)/$(BOOTSTRAP_KS_CLUSTER_NAME).kubeconfig '. + {kubeconfig: $$kubeconfig}' gc1.json > .tmp; mv .tmp gc1.json;
 	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
