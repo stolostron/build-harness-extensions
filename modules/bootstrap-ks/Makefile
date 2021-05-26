@@ -28,6 +28,7 @@ BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.jso
 BOOTSTRAP_KS_EKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/eks/*.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_IKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-iks.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-roks.json | $(JQ) -r .CLUSTER_NAME)
+BOOTSTRAP_KS_ARO_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
