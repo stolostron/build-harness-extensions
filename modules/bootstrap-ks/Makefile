@@ -217,17 +217,17 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 			BOOTSTRAP_KS_CC_NAME=`$(SELF) -s bootstrap-ks/get-cluster-claim` \
 			BOOTSTRAP_KS_CC_NAMESPACE=`$(SELF) -s bootstrap-ks/get-cluster-claim-namespace`; \
 	elif [[ `cat .st` == "aks" ]]; then \
-		$(SELF) boostrap-ks/aks-delete-cluster; \
+		$(SELF) bootstrap-ks/aks-delete-cluster; \
 	elif [[ `cat .st` == "eks" ]]; then \
-		$(SELF) boostrap-ks/eks-delete-cluster; \
+		$(SELF) bootstrap-ks/eks-delete-cluster; \
 	elif [[ `cat .st` == "iks" ]]; then \
-		$(SELF) boostrap-ks/iks-delete-cluster; \
+		$(SELF) bootstrap-ks/iks-delete-cluster; \
 	elif [[ `cat .st` == "roks" ]]; then \
-		$(SELF) boostrap-ks/roks-delete-cluster; \
+		$(SELF) bootstrap-ks/roks-delete-cluster; \
 	elif [[ `cat .st` == "gke" ]]; then \
-		$(SELF) boostrap-ks/gke-delete-cluster; \
+		$(SELF) bootstrap-ks/gke-delete-cluster; \
 	elif [[ `cat .st` == "aro" ]]; then \
-		$(SELF) boostrap-ks/aro-delete-cluster; \
+		$(SELF) bootstrap-ks/aro-delete-cluster; \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
