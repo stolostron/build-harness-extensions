@@ -437,7 +437,7 @@ bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
 		--from-literal=azure_subscription_id=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.SUBSCRIPTION'` \
 		--from-literal=cloud_platform=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PLATFORM'` \
 		--from-literal=azure_base_domain_resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME'` \
-		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN'` \
+		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CLUSTER_NAME'`.`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN'` \
 		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.USERNAME'` \
 		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PASSWORD'` \
 		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CONSOLE_URL'` \
