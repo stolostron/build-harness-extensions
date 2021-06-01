@@ -79,6 +79,8 @@ if [[ -z $SKIP_MIRROR ]]; then
     echo No output from ashdod\; aborting
     exit 1
   fi
+  # We expect ashdod to leave a mapping.txt file that contains all the images it knew to mirror
+  cp ashdod/mapping.txt .
 
   echo "acm-operator-bundle tag:"
   cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
@@ -102,6 +104,7 @@ if [[ -z $SKIP_MIRROR ]]; then
         tag=$(echo $item | jq -r '.["image-tag"]')
         echo oc image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
         echo $($OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag)
+	echo quay.io/acm-d/$name:$tag=__DESTINATION_ORG__/$name:$tag >> mapping.txt
       fi
     done
     rm -rf $tempy
@@ -130,8 +133,10 @@ if [[ -z $SKIP_INDEX ]]; then
   python3 -u $BIN_PATH/_generate_downstream_manifest.py
   # Push it to the pipeline repo
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
+  cp mapping.txt pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
   cd pipeline
   git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
+  git add snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
   git pull
   git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
   git push --quiet
