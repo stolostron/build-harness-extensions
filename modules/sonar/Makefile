@@ -29,7 +29,8 @@ sonar/go/prow:
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 	
 	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	gosec -fmt sonarqube -no-fail ./... | tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
+	gosec -fmt sonarqube -out gosec.json -no-fail ./... 
+	@cp gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
@@ -68,7 +69,8 @@ sonar/go/openshiftci:
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 	
 	@echo "Running gosec" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACT_DIR}/sonar_gosec.json")
+	-gosec -fmt sonarqube -out gosec.json -no-fail ./... 
+	@cp gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
