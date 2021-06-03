@@ -431,17 +431,17 @@ bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) \
 		-n $(BOOTSTRAP_KS_HOST_NAMESPACE) \
 		--from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json \
-		--from-literal=resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.RESOURCE_GROUP_NAME'` \
-		--from-literal=cluster_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CLUSTER_NAME'` \
-		--from-literal=region=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.REGION'` \
-		--from-literal=azure_subscription_id=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.SUBSCRIPTION'` \
-		--from-literal=cloud_platform=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PLATFORM'` \
-		--from-literal=azure_base_domain_resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME'` \
-		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CLUSTER_NAME'`.`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.AZURE_BASE_DOMAIN'` \
-		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.USERNAME'` \
-		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.PASSWORD'` \
-		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.CONSOLE_URL'` \
-		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | jq -r '.API_URL'`"
+		--from-literal=resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.RESOURCE_GROUP_NAME'` \
+		--from-literal=cluster_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.CLUSTER_NAME'` \
+		--from-literal=region=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.REGION'` \
+		--from-literal=azure_subscription_id=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.SUBSCRIPTION'` \
+		--from-literal=cloud_platform=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.PLATFORM'` \
+		--from-literal=azure_base_domain_resource_group_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME'` \
+		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.CLUSTER_NAME'`.`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.AZURE_BASE_DOMAIN'` \
+		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.USERNAME'` \
+		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.PASSWORD'` \
+		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.CONSOLE_URL'` \
+		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.API_URL'`"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks-type=ocp"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks-secret-type=aro"
@@ -452,7 +452,8 @@ bootstrap-ks/aro-delete-cluster: %aro-delete-cluster: %aro-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
 	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
-	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh $(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json;
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) -o json" | ${JQ} -r '.data.json' | base64 -d > ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ARO_CLUSTER_NAME}.json
+	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json;
 
 
 ##======= Amazon Elastic Kubernetes Service ===========================
