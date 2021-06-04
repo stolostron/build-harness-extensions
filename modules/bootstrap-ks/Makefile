@@ -452,10 +452,7 @@ bootstrap-ks/aro-delete-cluster: %aro-delete-cluster: %aro-install
 	$(call assert-set,AZURE_USER)
 	$(call assert-set,AZURE_PASS)
 	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
-	@${OC} get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) -o json
-	@${OC} get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) -o json | ${JQ} -r '.data'
 	@${OC} get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) -o json | ${JQ} -r '.data.json' | base64 -d > ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ARO_CLUSTER_NAME}.json
-	@cat ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ARO_CLUSTER_NAME}.json
 	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json;
 
 
