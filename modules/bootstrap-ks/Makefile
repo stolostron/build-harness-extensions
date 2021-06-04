@@ -227,7 +227,7 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 	elif [[ `cat .st` == "gke" ]]; then \
 		$(SELF) bootstrap-ks/gke-delete-cluster; \
 	elif [[ `cat .st` == "aro" ]]; then \
-		$(SELF) bootstrap-ks/aro-delete-cluster; \
+		$(SELF) bootstrap-ks/aro-delete-cluster BOOTSTRAP_KS_CLUSTER_NAME=$(BOOTSTRAP_KS_CLUSTER_NAME); \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
@@ -453,6 +453,7 @@ bootstrap-ks/aro-delete-cluster: %aro-delete-cluster: %aro-install
 	$(call assert-set,AZURE_PASS)
 	$(call assert-set,BOOTSTRAP_KS_ARO_CLUSTER_NAME)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) -o json" | ${JQ} -r '.data.json' | base64 -d > ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ARO_CLUSTER_NAME}.json
+	@cat ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ARO_CLUSTER_NAME}.json
 	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/aro; ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json;
 
 
