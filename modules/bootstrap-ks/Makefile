@@ -212,6 +212,7 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s bootstrap-ks/get-secret-type > .st
+	@echo "`cat .st`";
 	@if [[ `cat .st` == "clusterclaim" ]]; then \
 		$(SELF) bootstrap-ks/clusterclaim-delete-cluster \
 			BOOTSTRAP_KS_CC_NAME=`$(SELF) -s bootstrap-ks/get-cluster-claim` \
