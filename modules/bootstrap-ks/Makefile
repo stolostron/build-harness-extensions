@@ -29,6 +29,7 @@ BOOTSTRAP_KS_EKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/eks/*.jso
 BOOTSTRAP_KS_IKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-iks.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-roks.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws/*-odaw.json | $(JQ) -r .CLUSTER_NAME)
+BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-gcp/*-odgc.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ARO_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 
 # Convenience to just call bare jq executable
@@ -231,6 +232,8 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 		$(SELF) bootstrap-ks/aro-delete-cluster; \
 	elif [[ `cat .st` == "osd-aws" ]]; then \
 		$(SELF) bootstrap-ks/osd-aws-delete-cluster; \
+	elif [[ `cat .st` == "osd-gcp" ]]; then \
+		$(SELF) bootstrap-ks/osd-gcp-delete-cluster; \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
@@ -741,4 +744,63 @@ bootstrap-ks/osd-aws-delete-cluster: %osd-aws-delete-cluster: %osd-aws-install
 	cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws; ./destroy.sh ${BOOTSTRAP_KS_OSD_AWS_JSON_FILE}; \
 	else \
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws; ./destroy.sh *.json; \
+	fi;
+
+##======= OpenShift Dedicated on GCP ===========================
+
+.PHONY: bootstrap-ks/osd-gcp-install
+## Install OpenShift Dedicated on GCP (osd-gcp)
+bootstrap-ks/osd-gcp-install: %osd-gcp-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp; ./install.sh;
+
+.PHONY: bootstrap-ks/osd-gcp-create-cluster
+## Create OpenShift Dedicated on GCP (osd-gcp) cluster
+bootstrap-ks/osd-gcp-create-cluster: %osd-gcp-create-cluster: %osd-gcp-install
+	$(call assert-set,OCM_TOKEN)
+	$(call assert-set,GCLOUD_CREDS_FILE)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp; ./provision.sh;
+
+.PHONY: bootstrap-ks/osd-gcp-save-secret
+## Save osd-gcp JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
+bootstrap-ks/osd-gcp-save-secret: %osd-gcp-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks-type=osd-gcp"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks-secret-type=osd-gcp"
+
+
+.PHONY: bootstrap-ks/osd-gcp-get-cluster-name
+## Get OpenShift Dedicated on GCP (osd-gcp) cluster name
+bootstrap-ks/osd-gcp-get-cluster-name: %osd-gcp-get-cluster-name: %_init
+	@echo $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME)
+
+
+.PHONY: bootstrap-ks/osd-gcp-get-cluster-json
+## Get OpenShift Dedicated on GCP (osd-gcp) cluster JSON
+bootstrap-ks/osd-gcp-get-cluster-json: %osd-gcp-get-cluster-json: %_init
+	$(call assert-set,OCM_TOKEN)
+	$(call assert-set,BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
+
+.PHONY: bootstrap-ks/osd-gcp-get-cluster-kubeconfig
+## Get OpenShift Dedicated on GCP (osd-gcp) cluster KUBECONFIG
+bootstrap-ks/osd-gcp-get-cluster-kubeconfig: %osd-gcp-get-cluster-kubeconfig: %_init
+	$(call assert-set,OCM_TOKEN)
+	$(call assert-set,BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+.PHONY: bootstrap-ks/osd-gcp-delete-cluster
+## Delete OpenShift Dedicated on GCP (osd-gcp) cluster.  OPTIONAL: BOOTSTRAP_KS_OSD_GCP_JSON_FILE - path to the json file for the osd-gcp instance
+bootstrap-ks/osd-gcp-delete-cluster: %osd-gcp-delete-cluster: %osd-gcp-install
+	$(call assert-set,OCM_TOKEN)
+	$(call assert-set,GCLOUD_CREDS_FILE)
+	@if [ ! -z "$(BOOTSTRAP_KS_OSD_GCP_JSON_FILE)" ]; then \
+	cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-gcp; ./destroy.sh ${BOOTSTRAP_KS_OSD_GCP_JSON_FILE}; \
+	else \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-gcp; ./destroy.sh *.json; \
 	fi;
