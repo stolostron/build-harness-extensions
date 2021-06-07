@@ -28,6 +28,7 @@ BOOTSTRAP_KS_GKE_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/gke/*.jso
 BOOTSTRAP_KS_EKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/eks/*.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_IKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-iks.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-roks.json | $(JQ) -r .CLUSTER_NAME)
+BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws/*-odaw.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ARO_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 
 # Convenience to just call bare jq executable
@@ -675,4 +676,63 @@ bootstrap-ks/roks-delete-cluster: %roks-delete-cluster: %roks-install
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh ${BOOTSTRAP_KS_ROKS_JSON_FILE}; \
 	else \
 	  cd ${BOOTSTRAP_KS_DEPLOY_DIR}/iks; ./destroy.sh *-roks.json; \
+	fi;
+
+##======= OpenShift Dedicated on AWS ===========================
+
+.PHONY: bootstrap-ks/osd-aws-install
+## Install OpenShift Dedicated on AWS (osd-aws)
+bootstrap-ks/osd-aws-install: %osd-aws-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws; ./install.sh;
+
+.PHONY: bootstrap-ks/osd-aws-create-cluster
+## Create OpenShift Dedicated on AWS (osd-aws) cluster
+bootstrap-ks/osd-aws-create-cluster: %osd-aws-create-cluster: %osd-aws-install
+	$(call assert-set,AWS_ACCOUNT_ID)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws; ./provision.sh;
+
+.PHONY: bootstrap-ks/osd-aws-save-secret
+## Save osd-aws JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
+bootstrap-ks/osd-aws-save-secret: %osd-aws-save-secret: %_init
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks-type=osd-aws"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=osd-aws"
+
+
+.PHONY: bootstrap-ks/osd-aws-get-cluster-name
+## Get OpenShift Dedicated on AWS (osd-aws) cluster name
+bootstrap-ks/osd-aws-get-cluster-name: %osd-aws-get-cluster-name: %_init
+	@echo $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME)
+
+
+.PHONY: bootstrap-ks/osd-aws-get-cluster-json
+## Get OpenShift Dedicated on AWS (osd-aws) cluster JSON
+bootstrap-ks/osd-aws-get-cluster-json: %osd-aws-get-cluster-json: %_init
+	$(call assert-set,BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) -o json | $(JQ) -r .data.json | base64 -d"
+
+
+.PHONY: bootstrap-ks/osd-aws-get-cluster-kubeconfig
+## Get OpenShift Dedicated on AWS (osd-aws) cluster KUBECONFIG
+bootstrap-ks/osd-aws-get-cluster-kubeconfig: %osd-aws-get-cluster-kubeconfig: %_init
+	$(call assert-set,BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) -o json | $(JQ) -r .data.kubeconfig | base64 -d"
+
+.PHONY: bootstrap-ks/osd-aws-delete-cluster
+## Delete OpenShift Dedicated on AWS (osd-aws) cluster.  OPTIONAL: BOOTSTRAP_KS_OSD_AWS_JSON_FILE - path to the json file for the osd-aws instance
+bootstrap-ks/osd-aws-delete-cluster: %osd-aws-delete-cluster: %aks-install
+	$(call assert-set,AWS_ACCOUNT_ID)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	@if [ ! -z "$(BOOTSTRAP_KS_OSD_AWS_JSON_FILE)" ]; then \
+	cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws; ./destroy.sh ${BOOTSTRAP_KS_OSD_AWS_JSON_FILE}; \
+	else \
+		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws; ./destroy.sh *.json; \
 	fi;
