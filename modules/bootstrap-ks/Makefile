@@ -228,7 +228,9 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 	elif [[ `cat .st` == "gke" ]]; then \
 		$(SELF) bootstrap-ks/gke-delete-cluster; \
 	elif [[ `cat .st` == "aro" ]]; then \
-		$(SELF) bootstrap-ks/aro-delete-cluster BOOTSTRAP_KS_CLUSTER_NAME=$(BOOTSTRAP_KS_CLUSTER_NAME); \
+		$(SELF) bootstrap-ks/aro-delete-cluster; \
+	elif [[ `cat .st` == "osd-aws" ]]; then \
+		$(SELF) bootstrap-ks/osd-aws-delete-cluster; \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
