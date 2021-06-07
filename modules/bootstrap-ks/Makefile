@@ -477,7 +477,7 @@ bootstrap-ks/eks-save-secret: %eks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/eks/$(BOOTSTRAP_KS_EKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) bootstrap-ks-type=eks"
-	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=eks"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_EKS_CLUSTER_NAME) bootstrap-ks-secret-type=eks"
 
 
 .PHONY: bootstrap-ks/eks-get-cluster-name
@@ -535,7 +535,7 @@ bootstrap-ks/gke-save-secret: %gke-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/gke/$(BOOTSTRAP_KS_GKE_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks-type=gke"
-	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=gke"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_GKE_CLUSTER_NAME) bootstrap-ks-secret-type=gke"
 
 
 .PHONY: bootstrap-ks/gke-get-cluster-name
@@ -592,7 +592,7 @@ bootstrap-ks/iks-save-secret: %iks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_IKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) bootstrap-ks-type=iks"
-	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=iks"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_IKS_CLUSTER_NAME) bootstrap-ks-secret-type=iks"
 
 .PHONY: bootstrap-ks/iks-get-cluster-name
 ## Get IBM Cloud Kubernetes Service (IKS) cluster name
@@ -645,7 +645,7 @@ bootstrap-ks/roks-save-secret: %roks-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/iks/$(BOOTSTRAP_KS_ROKS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) bootstrap-ks-type=ocp"
-	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=roks"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROKS_CLUSTER_NAME) bootstrap-ks-secret-type=roks"
 
 .PHONY: bootstrap-ks/roks-get-cluster-name
 ## Get IBM Red Hat OpenShift Kubernetes Service (ROKS) cluster name
@@ -688,6 +688,7 @@ bootstrap-ks/osd-aws-install: %osd-aws-install: %_init
 .PHONY: bootstrap-ks/osd-aws-create-cluster
 ## Create OpenShift Dedicated on AWS (osd-aws) cluster
 bootstrap-ks/osd-aws-create-cluster: %osd-aws-create-cluster: %osd-aws-install
+	$(call assert-set,OCM_TOKEN)
 	$(call assert-set,AWS_ACCOUNT_ID)
 	$(call assert-set,AWS_ACCESS_KEY_ID)
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
@@ -699,7 +700,7 @@ bootstrap-ks/osd-aws-save-secret: %osd-aws-save-secret: %_init
 	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks-type=osd-aws"
-	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) bootstrap-ks-secret-type=osd-aws"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks-secret-type=osd-aws"
 
 
 .PHONY: bootstrap-ks/osd-aws-get-cluster-name
@@ -711,6 +712,7 @@ bootstrap-ks/osd-aws-get-cluster-name: %osd-aws-get-cluster-name: %_init
 .PHONY: bootstrap-ks/osd-aws-get-cluster-json
 ## Get OpenShift Dedicated on AWS (osd-aws) cluster JSON
 bootstrap-ks/osd-aws-get-cluster-json: %osd-aws-get-cluster-json: %_init
+	$(call assert-set,OCM_TOKEN)
 	$(call assert-set,BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
@@ -720,6 +722,7 @@ bootstrap-ks/osd-aws-get-cluster-json: %osd-aws-get-cluster-json: %_init
 .PHONY: bootstrap-ks/osd-aws-get-cluster-kubeconfig
 ## Get OpenShift Dedicated on AWS (osd-aws) cluster KUBECONFIG
 bootstrap-ks/osd-aws-get-cluster-kubeconfig: %osd-aws-get-cluster-kubeconfig: %_init
+	$(call assert-set,OCM_TOKEN)
 	$(call assert-set,BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
@@ -727,7 +730,8 @@ bootstrap-ks/osd-aws-get-cluster-kubeconfig: %osd-aws-get-cluster-kubeconfig: %_
 
 .PHONY: bootstrap-ks/osd-aws-delete-cluster
 ## Delete OpenShift Dedicated on AWS (osd-aws) cluster.  OPTIONAL: BOOTSTRAP_KS_OSD_AWS_JSON_FILE - path to the json file for the osd-aws instance
-bootstrap-ks/osd-aws-delete-cluster: %osd-aws-delete-cluster: %aks-install
+bootstrap-ks/osd-aws-delete-cluster: %osd-aws-delete-cluster: %osd-aws-install
+	$(call assert-set,OCM_TOKEN)
 	$(call assert-set,AWS_ACCOUNT_ID)
 	$(call assert-set,AWS_ACCESS_KEY_ID)
 	$(call assert-set,AWS_SECRET_ACCESS_KEY)
