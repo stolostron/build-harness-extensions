@@ -33,6 +33,9 @@ BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-g
 BOOTSTRAP_KS_ARO_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 BOOTSTRAP_KS_ROSA_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 
+# Default Identity Provider is always kube:admin
+BOOTSTRAP_KS_IDENTITY_PROVIDER ?= "kube:admin"
+
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 
@@ -96,6 +99,14 @@ bootstrap-ks/get-cluster-password: %get-cluster-password: %_init
 	$(call assert-set,BOOTSTRAP_KS_HOST_API)
 	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.password | base64 -d"
+
+.PHONY: bootstrap-ks/get-cluster-identity-provider
+## Get cluster identity provider from secret
+bootstrap-ks/get-cluster-identity-provider: %get-cluster-identity-provider: %_init
+	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
+	$(call assert-set,BOOTSTRAP_KS_HOST_API)
+	$(call assert-set,BOOTSTRAP_KS_HOST_NAMESPACE)
+	@$(SELF) -s oc/command OC_COMMAND="get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_CLUSTER_NAME) -o json | $(JQ) -r .data.identity_provider | base64 -d"
 
 .PHONY: bootstrap-ks/get-cluster-api
 ## Get cluster api from secret
@@ -181,6 +192,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(SELF) -s bootstrap-ks/get-cluster-username > .un; \
 		$(SELF) -s bootstrap-ks/get-cluster-password > .pw;\
+		$(SELF) -s bootstrap-ks/get-cluster-identity-provider > .idp;\
 		$(SELF) -s bootstrap-ks/get-cluster-api > .api; \
 		$(SELF) -s bootstrap-ks/get-cluster-basedomain > .bd; \
 		$(SELF) -s bootstrap-ks/get-cluster-cloud-platform > .pf; \
@@ -197,6 +209,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	@if [[ `cat .ct` == "ocp" ]]; then \
 		$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json; \
+		$(JQ) --arg identity_provider `cat .idp` '. + {identity_provider: $$identity_provider}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg basedomain `cat .bd` '. + {basedomain: $$basedomain}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg cloudplatform `cat .pf` '. + {cloud_platform: $$cloudplatform}' gc1.json > .tmp; mv .tmp gc1.json; \
@@ -205,7 +218,7 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 		$(JQ) --arg clusterclaim `cat .cc` '. + {clusterclaim: $$clusterclaim}' gc1.json > .tmp; mv .tmp gc1.json; \
 		$(JQ) --arg clusterclaim_namespace `cat .ccns` '. + {clusterclaim_namespace: $$clusterclaim_namespace}' gc1.json > .tmp; mv .tmp gc1.json; fi;
 	@cat gc1.json > $(BOOTSTRAP_KS_METADATA_FILE)
-	@rm -f .ct .st .cc .pf .ccns .un .pw .api .con gc1.json
+	@rm -f .ct .st .cc .pf .ccns .un .pw .idp .api .con gc1.json
 	@cat $(BOOTSTRAP_KS_METADATA_FILE)
 
 .PHONY: bootstrap-ks/delete-cluster
@@ -284,6 +297,7 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 	$(call assert-set,BOOTSTRAP_KS_CC_NAMESPACE)
 	$(call assert-set,BOOTSTRAP_KS_CLUSTER_NAME)
 	$(call assert-set,BOOTSTRAP_KS_CLOUD_PLATFORM)
+	$(call assert-set,BOOTSTRAP_KS_IDENTITY_PROVIDER)
 	@$(SELF) -s clusterpool/get-cluster-kubeconfig \
 		CLUSTERPOOL_CLUSTER_CLAIM=$(BOOTSTRAP_KS_CC_NAME) \
 		CLUSTERPOOL_HOST_NAMESPACE=$(BOOTSTRAP_KS_CC_NAMESPACE) \
@@ -333,6 +347,7 @@ bootstrap-ks/clusterclaim-save-secret-from-claim: %clusterclaim-save-secret-from
 		--from-literal=password=`cat $(BUILD_HARNESS_PATH)/.pw` \
 		--from-literal=api_url=`cat $(BUILD_HARNESS_PATH)/.ap` \
 		--from-literal=console_url=`cat $(BUILD_HARNESS_PATH)/.co` \
+		--from-literal=identity_provider=$(BOOTSTRAP_KS_IDENTITY_PROVIDER) \
 		--from-literal=basedomain=`cat $(BUILD_HARNESS_PATH)/.bd` \
 		--from-literal=clusterclaim_namespace=$(BOOTSTRAP_KS_CC_NAMESPACE) \
 		--from-literal=cloud_platform=$(BOOTSTRAP_KS_CLOUD_PLATFORM) \
@@ -450,6 +465,7 @@ bootstrap-ks/aro-save-secret: %aro-save-secret: %_init
 		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.USERNAME'` \
 		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.PASSWORD'` \
 		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.CONSOLE_URL'` \
+		--from-literal=identity_provider=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.IDENTITY_PROVIDER'` \
 		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/aro/$(BOOTSTRAP_KS_ARO_CLUSTER_NAME).json | ${JQ} -r '.API_URL'`"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ARO_CLUSTER_NAME) bootstrap-ks-type=ocp"
@@ -844,6 +860,7 @@ bootstrap-ks/rosa-save-secret: %rosa-save-secret: %_init
 		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.USERNAME'` \
 		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.PASSWORD'` \
 		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.CONSOLE_URL'` \
+		--from-literal=identity_provider=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.IDENTITY_PROVIDER'` \
 		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.API_URL'`"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) bootstrap-ks-type=ocp"
