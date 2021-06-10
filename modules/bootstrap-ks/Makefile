@@ -31,6 +31,7 @@ BOOTSTRAP_KS_ROKS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/iks/*-ro
 BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-aws/*-odaw.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME = $(shell cat ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-gcp/*-odgc.json | $(JQ) -r .CLUSTER_NAME)
 BOOTSTRAP_KS_ARO_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
+BOOTSTRAP_KS_ROSA_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
@@ -187,8 +188,8 @@ bootstrap-ks/get-cluster-metadata: %get-cluster-metadata:
 	@if [[ `cat .st` == "clusterclaim" ]]; then \
 		$(SELF) -s bootstrap-ks/get-cluster-claim > .cc; \
 		$(SELF) -s bootstrap-ks/get-cluster-claim > .ccns; fi;
-	@if [[ `cat .st` == "aro" ]]; then \
-		$(SELF) -s bootstrap-ks/get-cluster-json > ${BOOTSTRAP_KS_METADATA_FILE}.aro.raw.json; fi;
+	@if [[ `cat .st` == "aro" || `cat .st` == "rosa" ]]; then \
+		$(SELF) -s bootstrap-ks/get-cluster-json > ${BOOTSTRAP_KS_METADATA_FILE}.`cat .st`.raw.json; fi;
 	@echo "{}" > gc1.json
 	@$(JQ) --arg type `cat .ct` '. + {type: $$type}' gc1.json > .tmp; mv .tmp gc1.json
 	@$(JQ) --arg secret_type `cat .st` '. + {secret_type: $$secret_type}' gc1.json > .tmp; mv .tmp gc1.json
@@ -234,6 +235,8 @@ bootstrap-ks/delete-cluster: %delete-cluster: %_init
 		$(SELF) bootstrap-ks/osd-aws-delete-cluster; \
 	elif [[ `cat .st` == "osd-gcp" ]]; then \
 		$(SELF) bootstrap-ks/osd-gcp-delete-cluster; \
+	elif [[ `cat .st` == "rosa" ]]; then \
+		$(SELF) bootstrap-ks/rosa-delete-cluster; \
 	fi;
 
 .PHONY: bootstrap-ks/delete-secret
@@ -804,3 +807,54 @@ bootstrap-ks/osd-gcp-delete-cluster: %osd-gcp-delete-cluster: %osd-gcp-install
 	else \
 		cd ${BOOTSTRAP_KS_DEPLOY_DIR}/osd-gcp; ./destroy.sh *.json; \
 	fi;
+
+##======= Red Hat OpenShift Service on AWS (ROSA) ===========================
+
+.PHONY: bootstrap-ks/rosa-install
+## Install Red Hat OpenShift Service on AWS (ROSA) dependencies
+bootstrap-ks/rosa-install: %rosa-install: %_init
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa; ./install.sh;
+
+.PHONY: bootstrap-ks/rosa-create-cluster
+## Create Red Hat OpenShift Service on AWS (ROSA) cluster
+bootstrap-ks/rosa-create-cluster: %rosa-create-cluster: %rosa-install
+	$(call assert-set,ROSA_TOKEN)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	$(call assert-set,BOOTSTRAP_KS_ROSA_CLUSTER_NAME)
+	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa; \
+		CLUSTER_NAME=${BOOTSTRAP_KS_ROSA_CLUSTER_NAME} \
+		ROSA_TOKEN=${ROSA_TOKEN} \
+		AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+		AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+		./provision.sh;
+
+.PHONY: bootstrap-ks/rosa-save-secret
+## Save ROSA metadata as a secret.  You can filter these secrets using --selector=bootstrap-ks=true --bootstrap-ks-secret-type=rosa
+bootstrap-ks/rosa-save-secret: %rosa-save-secret: %_init
+	$(call assert-set,BOOTSTRAP_KS_ROSA_CLUSTER_NAME)
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) \
+		-n $(BOOTSTRAP_KS_HOST_NAMESPACE) \
+		--from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json \
+		--from-literal=cluster_name=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.CLUSTER_NAME'` \
+		--from-literal=region=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.REGION'` \
+		--from-literal=aws_account_id=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.AWS_ACCOUNT_ID'` \
+		--from-literal=cloud_platform=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.PLATFORM'` \
+		--from-literal=basedomain=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.CONSOLE_URL' | sed 's;https://console-openshift-console.apps.;;g'` \
+		--from-literal=username=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.USERNAME'` \
+		--from-literal=password=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.PASSWORD'` \
+		--from-literal=console_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.CONSOLE_URL'` \
+		--from-literal=api_url=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json | ${JQ} -r '.API_URL'`"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) bootstrap-ks=true"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) bootstrap-ks-type=ocp"
+	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) bootstrap-ks-secret-type=rosa"
+
+.PHONY: bootstrap-ks/rosa-delete-cluster
+## Delete Red Hat OpenShift Service on AWS (ROSA) cluster. OPTIONAL: BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the ROSA instance
+bootstrap-ks/rosa-delete-cluster: %rosa-delete-cluster: %rosa-install
+	$(call assert-set,ROSA_TOKEN)
+	$(call assert-set,AWS_ACCESS_KEY_ID)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	$(call assert-set,BOOTSTRAP_KS_ROSA_CLUSTER_NAME)
+	@${OC} get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) -o json | ${JQ} -r '.data.json' | base64 -d > ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ROSA_CLUSTER_NAME}.json
+	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/rosa; ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json;
