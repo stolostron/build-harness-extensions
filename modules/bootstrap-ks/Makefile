@@ -36,6 +36,10 @@ BOOTSTRAP_KS_ROSA_CLUSTER_NAME ?= ${BOOTSTRAP_KS_CLUSTER_NAME}
 # Default Identity Provider is always kube:admin
 BOOTSTRAP_KS_IDENTITY_PROVIDER ?= "kube:admin"
 
+# ROSA-specific credentials changes
+AWS_ACCESS_KEY_ID_ROSA ?= ${AWS_ACCESS_KEY_ID}
+AWS_SECRET_ACCESS_KEY_ROSA ?= ${AWS_SECRET_ACCESS_KEY}
+
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 
@@ -721,7 +725,7 @@ bootstrap-ks/osd-aws-create-cluster: %osd-aws-create-cluster: %osd-aws-install
 .PHONY: bootstrap-ks/osd-aws-save-secret
 ## Save osd-aws JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/osd-aws-save-secret: %osd-aws-save-secret: %_init
-	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).json --from-literal=identity_provider=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).json | ${JQ} -r '.IDENTITY_PROVIDER'` --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-aws/$(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks-type=osd-aws"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_AWS_CLUSTER_NAME) bootstrap-ks-secret-type=osd-aws"
@@ -782,7 +786,7 @@ bootstrap-ks/osd-gcp-create-cluster: %osd-gcp-create-cluster: %osd-gcp-install
 .PHONY: bootstrap-ks/osd-gcp-save-secret
 ## Save osd-gcp JSON and KUBECONFIG as a secret.  You can filter these secrets using --selector=bootstrap-ks=true
 bootstrap-ks/osd-gcp-save-secret: %osd-gcp-save-secret: %_init
-	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).json --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).kubeconfig"
+	@$(SELF) -s oc/command OC_COMMAND="create secret generic -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) --from-file=json=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).json --from-literal=identity_provider=`cat $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).json | ${JQ} -r '.IDENTITY_PROVIDER'` --from-file=kubeconfig=$(BOOTSTRAP_KS_DEPLOY_DIR)/osd-gcp/$(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME).kubeconfig"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks=true"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks-type=osd-gcp"
 	@$(SELF) -s oc/command OC_COMMAND="label secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_OSD_GCP_CLUSTER_NAME) bootstrap-ks-secret-type=osd-gcp"
@@ -870,8 +874,8 @@ bootstrap-ks/rosa-save-secret: %rosa-save-secret: %_init
 ## Delete Red Hat OpenShift Service on AWS (ROSA) cluster. OPTIONAL: BOOTSTRAP_KS_AKS_JSON_FILE - path to the json file for the ROSA instance
 bootstrap-ks/rosa-delete-cluster: %rosa-delete-cluster: %rosa-install
 	$(call assert-set,ROSA_TOKEN)
-	$(call assert-set,AWS_ACCESS_KEY_ID)
-	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	$(call assert-set,AWS_ACCESS_KEY_ID_ROSA)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY_ROSA)
 	$(call assert-set,BOOTSTRAP_KS_ROSA_CLUSTER_NAME)
 	@${OC} get secret -n $(BOOTSTRAP_KS_HOST_NAMESPACE) $(BOOTSTRAP_KS_ROSA_CLUSTER_NAME) -o json | ${JQ} -r '.data.json' | base64 -d > ${BUILD_HARNESS_PATH}/${BOOTSTRAP_KS_ROSA_CLUSTER_NAME}.json
-	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/rosa; ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json;
+	@cd ${BOOTSTRAP_KS_DEPLOY_DIR}/rosa; AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_ROSA} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_ROSA} ./destroy.sh ${BUILD_HARNESS_PATH}/$(BOOTSTRAP_KS_ROSA_CLUSTER_NAME).json;
