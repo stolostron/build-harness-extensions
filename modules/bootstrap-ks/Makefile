@@ -839,14 +839,14 @@ bootstrap-ks/rosa-install: %rosa-install: %_init
 ## Create Red Hat OpenShift Service on AWS (ROSA) cluster
 bootstrap-ks/rosa-create-cluster: %rosa-create-cluster: %rosa-install
 	$(call assert-set,ROSA_TOKEN)
-	$(call assert-set,AWS_ACCESS_KEY_ID)
-	$(call assert-set,AWS_SECRET_ACCESS_KEY)
+	$(call assert-set,AWS_ACCESS_KEY_ID_ROSA)
+	$(call assert-set,AWS_SECRET_ACCESS_KEY_ROSA)
 	$(call assert-set,BOOTSTRAP_KS_ROSA_CLUSTER_NAME)
 	@cd $(BOOTSTRAP_KS_DEPLOY_DIR)/rosa; \
 		CLUSTER_NAME=${BOOTSTRAP_KS_ROSA_CLUSTER_NAME} \
 		ROSA_TOKEN=${ROSA_TOKEN} \
-		AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-		AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+		AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_ROSA} \
+		AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_ROSA} \
 		./provision.sh;
 
 .PHONY: bootstrap-ks/rosa-save-secret
