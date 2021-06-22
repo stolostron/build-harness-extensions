@@ -2,6 +2,7 @@ import json
 import sys
 import os
 import requests
+import re
 
 # Parameters:
 #  sys.argv[1] - version number to calculate upgrade mapping for
@@ -38,16 +39,25 @@ upgrade_map['dev'] = ''
 upgrade_map['ga'] = ''
 upgrade_map['gaminus'] = ''
 upgrade_map['gaplus'] = ''
+upgrade_map['gaupstream'] = ''
+upgrade_map['gaplusupstream'] = ''
+upgrade_map['gaminusupstream'] = ''
+gasha = ''
+gaminussha = ''
+gaplussha = ''
 
 headers = {
     'Authorization': 'Bearer '+QUAY_TOKEN
 }
 
 page = 0
+page_data=[]
 while True:
   page=page+1
   url = "https://quay.io/api/v1/repository/"+repository+"/acm-custom-registry/tag/?onlyActiveTags=true&limit=100&page={}".format(page)
   response = requests.get(url, headers=headers).json()
+  # We need to have a consolidated list to search, so we do array extension of the pages
+  page_data.extend(response["tags"])
   my_list = response["tags"]
   for x in my_list:
     name = x.get('name')
@@ -66,5 +76,28 @@ while True:
   if (response["has_additional"] != True):
     break
 
+# We need to scan the full list of pages for instances of the RC names, then match them via docker image shas in order to find snapshot names
+if upgrade_map['ga'] != '':
+  match = next(x for x in page_data if x['name'] == upgrade_map['ga'] )
+  gasha=match['image_id']
+if upgrade_map['gaplus'] != '':
+  matchplus = next(x for x in page_data if x['name'] == upgrade_map['gaplus'] )
+  gaplussha=matchplus['image_id']
+if upgrade_map['gaminus'] != '':
+  matchminus = next(x for x in page_data if x['name'] == upgrade_map['gaminus'] )
+  gaminussha=matchminus['image_id']
+for x in page_data:
+    if x['image_id'] == gasha:
+        if x['name'] != upgrade_map['ga']:
+            newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
+            upgrade_map['gaupstream'] = newname
+    if x['image_id'] == gaplussha:
+        if x['name'] != upgrade_map['gaplus']:
+            newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
+            upgrade_map['gaplusupstream'] = newname
+    if x['image_id'] == gaminussha:
+        if x['name'] != upgrade_map['gaminus']:
+            newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
+            upgrade_map['gaminusupstream'] = newname
 json_data = json.dumps(upgrade_map)
 print(json_data)
