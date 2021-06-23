@@ -104,11 +104,12 @@ if [[ -z $SKIP_MIRROR ]]; then
         tag=$(echo $item | jq -r '.["image-tag"]')
         echo oc image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
         echo $($OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag)
-	echo quay.io/acm-d/$name:$tag=__DESTINATION_ORG__/$name:$tag >> mapping.txt
+        echo quay.io/acm-d/$name:$tag=__DESTINATION_ORG__/$name:$tag >> mapping.txt
       fi
     done
     rm -rf $tempy
   fi
+  echo quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 else
   echo SKIP_MIRROR defined, skipping mirror
 fi
