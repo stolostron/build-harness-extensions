@@ -111,9 +111,6 @@ if [[ -z $SKIP_MIRROR ]]; then
     done
     rm -rf $tempy
   fi
-  # Finally, send out the acm custom registry to the mapping file
-  amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
-  echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 else
   echo SKIP_MIRROR defined, skipping mirror
 fi
@@ -133,12 +130,16 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with acm
   make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
 
+  # Finally, send out the acm custom registry to the mapping file
+  amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
+  echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
+
   # Create the downstream-upstream connected manifest
   echo Create the downstream-upstream connected manifest
   python3 -u $BIN_PATH/_generate_downstream_manifest.py
   # Push it to the pipeline repo
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
-  cp mapping.txt pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
+  cat mapping.txt | sort -u > pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
   cd pipeline
   git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
   git add snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
