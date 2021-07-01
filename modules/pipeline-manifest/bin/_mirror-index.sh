@@ -69,6 +69,10 @@ if [ -d pipeline ];  \
     then cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
     else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/pipeline.git pipeline; \
 fi
+if [ -d deploy ];  \
+    then cd deploy; git checkout master; git pull --quiet;cd ..; \
+    else git clone -b master git@github.com:open-cluster-management/deploy.git deploy; \
+fi
 
 if [[ -z $SKIP_MIRROR ]]; then
   brew hello
@@ -134,17 +138,23 @@ if [[ -z $SKIP_INDEX ]]; then
   amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
   echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
-  # Create the downstream-upstream connected manifest
-  echo Create the downstream-upstream connected manifest
+  # Create the downstream-upstream connected manifest and mirror mapping
+  echo Create the downstream-upstream connected manifest and mirror mapping
   python3 -u $BIN_PATH/_generate_downstream_manifest.py
-  # Push it to the pipeline repo
+  # Push it to the pipeline and deploy repos
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
   cat mapping.txt | sort -u > pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
+  cp pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt deploy/mirror
   cd pipeline
   git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
   git add snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
   git pull
   git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
+  git push --quiet
+  cd ../deploy
+  git add mirror/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
+  git pull
+  git commit -am "Added $Z_RELEASE_VERSION downstream mirror mapping for $DATESTAMP" --quiet
   git push --quiet
 else
   echo SKIP_INDEX defined, skipping index makeage
