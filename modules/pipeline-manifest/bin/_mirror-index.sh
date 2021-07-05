@@ -9,6 +9,9 @@ set -e
 #  4. Query the production redhat docker registry to see what upgrade bundles we can add
 #  5. Build our catalog and push it
 
+# We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
+postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:952ac9a625c7600449f0ab1970fae0a86c8a547f785e0f33bfae4365ece06336
+
 # Take an arbitrary bundle and create an index image out of it
 # Parameters:
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
@@ -134,7 +137,10 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with acm
   make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
 
-  # Finally, send out the acm custom registry to the mapping file
+  # Add postgres to the downstream mirror mapping file
+  echo $postgres_spec=__DESTINATION_ORG__/postgresql-12:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
+
+  # Finally, send out the acm custom registry to the downstream mirror mapping file
   amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
   echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
