@@ -143,16 +143,14 @@ if [[ -z $SKIP_INDEX ]]; then
   python3 -u $BIN_PATH/_generate_downstream_manifest.py
   # Push it to the pipeline and deploy repos
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
-  cat mapping.txt | sort -u > pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
-  cp pipeline/snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt deploy/mirror
+  cat mapping.txt | sort -u > deploy/mirror/$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP.txt
   cd pipeline
   git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
-  git add snapshots/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
   git pull
   git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
   git push --quiet
   cd ../deploy
-  git add mirror/mapping-$DATESTAMP-$Z_RELEASE_VERSION.txt
+  git add mirror/$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP.txt
   git pull
   git commit -am "Added $Z_RELEASE_VERSION downstream mirror mapping for $DATESTAMP" --quiet
   git push --quiet
