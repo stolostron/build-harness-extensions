@@ -86,6 +86,7 @@ pipeline-manifest/_clone: %_clone:
 	@if [ -d $(PIPELINE_MANIFEST_DIR) ]; then \
 	    $(SELF) -s pipeline-manifest/_pull; \
 	else \
+	    echo git clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
 	    $(GIT) clone -b $(PIPELINE_MANIFEST_GIT_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) $(PIPELINE_MANIFEST_DIR); \
 	fi
 
