@@ -10,12 +10,14 @@ PIPELINE_MANIFEST_SITE ?= github.com
 PIPELINE_MANIFEST_ORG ?= open-cluster-management
 # Repo name not yet confirmed
 PIPELINE_MANIFEST_REPO?= pipeline
+# The "product" name that is used for release repo; release=RHACM, backplane=backplane
+PIPELINE_PRODUCT_PREFIX ?= release
 # The URL for the pipeline repo
 PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_MANIFEST_SITE)/$(PIPELINE_MANIFEST_ORG)/$(PIPELINE_MANIFEST_REPO).git"
 # Branch of release component is on, i.e release-1.0.0
 PIPELINE_MANIFEST_COMPONENT_BRANCH ?= $(PIPELINE_MANIFEST_BRANCH)
 # Release version of the product
-PIPELINE_MANIFEST_RELEASE_VERSION ?= $(subst backplane-,,$(PIPELINE_MANIFEST_BRANCH))
+PIPELINE_MANIFEST_RELEASE_VERSION ?= $(subst $(PIPELINE_PRODUCT_PREFIX)-,,$(PIPELINE_MANIFEST_BRANCH))
 # Release version of the product based on the branch it came from
 PIPELINE_MANIFEST_SHA_RELEASE_VERSION ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)
 # Directory to put manifest in
