@@ -15,7 +15,7 @@ PIPELINE_MANIFEST_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(PIPELINE_
 # Branch of release component is on, i.e release-1.0.0
 PIPELINE_MANIFEST_COMPONENT_BRANCH ?= $(PIPELINE_MANIFEST_BRANCH)
 # Release version of the product
-PIPELINE_MANIFEST_RELEASE_VERSION ?= $(subst release-,,$(PIPELINE_MANIFEST_BRANCH))
+PIPELINE_MANIFEST_RELEASE_VERSION ?= $(subst backplane-,,$(PIPELINE_MANIFEST_BRANCH))
 # Release version of the product based on the branch it came from
 PIPELINE_MANIFEST_SHA_RELEASE_VERSION ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)
 # Directory to put manifest in
