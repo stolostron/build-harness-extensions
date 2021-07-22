@@ -10,9 +10,10 @@ from subprocess import run
 #  sys.argv[3] - boolean: dry run/validate (true) vs. actually do the tagging (false)
 #  sys.argv[4] - textual name of repo to do the tagging in (git|quay)
 #  sys.argv[5] - z-release "name" (i.e. 2.0.1)
-#  sys.argv[6] - "product" name (release|backplane)
+#  sys.argv[6] - PIPELINE_MANIFEST_REPO (pipelie|backplane-pipeline)
+#  sys.argv[7] - "product" name (release|backplane)
 
-if sys.argv[6] == "backplane":
+if sys.argv[7] == "backplane":
     tag_discriminator="-BACKPLANE-"
 else:
     tag_discriminator="-SNAPSHOT-"
