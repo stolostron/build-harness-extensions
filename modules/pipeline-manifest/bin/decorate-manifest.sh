@@ -78,7 +78,7 @@ echo Creating $shad_filename file
 jq -s '.' < manifest-sha.badjson > $shad_filename
 rm manifest-sha.badjson 2> /dev/null
 
-if [[ -z "$instrumented_filename" ]]; then
+if [[ ! -z "$instrumented_filename" ]]; then
   echo Creating $instrumented_filename file
   jq -s '.' < manifest-instrumented.badjson > $instrumented_filename
   rm manifest-instrumented.badjson 2> /dev/null
