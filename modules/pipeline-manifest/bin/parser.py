@@ -10,6 +10,13 @@ from subprocess import run
 #  sys.argv[3] - boolean: dry run/validate (true) vs. actually do the tagging (false)
 #  sys.argv[4] - textual name of repo to do the tagging in (git|quay)
 #  sys.argv[5] - z-release "name" (i.e. 2.0.1)
+#  sys.argv[6] - PIPELINE_MANIFEST_REPO (pipelie|backplane-pipeline)
+#  sys.argv[7] - "product" name (release|backplane)
+
+if sys.argv[7] == "backplane":
+    tag_discriminator="-BACKPLANE-"
+else:
+    tag_discriminator="-SNAPSHOT-"
 
 data = json.load(open(sys.argv[1]))
 for v in data:
@@ -22,8 +29,8 @@ for v in data:
     date_re=r"^\d{4}(-\d\d){5}$"
     if re.search(date_re,sys.argv[2]):
         # Assuming a date such as "2020-xx-yy..." is coming in as a tag, mark it all up with SNAPSHOT decoration specifc to this repo:
-        # z-release name + "-SNAPSHOT-" + tag (i.e. snapshot date/timestamp)
-        retag_name = sys.argv[5] + "-SNAPSHOT-" + sys.argv[2]
+        # z-release name + tag_discriminator + tag (i.e. snapshot date/timestamp)
+        retag_name = sys.argv[5] + tag_discriminator + sys.argv[2]
     else:
         # Tag is respected as literally and solely the second argument contents, likely a version/release tag
         retag_name = sys.argv[2]

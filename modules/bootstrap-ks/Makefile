@@ -284,7 +284,7 @@ bootstrap-ks/clusterclaim-save-secret: %clusterclaim-save-secret: %_init
 		--from-file=kubeconfig=$(BOOTSTRAP_KS_CC_KUBECONFIG_FILE) \
 		--from-literal=username=$(BOOTSTRAP_KS_CC_USERNAME) \
 		--from-literal=password=$(BOOTSTRAP_KS_CC_PASSWORD) \
-		--from-literal=api_url=$(BOOTSTRAP_KS_CC_API_URL)\ 
+		--from-literal=api_url=$(BOOTSTRAP_KS_CC_API_URL) \
 		--from-literal=console_url=$(BOOTSTRAP_KS_CC_CONSOLE_URL) \
 		--from-literal=clusterclaim_namespace=$(BOOTSTRAP_KS_CC_NAMESPACE) \
 		--from-literal=cloud_platform=$(BOOTSTRAP_KS_CLOUD_PLATFORM) \
