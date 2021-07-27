@@ -16,7 +16,8 @@ while true; do
 		echo ">>> Removing existing pipeline repo clone"
 		rm -rf $OSCI_MANIFEST_DIR
 	fi
-	echo ">>> Cloning the pipeline repo"
+	echo ">>> Incoming: OSCI_PIPELINE_PRODUCT_PREFIX=$OSCI_PIPELINE_PRODUCT_PREFIX, OSCI_RELEASE_VERSION=$OSCI_RELEASE_VERSION"
+	echo ">>> Cloning the pipeline repo from $OSCI_PIPELINE_GIT_URL, branch $OSCI_PIPELINE_GIT_BRANCH"
 	git clone -b $OSCI_PIPELINE_GIT_BRANCH $OSCI_PIPELINE_GIT_URL $OSCI_MANIFEST_DIR
 	echo ">>> Setting git user name and email"
 	pushd $OSCI_MANIFEST_DIR > /dev/null
