@@ -51,7 +51,7 @@ sonar/go/prow:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization=open-cluster-management \
+		-Dsonar.organization="${REPO_OWNER}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
@@ -86,7 +86,7 @@ sonar/go/openshiftci:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization=open-cluster-management \
+		-Dsonar.organization="${REPO_OWNER}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
@@ -114,7 +114,7 @@ sonar/go/openshiftci-post:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization=open-cluster-management \
+		-Dsonar.organization="${REPO_OWNER}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACTS}/sonar.log")
 
@@ -165,6 +165,6 @@ sonar/js/prow:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization=open-cluster-management \
+		-Dsonar.organization="${REPO_OWNER}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
