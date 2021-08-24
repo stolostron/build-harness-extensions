@@ -295,6 +295,14 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 	@$(shell $(SELF) oc/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh 
 
+.PHONY: pipeline-manifest/_stealthy-mirror
+# Mirror a brew tag without an errata
+pipeline-manifest/_stealthy-mirror: %_stealthy-mirror:
+	$(call assert-set,PIPELINE_MANIFEST_MIRROR_ORG)
+	$(call assert-set,PIPELINE_MANIFEST_MIRROR_TAG)
+	@$(shell $(SELF) oc/install > /dev/null)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_stealthy_mirror.py
+
 .PHONY: pipeline-manifest/_upgrade-map
 # Calculate the upgrade map for a specified GA version as defined in issue #8709
 pipeline-manifest/_upgrade-map: %_upgrade-map:
