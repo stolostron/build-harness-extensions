@@ -36,10 +36,10 @@ def main():
                 results2 = brew_build_info(nvr).decode('utf8').replace("'", '"')
                 build = json.loads(results2)
                 pullspec = build['extra']['image']['index']['pull'][0]
-                tag = build['extra']['image']['index']['tags'][0]
-                # Remove final "-container" from an image name
-                image_name = "".join(image_data['name'].rsplit("-container",1))+":"+tag
-                print('Initiating mirror of {}, image {} of {} {}'.format(image_name,index+1,len(images),retry_phrase))
+                nicespec = build['extra']['image']['index']['pull'][1].replace(
+                        'registry-proxy.engineering.redhat.com/rh-osbs/rhacm2-', ''
+                        )
+                print('Initiating mirror of {} to {}, image {} of {} {}'.format(pullspec,nicespec,index+1,len(images),retry_phrase))
                 oc.invoke(
                     'image',
                     cmd_args=[
@@ -47,12 +47,12 @@ def main():
                         '--keep-manifest-list=true',
                         '--filter-by-os=.*',
                         '{0}'.format(pullspec),
-                        'quay.io/{0}/{1}'.format(org, image_name)
+                        'quay.io/{0}/{1}'.format(org, nicespec)
                     ]
                 )
                 image_done = True
             except oc.OpenShiftPythonException as error:
-                print('Unable to mirror image {}'.format(image_name))
+                print('Unable to mirror image {}'.format(nicespec))
                 try:
                     # Try to pluck out just the exact thing that went wrong
                     error_info = json.loads(str(error).strip("[Non-zero return code from invoke action]"))
