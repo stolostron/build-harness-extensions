@@ -100,12 +100,12 @@ if [[ -z $SKIP_INDEX ]]; then
   docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
-  # Call make_index with backplane
-  make_index backplane-operator-bundle $(cat .backplane_operator_bundle_tag) backplane-custom-registry
+  # Call make_index with multicluster-engine/backplane:
+  make_index backplane-operator-bundle $(cat .backplane_operator_bundle_tag) mce-custom-registry
 
   # Finally, send out the backplane custom registry to the downstream mirror mapping file
-  amd_sha=$($OC image info quay.io/acm-d/backplane-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
-  echo quay.io/acm-d/backplane-custom-registry@$amd_sha=__DESTINATION_ORG__/backplane-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
+  amd_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
+  echo quay.io/acm-d/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
 
 else
   echo SKIP_INDEX defined, skipping index makeage
