@@ -51,6 +51,15 @@ retag/git: %git:
 	else $(CURL) --silent --show-error -L -X POST -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${RETAG_REPO}/git/refs" --data '{ "ref": "refs/tags/${RETAG_SNAPSHOT_NAME}", "sha": "${RETAG_GITHUB_SHA}" }'; \
 	fi
 
+# Retrieve the "latest" commit sha on a branch
+.PHONY: retag/latest_sha
+## Add a git tag to a repo at the commit sha
+retag/latest_sha: %latest_sha:
+	$(call assert-set,GITHUB_TOKEN)
+	$(call assert-set,RETAG_GIT_BRANCH)
+	$(call assert-set,RETAG_REPO)
+	@$(CURL) --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.VERSION.sha" "https://api.github.com/repos/${RETAG_REPO}/commits/${RETAG_GIT_BRANCH}"
+
 .PHONY: retag/getquaysha
 ## Get the quay sha256 out of the manifest digest
 retag/getquaysha: %getquaysha:
