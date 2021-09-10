@@ -40,11 +40,11 @@ make_index () {
 	echo $COMPUTED_UPGRADE_BUNDLES
 	# Build a catalog from bundle
 	cd release; echo tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/acm-d/$BUNDLE:v1.0.0-2 \
+   -B quay.io/acm-d/$BUNDLE_TAG \
    -r quay.io/acm-d -n $INDEX \
    -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
 	cd release; tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/acm-d/$BUNDLE:v1.0.0-2 \
+   -B quay.io/acm-d/$BUNDLE_TAG \
    -r quay.io/acm-d -n $INDEX \
    -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
 	rm -rf /tmp/acm-custom-registry
@@ -100,7 +100,7 @@ if [[ -z $SKIP_INDEX ]]; then
   docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
-  # Call make_index with multicluster-engine/backplane:
+  # Call make_index with multicluster engine
   make_index backplane-operator-bundle $(cat .backplane_operator_bundle_tag) mce-custom-registry
 
   # Finally, send out the backplane custom registry to the downstream mirror mapping file
