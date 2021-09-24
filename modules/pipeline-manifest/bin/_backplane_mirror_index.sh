@@ -40,21 +40,21 @@ make_index () {
 	echo $COMPUTED_UPGRADE_BUNDLES
 	# Build a catalog from bundle
 	cd release; echo tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/acm-d/$BUNDLE_TAG \
-   -r quay.io/acm-d -n $INDEX \
+   -B quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$BUNDLE_TAG \
+   -r quay.io/$PIPELINE_MANIFEST_MIRROR_ORG -n $INDEX \
    -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
 	cd release; tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/acm-d/$BUNDLE_TAG \
-   -r quay.io/acm-d -n $INDEX \
+   -B quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$BUNDLE_TAG \
+   -r quay.io/$PIPELINE_MANIFEST_MIRROR_ORG -n $INDEX \
    -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
 	rm -rf /tmp/acm-custom-registry
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
 	else
 		echo Got at a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		echo docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		#docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		#docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		echo docker tag quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		#docker tag quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		#docker push quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
 	fi
 }
 
@@ -104,8 +104,8 @@ if [[ -z $SKIP_INDEX ]]; then
   make_index backplane-operator-bundle $(cat .backplane_operator_bundle_tag) mce-custom-registry
 
   # Finally, send out the backplane custom registry to the downstream mirror mapping file
-  amd_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
-  echo quay.io/acm-d/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
+  amd_sha=$($OC image info quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
+  echo quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
 
 else
   echo SKIP_INDEX defined, skipping index makeage
