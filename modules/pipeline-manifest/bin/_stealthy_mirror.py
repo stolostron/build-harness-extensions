@@ -17,7 +17,7 @@ def env_set(env_var, default):
 
 def main():
     org = env_set('PIPELINE_MANIFEST_MIRROR_ORG', 'acm-d')
-    mirror_tag = env_set('PIPELINE_MANIFEST_MIRROR_TAG', 'backplane-1.0-rhel-8-container-candidate')
+    mirror_tag = env_set('PIPELINE_MANIFEST_MIRROR_TAG', 'multicluster-engine-1.0-rhel-8-container-candidate')
 
     max_retries = 5
     results = list_tags(mirror_tag)
@@ -37,7 +37,7 @@ def main():
                 build = json.loads(results2)
                 pullspec = build['extra']['image']['index']['pull'][0]
                 nicespec = build['extra']['image']['index']['pull'][1].replace(
-                        'registry-proxy.engineering.redhat.com/rh-osbs/rhacm2-', ''
+                        'registry-proxy.engineering.redhat.com/rh-osbs/multicluster-engine-', ''
                         )
                 print('Initiating mirror of {} to {}, image {} of {} {}'.format(pullspec,nicespec,index+1,len(images),retry_phrase))
                 oc.invoke(

@@ -9,11 +9,14 @@ set -e
 #  4. Query the production redhat docker registry to see what upgrade bundles we can add
 #  5. Build our catalog and push it
 
+# We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
+postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:952ac9a625c7600449f0ab1970fae0a86c8a547f785e0f33bfae4365ece06336
+
 # Take an arbitrary bundle and create an index image out of it
 # Parameters:
-#  $1: bundle name (i.e. acm-operator-bundle, cmb-operator-bundle, klusterlet-operator-bundle, etc.)
+#  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
 #  $2: bundle and index tag (i.e. 2.2.0-DOWNSTREAM-2021-01-14-06-28-39)
-#  $3: index name (i.e. acm-custom-registry, cmb-custom-registry, klusterlet-custom-registry)
+#  $3: index name (i.e. acm-custom-registry, klusterlet-custom-registry)
 make_index () {
 	BUNDLE=$1
 	BUNDLE_TAG=$2
@@ -39,22 +42,15 @@ make_index () {
 	echo Adding upgrade bundles:
 	echo $COMPUTED_UPGRADE_BUNDLES
 	# Build a catalog from bundle
-	cd release; echo tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$BUNDLE_TAG \
-   -r quay.io/$PIPELINE_MANIFEST_MIRROR_ORG -n $INDEX \
-   -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
-	cd release; tools/custom-registry-gen/gen-custom-registry.sh \
-   -B quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$BUNDLE_TAG \
-   -r quay.io/$PIPELINE_MANIFEST_MIRROR_ORG -n $INDEX \
-   -t $PIPELINE_MANFIEST_INDEX_IMAGE_TAG -P; cd ..
+	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; cd ..
 	rm -rf /tmp/acm-custom-registry
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
 	else
 		echo Got at a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		echo docker tag quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		#docker tag quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		#docker push quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		echo docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
 	fi
 }
 
@@ -64,14 +60,21 @@ OC=$BUILD_HARNESS_PATH/vendor/oc
 BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
 
 rm -rf /tmp/acm-custom-registry
+if [ -d ashdod ];  \
+    then cd ashdod; git pull --quiet;cd ..; \
+    else git clone -b master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
+fi
+echo Squaring up release repo...
 if [ -d release ];  \
     then cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
     else git clone -b backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:open-cluster-management/release.git release; \
 fi
+echo Squaring up backplane-pipeline repo...
 if [ -d backplane-pipeline ];  \
     then cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/backplane-pipeline.git backplane-pipeline; \
+    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/pipeline.git pipeline; \
 fi
+echo Squaring up deploy repo...
 if [ -d deploy ];  \
     then cd deploy; git checkout master; git pull --quiet;cd ..; \
     else git clone -b master git@github.com:open-cluster-management/deploy.git deploy; \
@@ -80,17 +83,42 @@ fi
 if [[ -z $SKIP_MIRROR ]]; then
   brew hello
   # Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
-  echo Mirroring images with tag $PIPELINE_MANIFEST_MIRROR_TAG...
-  python3 -u $BIN_PATH/_stealthy_mirror.py | tee .stealthy_output
-
-  if [[ ! -s .stealthy_output ]]; then
-    echo No output from mirroring\; aborting
+  echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
+  cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG --namespace $PIPELINE_MANIFEST_MIRROR_NAMESPACE | tee ../.ashdod_output; cd ..
+  if [[ ! -s .ashdod_output ]]; then
+    echo No output from ashdod\; aborting
     exit 1
   fi
 
-  echo "backplane-operator-bundle tag:"
-  cat .stealthy_output | grep "backplane-operator-bundle" | awk -F" " '{print $6}' | awk -F"," '{print $1}' | tee .backplane_operator_bundle_tag
+  # We expect ashdod to leave a mapping.txt file that contains all the images it knew to mirror
+  cp ashdod/mapping.txt .
 
+  echo "mce-operator-bundle tag:"
+  cat .ashdod_output | grep "Image to mirror: mce-operator-bundle:" | awk -F":" '{print $3}' | tee .mce_operator_bundle_tag
+
+  # Mirror the openshift images we depend on
+  # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
+  tempy=$(mktemp -d)
+  if [[ "$tempy" = "" ]]; then
+    echo Not doing it, no way, no how
+  else
+    ocwd=$(pwd)
+    pushd . && cd $tempy && $OC image extract quay.io/acm-d/mce-operator-bundle:$(cat $ocwd/.mce_operator_bundle_tag) --file=extras/* --filter-by-os=linux/amd64 && popd
+    cp $tempy/$(ls $tempy/) mce-operator-bundle-manifest.json
+    cat $tempy/$(ls $tempy/) | jq -rc '.[]' | while IFS='' read item;do
+      remote=$(echo $item | jq -r '.["image-remote"]')
+      if [[ "registry.redhat.io/openshift4" = "$remote" ]]
+      then
+        name=$(echo $item | jq -r '.["image-name"]')
+        tag=$(echo $item | jq -r '.["image-tag"]')
+        echo oc image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
+        $OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
+        amd_sha=$($OC image info quay.io/acm-d/$name:$tag --filter-by-os=linux/amd64 --output=json | jq -r '.listDigest')
+        echo quay.io/acm-d/$name@$amd_sha=__DESTINATION_ORG__/$name:$tag >> mapping.txt
+      fi
+    done
+    rm -rf $tempy
+  fi
 else
   echo SKIP_MIRROR defined, skipping mirror
 fi
@@ -100,12 +128,12 @@ if [[ -z $SKIP_INDEX ]]; then
   docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
-  # Call make_index with multicluster engine
-  make_index backplane-operator-bundle $(cat .backplane_operator_bundle_tag) mce-custom-registry
+  # Call make_index with mce
+  make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry
 
-  # Finally, send out the backplane custom registry to the downstream mirror mapping file
-  amd_sha=$($OC image info quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
-  echo quay.io/$PIPELINE_MANIFEST_MIRROR_ORG/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
+  # Finally, send out the mce custom registry to the downstream mirror mapping file
+  mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
+  echo quay.io/acm-d/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
 
 else
   echo SKIP_INDEX defined, skipping index makeage
