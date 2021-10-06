@@ -252,7 +252,7 @@ pipeline-manifest/_snapshot: %_snapshot: %_clone %_validate-tag
 .PHONY: pipeline-manifest/_validate-tag
 # Create sha-based manifest (validates as it goes, fails if all images are not present)
 pipeline-manifest/_validate-tag: %_validate-tag:
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json $(PIPELINE_MANIFEST_REMOTE_REPO) > out.tmp
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/decorate-manifest.sh $(PIPELINE_MANIFEST_FILE_NAME).json $(PIPELINE_MANIFEST_FILE_NAME)-$(TAG)-$(PIPELINE_MANIFEST_SHA_RELEASE_VERSION).json $(PIPELINE_MANIFEST_ALIAS_FILE_NAME).json $(PIPELINE_MANIFEST_REPO) $(PIPELINE_MANIFEST_REMOTE_REPO) > out.tmp
 	@echo .. "output from _validate-tag process:"
 	@cat out.tmp
 
