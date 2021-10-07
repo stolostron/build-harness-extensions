@@ -50,7 +50,7 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
     echo "**** Home ****"
   else
     echo "**** Away, mirroring to Home ****"
-    $OC image mirror $remote/$name:$tag=$home_quay_org/$name:$home_tag --keep-manifest-list=true --filter-by-os=.*
+    $OC image mirror $remote/$name:$tag=$home_quay_org/$name:$tag-$home_tag --keep-manifest-list=true --filter-by-os=.*
   fi
   echo image name: [$name] remote: [$remote] repostory: [$repository] tag: [$tag] image_key: [$image_key]
 
