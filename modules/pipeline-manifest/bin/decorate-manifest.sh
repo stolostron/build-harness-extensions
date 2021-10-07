@@ -6,6 +6,7 @@
 #   $3 - image-to-alias dictionary (image-alias.json, should exist)
 #   $4 - name of the GitHub pipeline repo (pipeline vs. backplane-pipeline)
 #   $5 - Quay org/repo name of "home" registry - "visitor" images will be mirrored here ($PIPELINE_MANIFEST_REMOTE_REPO)
+#   $6 - Tag (datestamp) to add to mirrored "away" images
 #
 # Required environment variables:
 #   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read open-cluster-management stuffs
@@ -22,6 +23,7 @@ shad_filename=$2
 dictionary_filename=$3
 pipeline_repo=$4
 home_quay_org=$5
+home_tag=$6
 
 OC=$BUILD_HARNESS_PATH/vendor/oc
 
@@ -48,7 +50,7 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
     echo "**** Home ****"
   else
     echo "**** Away, mirroring to Home ****"
-    $OC image mirror $remote/$name:$tag=$home_quay_org/$name --keep-manifest-list=true --filter-by-os=.*
+    $OC image mirror $remote/$name:$tag=$home_quay_org/$name:$home_tag --keep-manifest-list=true --filter-by-os=.*
   fi
   echo image name: [$name] remote: [$remote] repostory: [$repository] tag: [$tag] image_key: [$image_key]
 
