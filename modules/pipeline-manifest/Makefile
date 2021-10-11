@@ -306,3 +306,15 @@ pipeline-manifest/_mirror-backplane-index: %_mirror-backplane-index:
 pipeline-manifest/_upgrade-map: %_upgrade-map:
 	$(call assert-set,PIPELINE_MANIFEST_UPGRADE_MAP_VERSION)
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_upgrade-map.py $(PIPELINE_MANIFEST_UPGRADE_MAP_VERSION) $(PIPELINE_MANIFEST_ORG)
+
+.PHONY: pipeline-manifest/_snapshot_pruner
+## Prune snapshots in a specified branch
+pipeline-manifest/_snapshot-pruner: %_snapshot-pruner:
+	$(call assert-set,PIPELINE_MANIFEST_REPO)
+	$(call assert-set,PIPELINE_MANIFEST_BRANCH)
+	rm -rf .pruner_work
+	$(GIT) clone -b $(PIPELINE_MANIFEST_BRANCH) $(PIPELINE_MANIFEST_GIT_URL) .pruner_work
+	cd .pruner_work/snapshots ; python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_snapshot_pruner.py . $(REALLY_REALLY_DO_IT)
+	@if [[ "$(REALLY_REALLY_DO_IT)" = "True" ]]; then \
+		cd .pruner_work;  $(GIT) commit -am "Trim snapshots [skip ci]" --quiet; $(GIT) push --quiet ; \
+	fi
