@@ -3,16 +3,16 @@ OPM_VERSION ?= v1.6.1
 OPM_URL ?= https://github.com/operator-framework/operator-registry/releases/download/$(OPM_VERSION)/$(BUILD_HARNESS_OS)-$(BUILD_HARNESS_ARCH)-opm
 OPM ?= $(BUILD_HARNESS_PATH)/vendor/opm
 
-# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=quay.io/identitatem/idp-mgmt-config-bundle:0.0.1,quay.io/identitatem/idp-mgmt-config-bundle:0.0.2).
+# A comma-separated list of bundle images (e.g. make catalog-build OPM_BUNDLE_IMGS=quay.io/identitatem/idp-mgmt-config-bundle:0.0.1,quay.io/identitatem/idp-mgmt-config-bundle:0.0.2).
 # These images MUST exist in a registry and be pull-able.
-BUNDLE_IMGS ?= $(BUNDLE_IMG)
+OPM_BUNDLE_IMGS ?= $(OPM_BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=quay.io/identitatem/idp-mgmt-config-catalog:0.0.1).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+OPM_CATALOG_IMG ?= $(OPM_IMAGE_TAG_BASE)-catalog:v$(OPM_VERSION)
 
-# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
-ifneq ($(origin CATALOG_BASE_IMG), undefined)
-FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $OPM_BUNDLE_IMGS to that image.
+ifneq ($(origin OPM_CATALOG_BASE_IMG), undefined)
+OPM_FROM_INDEX_OPT := --from-index $(OPM_CATALOG_BASE_IMG)
 endif
 
 .PHONY: opm/install
@@ -32,4 +32,4 @@ opm/install: %install:
 .PHONY: opm/catalog-build
 ## Build a catalog image.
 opm/catalog-build: opm/install
-	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+	$(OPM) index add --container-tool docker --mode semver --tag $(OPM_CATALOG_IMG) --bundles $(OPM_BUNDLE_IMGS) $(OPM_FROM_INDEX_OPT)
