@@ -307,8 +307,8 @@ pipeline-manifest/_upgrade-map: %_upgrade-map:
 	$(call assert-set,PIPELINE_MANIFEST_UPGRADE_MAP_VERSION)
 	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_upgrade-map.py $(PIPELINE_MANIFEST_UPGRADE_MAP_VERSION) $(PIPELINE_MANIFEST_ORG)
 
-.PHONY: pipeline-manifest/_snapshot_pruner
-## Prune snapshots in a specified branch
+.PHONY: pipeline-manifest/_snapshot-pruner
+# Prune snapshots in a specified branch
 pipeline-manifest/_snapshot-pruner: %_snapshot-pruner:
 	$(call assert-set,PIPELINE_MANIFEST_REPO)
 	$(call assert-set,PIPELINE_MANIFEST_BRANCH)
