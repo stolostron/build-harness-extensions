@@ -1,17 +1,19 @@
 #!/bin/sh
 
 # Incoming variables:
-#   $1 - name of the "base" decorated manifest json file without .json sufffix (should exist)
-#   $2 - name of the "delta" decorated manifests json file without .json sufffix (can be blank)
-#   $3 - name of the snapshot multiclusterhub-operator image tag (should exist; i.e. 2.1.0-SNAPSHOT-2020-08-12-06-21-22)
-#   $4 - name of the snapshot endpoint-operator image tag (should exist; i.e. 2.1.0-SNAPSHOT-2020-08-12-06-21-22)
-#   $5 - name of the delta image tags (to be created; i.e. 2.1.0-DEVELOPER-2020-08-12-06-21-22)
-#   $6 - Z release version (i.e. 1.0.1, 2.0.1)
-#   $7 - Release version (i.e. 2.0, 2.1)
-#   $8 - Retag all images [true|false]; must be "true" to actually do the work, default is "false"
+#   $1  - name of the "base" decorated manifest json file without .json sufffix (should exist)
+#   $2  - name of the "delta" decorated manifests json file without .json sufffix (can be blank)
+#   $3  - name of the snapshot multiclusterhub-operator image tag (should exist; i.e. 2.1.0-SNAPSHOT-2020-08-12-06-21-22)
+#   $4  - name of the snapshot endpoint-operator image tag (should exist; i.e. 2.1.0-SNAPSHOT-2020-08-12-06-21-22)
+#   $5  - name of the delta image tags (to be created; i.e. 2.1.0-DEVELOPER-2020-08-12-06-21-22)
+#   $6  - Z release version (i.e. 1.0.1, 2.0.1)
+#   $7  - Release version (i.e. 2.0, 2.1)
+#   $8  - Retag all images [true|false]; must be "true" to actually do the work, default is "false"
+#   $9  - GitHub org name where the repos live
+#   $10 - Quay org name where the dockerimages live
 #
 # Requires:
-#   $GITHUB_USER - GitHub user (needs access to open-cluster-management stuffs)
+#   $GITHUB_USER - GitHub user (needs access to github org stuffs)
 #   $GITHUB_TOKEN - GitHub API token
 #   $DOCKER_USER - docker/quay userid
 #   $DOCKER_PASS - docker/quay password
@@ -25,6 +27,8 @@ PIPELINE_MANIFEST_NEW_INDEX_TAG=$5
 Z_RELEASE_VERSION=$6
 RELEASE_VERSION=$7
 RETAGIT=$8
+GITHUB_ORG=$9
+QUAY_ORG=$10
 
 # For each component in the delta manifest file, replace what's in the base manifest file
 for k in $(jq -c '.[]' $delta_file.json); do
@@ -69,18 +73,18 @@ eval 'sed -e "s:%%MCHO_INPUT_TAG%%:$PIPELINE_MANIFEST_INCOMING_MCHO_TAG:g;" -e "
 # First build the endpoint operator so that its sha can be included in the manifest layered into the hub operator
 #
 eval 'docker login -u=$DOCKER_USER -p=$DOCKER_PASS quay.io'
-eval 'docker pull quay.io/open-cluster-management/endpoint-operator:$PIPELINE_MANIFEST_INCOMING_EO_TAG'
-eval 'docker build . -f Dockerfile.eo -t quay.io/open-cluster-management/endpoint-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
-eval 'docker push quay.io/open-cluster-management/endpoint-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
+eval 'docker pull quay.io/$QUAY_ORG/endpoint-operator:$PIPELINE_MANIFEST_INCOMING_EO_TAG'
+eval 'docker build . -f Dockerfile.eo -t quay.io/$QUAY_ORG/endpoint-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
+eval 'docker push quay.io/$QUAY_ORG/endpoint-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
 ep_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$PIPELINE_MANIFEST_NEW_INDEX_TAG COMPONENT_NAME=endpoint-operator`
 echo endpoint-operator image sha: $ep_quaysha
 
 jq --arg ep_quaysha $ep_quaysha '(.[] | select (.["image-name"] == "endpoint-operator") | .["image-digest"]) |= $ep_quaysha' $base_file.json > tmp.json ; mv tmp.json $base_file.json
 if [[ "$ep_quaysha" == "null" ]]; then echo Oh no - the endpoint operator image digest is missing!; exit 1; fi
 
-eval 'docker pull quay.io/open-cluster-management/multiclusterhub-operator:$PIPELINE_MANIFEST_INCOMING_MCHO_TAG'
-eval 'docker build . -f Dockerfile.mcho -t quay.io/open-cluster-management/multiclusterhub-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
-eval 'docker push quay.io/open-cluster-management/multiclusterhub-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
+eval 'docker pull quay.io/$QUAY_ORG/multiclusterhub-operator:$PIPELINE_MANIFEST_INCOMING_MCHO_TAG'
+eval 'docker build . -f Dockerfile.mcho -t quay.io/$QUAY_ORG/multiclusterhub-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
+eval 'docker push quay.io/$QUAY_ORG/multiclusterhub-operator:$PIPELINE_MANIFEST_NEW_INDEX_TAG'
 mco_quaysha=`make -s retag/getquaysha RETAG_QUAY_COMPONENT_TAG=$PIPELINE_MANIFEST_NEW_INDEX_TAG COMPONENT_NAME=multiclusterhub-operator`
 echo multiclusterhub-operator image sha: $mco_quaysha
 
@@ -90,7 +94,7 @@ if [[ "$mco_quaysha" == "null" ]]; then echo Oh no - the multiclusterhub operato
 # Build an index image using the release repo
 if [ -d release ];  \
 then cd release; git pull; cd ..; \
-else git clone -b release-$RELEASE_VERSION https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/open-cluster-management/release.git release ;\
+else git clone -b release-$RELEASE_VERSION https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_ORG}/release.git release ;\
 fi
 
 # Copy over the manifest

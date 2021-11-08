@@ -10,7 +10,7 @@ COMPONENT_VERSION ?= $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_VERSION 2> /
 COMPONENT_TAG_EXTENSION ?= -${TRAVIS_COMMIT}
 
 # Build the details for the remote destination repo for the image
-COMPONENT_DOCKER_REPO ?= quay.io/open-cluster-management
+COMPONENT_DOCKER_REPO ?= quay.io/${PIPELINE_MANIFEST_QUAY_ORG}
 
 # Docker image coverage postfix
 DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage

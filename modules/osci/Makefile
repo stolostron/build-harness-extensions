@@ -20,7 +20,7 @@ export OSCI_RELEASE_VERSION ?= $(subst $(OSCI_PIPELINE_PRODUCT_PREFIX)-,,$(OSCI_
 export OSCI_RELEASE_SHA_VERSION ?= $(OSCI_RELEASE_VERSION)
 
 export OSCI_PIPELINE_SITE ?= github.com
-export OSCI_PIPELINE_ORG ?= open-cluster-management
+export OSCI_PIPELINE_ORG ?= $(PIPELINE_MANIFEST_ORG)
 export OSCI_PIPELINE_REPO ?= pipeline
 export OSCI_PIPELINE_STAGE ?= integration
 export OSCI_PIPELINE_RETAG_BRANCH ?= quay-retag
@@ -40,7 +40,7 @@ export OSCI_MANIFEST_SNAPSHOT_DIR ?= snapshots
 # the actual work of the publish job.
 export OSCI_PUBLISH_DELAY ?= 5
 
-export OSCI_IMAGE_REMOTE_REPO ?= quay.io/open-cluster-management
+export OSCI_IMAGE_REMOTE_REPO ?= $(PIPELINE_MANIFEST_REMOTE_REPO)
 export OSCI_IMAGE_REMOTE_REPO_SRC ?= $(OSCI_IMAGE_REMOTE_REPO)
 export OSCI_IMAGE_REMOTE_REPO_DST ?= $(OSCI_IMAGE_REMOTE_REPO)
 
@@ -55,7 +55,7 @@ export OSCI_SORT_QUERY ?= . | sort_by(.["image-name"])
 
 export OSCI_DATETIME := $(shell (date +%Y-%m-%d-%H-%M-%S))
 
-export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/open-cluster-management/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
+export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
 
 .PHONY: osci/publish
 ## Add or update component $OSCI_COMPONENT_NAME to have version $OSCI_COMPONENT_VERSION in the pipeline manifest in stage $OSCI_PIPELINE_STAGE

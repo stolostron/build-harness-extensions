@@ -8,6 +8,7 @@
 #export PIPELINE_MANIFEST_LATEST_Z_RELEASE=x.y.z
 #export MANIFEST_FILE=`make pipeline-manifest/_get_latest_manifest`
 #export PIPELINE_REPO_BRANCH=$PIPELINE_MANIFEST_LATEST_BRANCH
+#export PIPELINE_MANIFEST_ORG=<github org where repos are>
 
 NEW_BRANCH=release-x.y
 OLD_BRANCH=
@@ -15,7 +16,7 @@ OLD_BRANCH1=master
 OLD_BRANCH2=main
 
 rm pipeline.json 2> /dev/null
-$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/open-cluster-management/pipeline/$PIPELINE_REPO_BRANCH/snapshots/$MANIFEST_FILE --output pipeline.json)
+$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/$PIPELINE_MANIFEST_ORG/pipeline/$PIPELINE_REPO_BRANCH/snapshots/$MANIFEST_FILE --output pipeline.json)
 
 cat pipeline.json | jq -rc '.[]' | while IFS='' read item;do
   #
@@ -43,7 +44,7 @@ cat pipeline.json | jq -rc '.[]' | while IFS='' read item;do
   if [ $MASTER_SHA == "null" ]; then
     echo "No master/main branch - ignoring"
   else
-    if [ $repo == "open-cluster-management" ]; then
+    if [ $repo == $PIPELINE_MANIFEST_ORG ]; then
       #
       # Create the new branch off of master/main
       #
@@ -52,7 +53,7 @@ cat pipeline.json | jq -rc '.[]' | while IFS='' read item;do
       #output='curl -s --show-error -X POST -H "Authorization: token $GITHUB_TOKEN" -d  "{\"ref\": \"refs/heads/$NEW_BRANCH\",\"sha\": \"$MASTER_SHA\"}" "https://api.github.com/repos/$gitrepo/git/refs"'
       echo $output
     else
-      echo "Not in open-cluster-management - ignoring"
+      echo "Not in $PIPELINE_MANIFEST_ORG - ignoring"
     fi
   fi
 done

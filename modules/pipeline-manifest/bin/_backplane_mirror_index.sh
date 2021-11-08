@@ -8,12 +8,15 @@ set -e
 #  3b. Mirror the openshift images
 #  4. Query the production redhat docker registry to see what upgrade bundles we can add
 #  5. Build our catalog and push it
+#
+# Main Parameters:
+#  $1: GitHub organization name
 
 # We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
 postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:952ac9a625c7600449f0ab1970fae0a86c8a547f785e0f33bfae4365ece06336
 
 # Take an arbitrary bundle and create an index image out of it
-# Parameters:
+# make_index Parameters:
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
 #  $2: bundle and index tag (i.e. 2.2.0-DOWNSTREAM-2021-01-14-06-28-39)
 #  $3: index name (i.e. acm-custom-registry, klusterlet-custom-registry)
@@ -58,6 +61,7 @@ make_index () {
 echo Preparing environment for release $Z_RELEASE_VERSION tagged as $PIPELINE_MANFIEST_INDEX_IMAGE_TAG...
 OC=$BUILD_HARNESS_PATH/vendor/oc
 BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
+PIPELINE_MANIFEST_ORG=$1
 
 rm -rf /tmp/acm-custom-registry
 if [ -d ashdod ];  \
@@ -67,17 +71,17 @@ fi
 echo Squaring up release repo...
 if [ -d release ];  \
     then cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone -b backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:open-cluster-management/release.git release; \
+    else git clone -b backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$(PIPELINE_MANIFEST_ORG)/release.git release; \
 fi
 echo Squaring up backplane-pipeline repo...
 if [ -d backplane-pipeline ];  \
     then cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:open-cluster-management/pipeline.git pipeline; \
+    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$(PIPELINE_MANIFEST_ORG)/pipeline.git pipeline; \
 fi
 echo Squaring up deploy repo...
 if [ -d deploy ];  \
     then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone -b master git@github.com:open-cluster-management/deploy.git deploy; \
+    else git clone -b master git@github.com:$(PIPELINE_MANIFEST_ORG)/deploy.git deploy; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then

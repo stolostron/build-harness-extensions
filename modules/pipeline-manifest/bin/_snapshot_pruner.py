@@ -25,7 +25,7 @@ def main():
         if (dry_run == True):
             print('Second argument is not "True"; only rehearsing changes')
     else:
-        print("Syntax: python3 parser.py <directory> [True]")
+        print("Syntax: python3 _snapshot_pruner.py <directory> [True]")
         exit(1)
 
     files = os.listdir(snapshot_dir)
