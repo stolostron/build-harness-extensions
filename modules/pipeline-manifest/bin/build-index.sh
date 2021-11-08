@@ -66,8 +66,8 @@ MCHO_RELEASE=`eval $MCHO_JQUERY`
 echo EO_RELEASE: $EO_RELEASE
 echo MCHO_RELEASE: $MCHO_RELEASE
 
-eval 'sed -e "s:%%EO_INPUT_TAG%%:$PIPELINE_MANIFEST_INCOMING_EO_TAG:g;" -e "s:%%MANIFEST%%:$base_file:g;" -e "s:%%Z_RELEASE_VERSION%%:$Z_RELEASE_VERSION:g;" $BUILD_HARNESS_EXTENSIONS_PATH/modules/pipeline-manifest/lib/Dockerfile.eo_template > Dockerfile.eo'
-eval 'sed -e "s:%%MCHO_INPUT_TAG%%:$PIPELINE_MANIFEST_INCOMING_MCHO_TAG:g;" -e "s:%%MANIFEST%%:$base_file:g;" -e "s:%%Z_RELEASE_VERSION%%:$Z_RELEASE_VERSION:g;" $BUILD_HARNESS_EXTENSIONS_PATH/modules/pipeline-manifest/lib/Dockerfile.mcho_template > Dockerfile.mcho'
+eval 'sed -e "s:%%EO_INPUT_TAG%%:$PIPELINE_MANIFEST_INCOMING_EO_TAG:g;" -e "s:%%MANIFEST%%:$base_file:g;" -e "s:%%Z_RELEASE_VERSION%%:$Z_RELEASE_VERSION:g;" -e "s:%%QUAY_ORG%%:$QUAY_ORG:g;" $BUILD_HARNESS_EXTENSIONS_PATH/modules/pipeline-manifest/lib/Dockerfile.eo_template > Dockerfile.eo'
+eval 'sed -e "s:%%MCHO_INPUT_TAG%%:$PIPELINE_MANIFEST_INCOMING_MCHO_TAG:g;" -e "s:%%MANIFEST%%:$base_file:g;" -e "s:%%Z_RELEASE_VERSION%%:$Z_RELEASE_VERSION:g;" -e "s:%%QUAY_ORG%%:$QUAY_ORG:g;" $BUILD_HARNESS_EXTENSIONS_PATH/modules/pipeline-manifest/lib/Dockerfile.mcho_template > Dockerfile.mcho'
 
 #
 # First build the endpoint operator so that its sha can be included in the manifest layered into the hub operator
