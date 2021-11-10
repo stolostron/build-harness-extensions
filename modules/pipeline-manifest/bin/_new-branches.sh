@@ -4,11 +4,12 @@
 
 # Notes - set these in your environment or here:
 #export GITHUB_TOKEN=your_token
+#export PIPELINE_MANIFEST_ORG=<github org where repos are>
+#export PIPELINE_MANIFEST_REPO=(pipeline or backplane-pipeline)
 #export PIPELINE_MANIFEST_LATEST_BRANCH=x.y-integration
 #export PIPELINE_MANIFEST_LATEST_Z_RELEASE=x.y.z
 #export MANIFEST_FILE=`make pipeline-manifest/_get_latest_manifest`
 #export PIPELINE_REPO_BRANCH=$PIPELINE_MANIFEST_LATEST_BRANCH
-#export PIPELINE_MANIFEST_ORG=<github org where repos are>
 
 NEW_BRANCH=release-x.y
 OLD_BRANCH=
@@ -16,7 +17,7 @@ OLD_BRANCH1=master
 OLD_BRANCH2=main
 
 rm pipeline.json 2> /dev/null
-$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/$PIPELINE_MANIFEST_ORG/pipeline/$PIPELINE_REPO_BRANCH/snapshots/$MANIFEST_FILE --output pipeline.json)
+$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/$PIPELINE_MANIFEST_ORG/$PIPELINE_MANIFEST_REPO/$PIPELINE_REPO_BRANCH/snapshots/$MANIFEST_FILE --output pipeline.json)
 
 cat pipeline.json | jq -rc '.[]' | while IFS='' read item;do
   #
