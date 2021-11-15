@@ -1,5 +1,5 @@
 #-- bootstrap-ks Params---#
-BOOTSTRAP_KS_REPO ?= https://${GITHUB_TOKEN}@github.com/open-cluster-management/bootstrap-ks.git
+BOOTSTRAP_KS_REPO ?= https://${GITHUB_TOKEN}@github.com/${PIPELINE_MANIFEST_ORG}/bootstrap-ks.git
 BOOTSTRAP_KS_BRANCH ?= main
 BOOTSTRAP_KS_DEPLOY_DIR ?= bootstrap-ks
 

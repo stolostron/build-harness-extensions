@@ -3,12 +3,13 @@
 # Incoming parameters:
 #   $1 - path to the charts that should be manipulated (typically multicloudhub-repo/multiclusterhub/charts)
 #   $2 - snapshot date (just the date part)
+#   $3 - Quay org name
 #
 # Required environment variables:
-#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read open-cluster-management stuffs
+#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read quay org stuffs
 #
 
-quay_org=open-cluster-management
+quay_org=$3
 
 SNAPSHOT=$2
 if [[ -z "$GITHUB_TOKEN" ]]

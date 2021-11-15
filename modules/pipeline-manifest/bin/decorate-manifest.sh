@@ -9,7 +9,7 @@
 #   $6 - Tag (datestamp) to add to mirrored "away" images
 #
 # Required environment variables:
-#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read open-cluster-management stuffs
+#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read quay org stuffs
 #
 
 if [[ -z "$QUAY_TOKEN" ]]

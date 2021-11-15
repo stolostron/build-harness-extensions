@@ -6,7 +6,7 @@
 #   $3 - sequence of events (1=endpoint operator, 2=hub operator)
 #   $4 - the Z-release version number
 # Required environment variables:
-#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read open-cluster-management stuffs)
+#   $QUAY_TOKEN - you know, the token... to quay (needs to be able to read Quay org stuffs)
 #
 
 if [[ -z "$QUAY_TOKEN" ]]

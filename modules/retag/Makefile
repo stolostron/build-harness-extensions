@@ -14,7 +14,6 @@ RETAG_QUAY_COMPONENT_TAG ?=
 RETAG_SNAPSHOT_NAME ?=
 RETAG_GITHUB_SHA ?=
 RETAG_REPO ?=
-PIPELINE_MANIFEST_ORG ?= open-cluster-management
 
 # Retag needs to do the following steps:
 #  1. Find an image in quay based on what we would call the team's docker tag, and pull out and assign 'RETAG_QUAY_SHA' from that
@@ -71,7 +70,7 @@ retag/getquaysha: %getquaysha:
 retag/shabuild: %shabuild:
 	@$(shell $(SELF) jq/install > /dev/null)
 	@$(shell $(SELF) yq/install > /dev/null)
-	$(GIT) clone -b $(RETAG_GIT_BRANCH) https://github.com/open-cluster-management/multicloudhub-repo.git
-	$(shell $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/retag/bin/process.sh multicloudhub-repo/multiclusterhub/charts ${RETAG_SNAPSHOT_NAME} > temp.out )
+	$(GIT) clone -b $(RETAG_GIT_BRANCH) https://github.com/$(PIPELINE_MANIFEST_ORG)/multicloudhub-repo.git
+	$(shell $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/retag/bin/process.sh multicloudhub-repo/multiclusterhub/charts ${RETAG_SNAPSHOT_NAME} ${PIPELINE_MANIFEST_QUAY_ORG} > temp.out )
 	@cat temp.out
 

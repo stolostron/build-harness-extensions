@@ -37,7 +37,9 @@ PIPELINE_MANIFEST_RETAG_BRANCH ?= quay-retag
 PIPELINE_MANIFEST_LATEST_BRANCH ?= 2.4-edge
 # The Z release of the pipeline to use for grabbing the latest manifest file
 PIPELINE_MANIFEST_LATEST_Z_RELEASE ?= 2.4.0
-PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/open-cluster-management
+# If GitHub and Quay org names diverge, this is where it changes
+PIPELINE_MANIFEST_QUAY_ORG ?= $(PIPELINE_MANIFEST_ORG)
+PIPELINE_MANIFEST_REMOTE_REPO ?= quay.io/$(PIPELINE_MANIFEST_QUAY_ORG)
 
 PIPELINE_MANIFEST_COMPONENT_SUFFIX ?= $(PIPELINE_MANIFEST_COMPONENT_SHA256)
 
@@ -63,7 +65,7 @@ PIPELINE_MANIFEST_GIT_BRANCH ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_F
 PIPELINE_MANIFEST_RETAG_REPO ?= quay
 
 DATETIME_VAR := $(shell (date +%Y-%m-%d-%H-%M-%S))
-Z_RELEASE_VERSION ?= $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/open-cluster-management/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
+Z_RELEASE_VERSION ?= $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${PIPELINE_MANIFEST_ORG}/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
 	
 
 .PHONY: pipeline-manifest/_datetime_gen
@@ -259,14 +261,14 @@ pipeline-manifest/_validate-tag: %_validate-tag:
 .PHONY: pipeline-manifest/_retag
 # Validate and retag all images or git repos identified in manifest
 pipeline-manifest/_retag: %_retag:
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_PRODUCT_PREFIX)
-	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_PRODUCT_PREFIX)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) true $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_MANIFEST_ORG) $(PIPELINE_PRODUCT_PREFIX)
+	@python3 $(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/parser.py $(PIPELINE_MANIFEST_FILE_NAME).json $(TAG) false $(PIPELINE_MANIFEST_RETAG_REPO) $(PIPELINE_MANIFEST_SHA_RELEASE_VERSION) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_MANIFEST_ORG) $(PIPELINE_PRODUCT_PREFIX)
 
 .PHONY: pipeline-manifest/_get_latest_manifest
 # Get the latest manifest file in the snapshots directory of a pipeline repo on the PIPELINE_MANIFEST_LATEST_BRANCH branch (i.e. x.y-edge or x.y-stable) specific to a Z-release
 pipeline-manifest/_get_latest_manifest:
 	@$(shell $(SELF) jq/install > /dev/null)
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/get-latest-manifest.sh $(PIPELINE_MANIFEST_LATEST_BRANCH) $(PIPELINE_MANIFEST_LATEST_Z_RELEASE) $(PIPELINE_MANIFEST_REPO)
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/get-latest-manifest.sh $(PIPELINE_MANIFEST_LATEST_BRANCH) $(PIPELINE_MANIFEST_LATEST_Z_RELEASE) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_MANIFEST_ORG)
 
 .PHONY: pipeline-manifest/_postprocess
 # Postprocessing steps
@@ -277,7 +279,7 @@ pipeline-manifest/_postprocess: %_postprocess:
 ## Build bundle and index images out of a hybrid of decorated manifest files
 pipeline-manifest/build-index: %build-index:
 	@$(shell $(SELF) jq/install > /dev/null)
-	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION) $(PIPELINE_MANIFEST_NEW_CANARY_TAG) $(PIPELINE_MANIFEST_REPO)
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/build-index.sh $(PIPELINE_MANIFEST_FILE_NAME) $(PIPELINE_MANIFEST_DELTA_FILE_NAME) $(PIPELINE_MANIFEST_INCOMING_MCHO_TAG) $(PIPELINE_MANIFEST_INCOMING_EO_TAG) $(PIPELINE_MANIFEST_NEW_INDEX_TAG) $(Z_RELEASE_VERSION) $(PIPELINE_MANIFEST_RELEASE_VERSION) $(PIPELINE_MANIFEST_NEW_CANARY_TAG) $(PIPELINE_MANIFEST_REPO) $(PIPELINE_MANIFEST_ORG) $(PIPELINE_MANIFEST_QUAY_ORG)
 
 .PHONY: pipeline-manifest/_mirror-index
 # Mirror downstream acm-d and create custom registry/index
@@ -290,7 +292,7 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 	$(call assert-set,PIPELINE_MANIFEST_REDHAT_TOKEN)
 	@$(shell $(SELF) jq/install > /dev/null)
 	@$(shell $(SELF) oc/install > /dev/null)
-	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh 
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh $(PIPELINE_MANIFEST_ORG)
 
 .PHONY: pipeline-manifest/_mirror-backplane-index
 # Mirror a brew tag without an errata and create custom registry/index
@@ -299,7 +301,7 @@ pipeline-manifest/_mirror-backplane-index: %_mirror-backplane-index:
 	$(call assert-set,PIPELINE_MANIFEST_MIRROR_TAG)
 	$(call assert-set,PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
 	@$(shell $(SELF) oc/install > /dev/null)
-	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_backplane_mirror_index.sh
+	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_backplane_mirror_index.sh $(PIPELINE_MANIFEST_ORG)
 
 .PHONY: pipeline-manifest/_upgrade-map
 # Calculate the upgrade map for a specified GA version as defined in issue #8709

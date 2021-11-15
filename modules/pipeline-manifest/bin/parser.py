@@ -11,9 +11,10 @@ from subprocess import run
 #  sys.argv[4] - textual name of repo to do the tagging in (git|quay)
 #  sys.argv[5] - z-release "name" (i.e. 2.0.1)
 #  sys.argv[6] - PIPELINE_MANIFEST_REPO (pipelie|backplane-pipeline)
-#  sys.argv[7] - "product" name (release|backplane)
+#  sys.argv[7] - PIPELINE_MANIFEST_ORG
+#  sys.argv[8] - "product" name (release|backplane)
 
-if sys.argv[7] == "backplane":
+if sys.argv[8] == "backplane":
     tag_discriminator="-BACKPLANE-"
 else:
     tag_discriminator="-SNAPSHOT-"
@@ -34,7 +35,7 @@ for v in data:
     else:
         # Tag is respected as literally and solely the second argument contents, likely a version/release tag
         retag_name = sys.argv[2]
-    if (component_repo.startswith('open-cluster-management')):
+    if (component_repo.startswith(sys.argv[7])):
         # We don't try to tag anyone else's repos
         run('echo RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={} repo-type={}'.format(retag_name, component_name, component_repo, compenent_tag, compenent_sha, sys.argv[3], sys.argv[4]), shell=True)
         if (sys.argv[4] == "git"):
