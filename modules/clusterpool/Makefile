@@ -75,6 +75,9 @@ CLUSTERPOOL_GCP_ACCOUNT_JSON_FILE ?= $(HOME)/.gcp/osServiceAccount.json
 #---Clusterpool List-related env vars---#
 CLUSTERPOOL_LIST_ARGUMENTS ?= 
 
+#---Clusterpool auto-import flag (true/false)---#
+CLUSTERPOOL_AUTO_IMPORT ?= "false"
+
 # Convenience to just call bare jq executable
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 
@@ -310,11 +313,13 @@ clusterpool/_create-claim: %_create-claim: %_init
 			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
 			-e "s;__CLUSTERPOOL_LIFETIME__;$(CLUSTERPOOL_LIFETIME);g" \
 			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
+			-e "s;__CLUSTERPOOL_AUTO_IMPORT__;$(CLUSTERPOOL_AUTO_IMPORT);g" \
 			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; else \
 		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
 			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
 			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
 			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
+			-e "s;__CLUSTERPOOL_AUTO_IMPORT__;$(CLUSTERPOOL_AUTO_IMPORT);g" \
 			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi; \
 	if [ "`cat .whoami.txt | awk -F ':' '{print $$2}'`" == "serviceaccount" ]; then \
 		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;`cat .whoami.txt | awk -F ':' '{print $$4}'`;g" \
