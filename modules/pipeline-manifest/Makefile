@@ -128,6 +128,7 @@ pipeline-manifest/_add: %_add:
 	$(call assert-set,PIPELINE_MANIFEST_COMPONENT_REPO)
 	$(call assert-set,PIPELINE_MANIFEST_COMPONENT_SHA256)
 	@$(JQ) '$(PM_ADDITION_QUERY)' $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json > tmp; mv tmp $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_sha-level.sh $(COMPONENT_NAME) $(PIPELINE_MANIFEST_DIR)/$(PIPELINE_MANIFEST_FILE_NAME).json
 
 .PHONY: pipeline-manifest/update
 ## Add or update component $COMPONENT_NAME to have version $COMPONENT_VERSION in the pipeline manifest in stage $PIPELINE_STAGE
