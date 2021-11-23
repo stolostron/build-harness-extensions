@@ -4,7 +4,7 @@ metadata:
   name: __CLUSTERPOOL_CLUSTER_CLAIM__
   namespace: __CLUSTERPOOL_HOST_NAMESPACE__
   annotations:
-    open-cluster-management.io/createmanagedcluster: "__CLUSTERPOOL_AUTO_IMPORT__"
+    cluster.open-cluster-management.io/createmanagedcluster: "__CLUSTERPOOL_AUTO_IMPORT__"
 spec:
   clusterPoolName: __CLUSTERPOOL_NAME__
   lifetime: __CLUSTERPOOL_LIFETIME__
