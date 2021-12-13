@@ -19,7 +19,7 @@ CD_UNR_REASON=`jq -r '.status.conditions[]? | select(.type=="Unreachable") | .re
 #echo cd_unr_condition: "$CD_UNR_CONDITION"
 #echo cd_unr_reason: "$CD_UNR_REASON"
 if [[ ! "$NAMESPACE" = "null" && "$CC_PEND_CONDITION" = "False" && "$CD_HIB_CONDITION" = "False" && "$CD_UNR_CONDITION" = "False" ]]; then
-        echo ClusterReady > .verifyStatus;
+        echo ClusterReady > $CLUSTERPOOL_TEMP_DIR/.verifyStatus;
         else
-        echo ClusterNotReady - [Pending: $CC_PEND_CONDITION:$CC_PEND_REASON] [Hibernating: $CD_HIB_CONDITION:$CD_HIB_REASON] [Unreachable: $CD_UNR_CONDITION:$CD_UNR_REASON] > .verifyStatus
+        echo ClusterNotReady - [Pending: $CC_PEND_CONDITION:$CC_PEND_REASON] [Hibernating: $CD_HIB_CONDITION:$CD_HIB_REASON] [Unreachable: $CD_UNR_CONDITION:$CD_UNR_REASON] > $CLUSTERPOOL_TEMP_DIR/.verifyStatus
 fi

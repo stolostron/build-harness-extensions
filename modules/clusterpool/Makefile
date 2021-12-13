@@ -35,6 +35,7 @@ CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES ?= 10
 CLUSTERPOOL_LIFETIME ?=
 CLUSTERPOOL_GROUP_NAME ?= system:masters
 CLUSTERPOOL_SERVICE_ACCOUNT ?=
+CLUSTERPOOL_TEMP_DIR ?= .
 
 # AWS
 CLUSTERPOOL_AWS_BASE_DOMAIN ?=
@@ -93,9 +94,9 @@ clusterpool/_init: %_init:
 # Query the namespace and stash it in .namespace in the current working directory
 clusterpool/_init_namespace:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
-	@$(JQ) -r '.spec.namespace' .ClusterClaim.json > .namespace
-	@rm .ClusterClaim.json
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > $(CLUSTERPOOL_TEMP_DIR)/.ClusterClaim.json
+	@$(JQ) -r '.spec.namespace' $(CLUSTERPOOL_TEMP_DIR)/.ClusterClaim.json > $(CLUSTERPOOL_TEMP_DIR)/.namespace
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.ClusterClaim.json
 
 .PHONY: clusterpool/deploy-hive
 ## Takes as input a branch for the hive project and deploys hive onto the target cluster
@@ -116,8 +117,8 @@ clusterpool/create-image-set: %create-image-set: %_init
 	@sed -e "s;__CLUSTERPOOL_IMAGESET_NAME__;$(CLUSTERPOOL_IMAGESET_NAME);g" \
 		-e "s;__CLUSTERPOOL_IMAGESET_RELEASE_IMAGE__;$(CLUSTERPOOL_IMAGESET_RELEASE_IMAGE);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterimageset.yaml.template \
-		> .$(CLUSTERPOOL_IMAGESET_NAME).clusterimageset.yaml
-	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HIVE_NAMESPACE) -f .$(CLUSTERPOOL_IMAGESET_NAME).clusterimageset.yaml"
+		> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_IMAGESET_NAME).clusterimageset.yaml
+	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HIVE_NAMESPACE) -f $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_IMAGESET_NAME).clusterimageset.yaml"
 
 .PHONY: clusterpool/delete-image-set
 ## Takes as input the name of an imageset and deletes said imageset
@@ -143,12 +144,12 @@ clusterpool/aws/create-clusterpool: %aws/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
 		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
-		> .$(CLUSTERPOOL_NAME).aws.clusterpool.yaml
+		> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).aws.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_AWS_CRED_NAME__;$(CLUSTERPOOL_AWS_CRED_NAME);g" \
 		-e "s;__CLUSTERPOOL_AWS_REGION__;$(CLUSTERPOOL_AWS_REGION);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.suffix.aws.yaml.template \
-		>> .$(CLUSTERPOOL_NAME).aws.clusterpool.yaml
-	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_NAME).aws.clusterpool.yaml"
+		>> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).aws.clusterpool.yaml
+	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).aws.clusterpool.yaml"
 
 .PHONY: clusterpool/azure/create-clusterpool
 ## Create a cluserpool on Azure
@@ -167,13 +168,13 @@ clusterpool/azure/create-clusterpool: %azure/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
 		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
-		> .$(CLUSTERPOOL_NAME).az.clusterpool.yaml
+		> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).az.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_AZURE_CREDS_NAME__;$(CLUSTERPOOL_AZURE_CRED_NAME);g" \
 		-e "s;__CLUSTERPOOL_AZURE_REGION__;$(CLUSTERPOOL_AZURE_REGION);g" \
 		-e "s;__CLUSTERPOOL_AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME__;$(CLUSTERPOOL_AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.suffix.azure.yaml.template \
-		>> .$(CLUSTERPOOL_NAME).az.clusterpool.yaml
-	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_NAME).az.clusterpool.yaml"
+		>> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).az.clusterpool.yaml
+	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).az.clusterpool.yaml"
 
 .PHONY: clusterpool/gcp/create-clusterpool
 ## Create a ClusterPool on GCP
@@ -192,11 +193,11 @@ clusterpool/gcp/create-clusterpool: %gcp/create-clusterpool: %_init
 		-e "s;__CLUSTERPOOL_SIZE__;$(CLUSTERPOOL_SIZE);g" \
 		-e "s;__CLUSTERPOOL_PULL_SECRET_NAME__;$(CLUSTERPOOL_PULL_SECRET_NAME);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.prefix.yaml.template \
-		> .$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml
+		> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml
 	@sed -e "s;__CLUSTERPOOL_GCP_CREDS_NAME__;$(CLUSTERPOOL_GCP_CRED_NAME);g" \
 		-e "s;__CLUSTERPOOL_GCP_REGION__;$(CLUSTERPOOL_GCP_REGION);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterpool.suffix.gcp.yaml.template \
-		>> .$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml
+		>> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml
 	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_NAME).gcp.clusterpool.yaml"
 
 .PHONY: clusterpool/delete-clusterpool
@@ -236,7 +237,7 @@ clusterpool/aws/create-creds: %aws/create-creds: %_init
 		-e "s;__ENCODED_AWS_ACCESS_KEY_ID__;$(CLUSTERPOOL_ENCODED_AWS_ACCESS_KEY_ID);g" \
 		-e "s;__ENCODED_AWS_SECRET_ACCESS_KEY__;$(CLUSTERPOOL_ENCODED_AWS_SECRET_ACCESS_KEY);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/creds.aws.yaml.template \
-		> .$(CLUSTERPOOL_AWS_CRED_NAME).aws.creds.yaml
+		> $(CLUSTERPOOL_TEMP_DIR)/.$(CLUSTERPOOL_AWS_CRED_NAME).aws.creds.yaml
 	@$(SELF) oc/command OC_COMMAND="apply -n $(CLUSTERPOOL_HOST_NAMESPACE) -f .$(CLUSTERPOOL_AWS_CRED_NAME).aws.creds.yaml"
 
 .PHONY: clusterpool/aws/delete-creds
@@ -260,8 +261,8 @@ clusterpool/azure/create-creds: %azure/create-creds: %_init
 		-e "s;__AZURE_CLIENT_SECRET__;$(CLUSTERPOOL_AZURE_CLIENT_SECRET);g" \
 		-e "s;__AZURE_TENANT_ID__;$(CLUSTERPOOL_AZURE_TENNANT_ID);g" \
 		$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/creds.azure.osServicePrincipal.json.tempate \
-		> osServicePrincipal.json
-	@$(SELF) oc/command OC_COMMAND="create secret generic $(CLUSTERPOOL_AZURE_CRED_NAME) --from-file=osServicePrincipal.json -n $(CLUSTERPOOL_HOST_NAMESPACE)"
+		> $(CLUSTERPOOL_TEMP_DIR)/osServicePrincipal.json
+	@$(SELF) oc/command OC_COMMAND="create secret generic $(CLUSTERPOOL_AZURE_CRED_NAME) --from-file=$(CLUSTERPOOL_TEMP_DIR)/osServicePrincipal.json -n $(CLUSTERPOOL_HOST_NAMESPACE)"
 
 .PHONY: clusterpool/azure/delete-creds
 ## Deletes the secret CLUSTERPOOL_AZURE_CRED_NAME
@@ -306,7 +307,7 @@ clusterpool/_create-claim: %_create-claim: %_init
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_NAME)
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
-	@$(SELF) -s --no-print-directory oc/command OC_COMMAND="whoami" > .whoami.txt
+	@$(SELF) -s --no-print-directory oc/command OC_COMMAND="whoami" > $(CLUSTERPOOL_TEMP_DIR)/.whoami.txt
 	@if [ -n "$(CLUSTERPOOL_LIFETIME)" ]; then \
 		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
 			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
@@ -314,33 +315,33 @@ clusterpool/_create-claim: %_create-claim: %_init
 			-e "s;__CLUSTERPOOL_LIFETIME__;$(CLUSTERPOOL_LIFETIME);g" \
 			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
 			-e "s;__CLUSTERPOOL_AUTO_IMPORT__;$(CLUSTERPOOL_AUTO_IMPORT);g" \
-			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; else \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.yaml.template > $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml; else \
 		sed -e "s;__CLUSTERPOOL_CLUSTER_CLAIM__;$(CLUSTERPOOL_CLUSTER_CLAIM);g" \
 			-e "s;__CLUSTERPOOL_HOST_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
 			-e "s;__CLUSTERPOOL_NAME__;$(CLUSTERPOOL_NAME);g" \
 			-e "s;__CLUSTERPOOL_GROUP_NAME__;$(CLUSTERPOOL_GROUP_NAME);g" \
 			-e "s;__CLUSTERPOOL_AUTO_IMPORT__;$(CLUSTERPOOL_AUTO_IMPORT);g" \
-			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi; \
-	if [ "`cat .whoami.txt | awk -F ':' '{print $$2}'`" == "serviceaccount" ]; then \
-		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;`cat .whoami.txt | awk -F ':' '{print $$4}'`;g" \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.nolifetime.yaml.template > $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml; fi; \
+	if [ "`cat $(CLUSTERPOOL_TEMP_DIR)/.whoami.txt | awk -F ':' '{print $$2}'`" == "serviceaccount" ]; then \
+		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;`cat $(CLUSTERPOOL_TEMP_DIR)/.whoami.txt | awk -F ':' '{print $$4}'`;g" \
 			-e "s;__CLUSTERCLAIM_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
-			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; \
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml; \
 	elif [ -n "$(CLUSTERPOOL_SERVICE_ACCOUNT)" ]; then \
 		sed -e "s;__RBAC_SERVICEACCOUNT_NAME__;$(CLUSTERPOOL_SERVICE_ACCOUNT);g" \
 			-e "s;__CLUSTERCLAIM_NAMESPACE__;$(CLUSTERPOOL_HOST_NAMESPACE);g" \
-			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml; fi
-	@$(SELF) oc/command OC_COMMAND="apply -f $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml"
-	@rm $(BUILD_HARNESS_EXTENSIONS_PATH)/clusterclaim.yaml
-	@rm .whoami.txt
+			$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/templates/clusterclaim.subjects.serviceaccount.yaml.template >> $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml; fi
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then cat $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml; fi
+	@$(SELF) oc/command OC_COMMAND="apply -f $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/clusterclaim.yaml
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.whoami.txt
 
 .PHONY: clusterpool/_gather-status
 # Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to check - and gathers relevant information about it
 clusterpool/_gather-status: %_gather-status: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > .ClusterClaim.json
-	@if [ ! "`cat .namespace`" = "null" ]; then $(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" > .ClusterDeployment.json 2> /dev/null; else echo "{}" > .ClusterDeployment.json; fi
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh .ClusterClaim.json .ClusterDeployment.json
+	@$(SELF) --no-print-directory -s oc/command OC_COMMAND="get clusterclaim.hive $(CLUSTERPOOL_CLUSTER_CLAIM) -o json -n $(CLUSTERPOOL_HOST_NAMESPACE)"  > $(CLUSTERPOOL_TEMP_DIR)/.ClusterClaim.json
+	@if [ ! "`cat $(CLUSTERPOOL_TEMP_DIR)/.namespace`" = "null" ]; then $(SELF) --no-print-directory -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json" > $(CLUSTERPOOL_TEMP_DIR)/.ClusterDeployment.json 2> /dev/null; else echo "{}" > $(CLUSTERPOOL_TEMP_DIR)/.ClusterDeployment.json; fi
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/verify-status.sh $(CLUSTERPOOL_TEMP_DIR)/.ClusterClaim.json $(CLUSTERPOOL_TEMP_DIR)/.ClusterDeployment.json
 
 .PHONY: clusterpool/_delete-claim
 # Deletes cluster claim named CLUSTERPOOL_CLUSTER_CLAIM
@@ -354,6 +355,11 @@ clusterpool/checkout: %checkout:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/checkout-poll.sh $(CLUSTERPOOL_CHECKOUT_TIMEOUT_MINUTES)
 
+.PHONY: clusterpool/_checkout-two
+# Pulls two clusters out of the pool defined in shuffled_available_clusterpools.txt and waits for sucessful checkout of both, returns HUB_CLUSTER_CLAIM and HUB_CLUSTER_CLAIM files filled with those values
+clusterpool/_checkout-two: %_checkout-two:
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/clusterpool/bin/checkout-two.sh
+
 .PHONY: clusterpool/checkin
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the cluster claim to check back in
 clusterpool/checkin: %checkin: %_init
@@ -364,70 +370,70 @@ clusterpool/checkin: %checkin: %_init
 ## Takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-kubeconfig: %get-cluster-kubeconfig: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminKubeconfigSecretRef.name' > .adminKubeconfigSecretRef"
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat .adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminKubeconfigSecretRef` -n `cat .namespace` -o json | $(JQ) -r .data.kubeconfig | base64 -d"
-	@rm .namespace .adminKubeconfigSecretRef
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminKubeconfigSecretRef.name' > $(CLUSTERPOOL_TEMP_DIR)/.adminKubeconfigSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminKubeconfigSecretRef:; cat $(CLUSTERPOOL_TEMP_DIR)/.adminKubeconfigSecretRef; echo kubeconfig yaml:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat $(CLUSTERPOOL_TEMP_DIR)/.adminKubeconfigSecretRef` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.data.kubeconfig' | base64 -d"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.namespace $(CLUSTERPOOL_TEMP_DIR)/.adminKubeconfigSecretRef
 
 .PHONY: clusterpool/get-cluster-username
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-username: %get-cluster-username: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo username:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.username' | base64 -d"
-	@rm .namespace .adminPasswordSecretRef
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef; echo username:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.data.username' | base64 -d"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.namespace $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-password
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-password: %get-cluster-password: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > .adminPasswordSecretRef"
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat .adminPasswordSecretRef; echo password:; fi
-	@$(SELF) -s oc/command OC_COMMAND="get secret `cat .adminPasswordSecretRef` -n `cat .namespace` -o json | $(JQ) -r '.data.password' | base64 -d"
-	@rm .namespace .adminPasswordSecretRef
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.spec.clusterMetadata.adminPasswordSecretRef.name' > $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef"
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo adminPasswordSecretRef:; cat $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef; echo password:; fi
+	@$(SELF) -s oc/command OC_COMMAND="get secret `cat $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.data.password' | base64 -d"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.namespace $(CLUSTERPOOL_TEMP_DIR)/.adminPasswordSecretRef
 
 .PHONY: clusterpool/get-cluster-api
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-api: %get-cluster-api: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.status.apiURL'"
-	@rm .namespace
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.status.apiURL'"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.namespace
 
 .PHONY: clusterpool/get-cluster-console
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get creds from
 clusterpool/get-cluster-console: %get-cluster-console: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -r '.status.webConsoleURL'"
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -r '.status.webConsoleURL'"
 	@rm .namespace
 
 .PHONY: clusterpool/get-cluster-basedomain
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable - the name of the claim to get a basedomain from
 clusterpool/get-cluster-basedomain: %get-cluster-basedomain: %_init %_init_namespace
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json" | $(JQ) -rj '.metadata.name' > .name
-	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat .namespace` -n `cat .namespace` -o json | $(JQ) -rj '.spec.baseDomain'" > .bd
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "ClusterDeployment name:"; cat .name; fi
-	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "baseDomain:"; cat .bd; fi
-	@echo "`cat .name`.`cat .bd`"
-	@rm .namespace
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json" | $(JQ) -rj '.metadata.name' > $(CLUSTERPOOL_TEMP_DIR)/.name
+	@$(SELF) -s oc/command OC_COMMAND="get ClusterDeployment `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -n `cat $(CLUSTERPOOL_TEMP_DIR)/.namespace` -o json | $(JQ) -rj '.spec.baseDomain'" > $(CLUSTERPOOL_TEMP_DIR)/.bd
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "ClusterDeployment name:"; cat $(CLUSTERPOOL_TEMP_DIR)/.name; fi
+	@if [ -n "$(CLUSTERPOOL_DEBUG)" ]; then echo "baseDomain:"; cat $(CLUSTERPOOL_TEMP_DIR)/.bd; fi
+	@echo "`cat $(CLUSTERPOOL_TEMP_DIR)/.name`.`cat $(CLUSTERPOOL_TEMP_DIR)/.bd`"
+	@rm $(CLUSTERPOOL_TEMP_DIR)/.namespace
 
 .PHONY: clusterpool/get-cluster-metadata
 ## takes in a CLUSTERPOOL_CLUSTER_CLAIM variable and a CLUSTERPOOL_METADATA_FILE where it will dump the json cluster details - this will consume the previous focused creds
 clusterpool/get-cluster-metadata: %get-cluster-metadata:
 	$(call assert-set,CLUSTERPOOL_CLUSTER_CLAIM)
 	$(call assert-set,CLUSTERPOOL_METADATA_FILE)
-	@$(SELF) -s clusterpool/get-cluster-username > .un
-	@$(SELF) -s clusterpool/get-cluster-password > .pw
-	@$(SELF) -s clusterpool/get-cluster-api > .api
-	@$(SELF) -s clusterpool/get-cluster-console > .con
-	@$(SELF) -s clusterpool/get-cluster-basedomain > .bd
-	@echo "{}" > gc1.json
-	@$(JQ) --arg username `cat .un` '. + {username: $$username}' gc1.json > .tmp; mv .tmp gc1.json
-	@$(JQ) --arg password `cat .pw` '. + {password: $$password}' gc1.json > .tmp; mv .tmp gc1.json
-	@$(JQ) --arg basedomain `cat .bd` '. + {basedomain: $$basedomain}' gc1.json > .tmp; mv .tmp gc1.json
-	@$(JQ) --arg api_url `cat .api` '. + {api_url: $$api_url}' gc1.json > .tmp; mv .tmp gc1.json
-	@$(JQ) --arg console_url `cat .con` '. + {console_url: $$console_url}' gc1.json > $(CLUSTERPOOL_METADATA_FILE)
-	@rm -f .un .pw .api .con .bd gc1.json .namespace
+	@$(SELF) -s clusterpool/get-cluster-username > $(CLUSTERPOOL_TEMP_DIR)/.un
+	@$(SELF) -s clusterpool/get-cluster-password > $(CLUSTERPOOL_TEMP_DIR)/.pw
+	@$(SELF) -s clusterpool/get-cluster-api > $(CLUSTERPOOL_TEMP_DIR)/.api
+	@$(SELF) -s clusterpool/get-cluster-console > $(CLUSTERPOOL_TEMP_DIR)/.con
+	@$(SELF) -s clusterpool/get-cluster-basedomain > $(CLUSTERPOOL_TEMP_DIR)/.bd
+	@echo "{}" > $(CLUSTERPOOL_TEMP_DIR)/gc1.json
+	@$(JQ) --arg username `cat $(CLUSTERPOOL_TEMP_DIR)/.un` '. + {username: $$username}' $(CLUSTERPOOL_TEMP_DIR)/gc1.json > $(CLUSTERPOOL_TEMP_DIR)/.tmp; mv $(CLUSTERPOOL_TEMP_DIR)/.tmp $(CLUSTERPOOL_TEMP_DIR)/gc1.json
+	@$(JQ) --arg password `cat $(CLUSTERPOOL_TEMP_DIR)/.pw` '. + {password: $$password}' $(CLUSTERPOOL_TEMP_DIR)/gc1.json > $(CLUSTERPOOL_TEMP_DIR)/.tmp; mv $(CLUSTERPOOL_TEMP_DIR)/.tmp $(CLUSTERPOOL_TEMP_DIR)/gc1.json
+	@$(JQ) --arg basedomain `cat $(CLUSTERPOOL_TEMP_DIR)/.bd` '. + {basedomain: $$basedomain}' $(CLUSTERPOOL_TEMP_DIR)/gc1.json > $(CLUSTERPOOL_TEMP_DIR)/.tmp; mv $(CLUSTERPOOL_TEMP_DIR)/.tmp $(CLUSTERPOOL_TEMP_DIR)/gc1.json
+	@$(JQ) --arg api_url `cat $(CLUSTERPOOL_TEMP_DIR)/.api` '. + {api_url: $$api_url}' $(CLUSTERPOOL_TEMP_DIR)/gc1.json > $(CLUSTERPOOL_TEMP_DIR)/.tmp; mv $(CLUSTERPOOL_TEMP_DIR)/.tmp $(CLUSTERPOOL_TEMP_DIR)/gc1.json
+	@$(JQ) --arg console_url `cat $(CLUSTERPOOL_TEMP_DIR)/.con` '. + {console_url: $$console_url}' $(CLUSTERPOOL_TEMP_DIR)/gc1.json > $(CLUSTERPOOL_METADATA_FILE)
+	@rm -f $(CLUSTERPOOL_TEMP_DIR)/.un $(CLUSTERPOOL_TEMP_DIR)/.pw $(CLUSTERPOOL_TEMP_DIR)/.api $(CLUSTERPOOL_TEMP_DIR)/.con $(CLUSTERPOOL_TEMP_DIR)/.bd $(CLUSTERPOOL_TEMP_DIR)/gc1.json $(CLUSTERPOOL_TEMP_DIR)/.namespace
 	@cat $(CLUSTERPOOL_METADATA_FILE)
 
