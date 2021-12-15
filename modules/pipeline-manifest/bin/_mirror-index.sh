@@ -67,19 +67,19 @@ PIPELINE_MANIFEST_ORG=$1
 rm -rf /tmp/acm-custom-registry
 if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
-    else git clone -b master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
+    else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
 fi
 if [ -d release ];  \
     then cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone -b release-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; \
+    else git clone --single-branch --branch release-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; \
 fi
 if [ -d pipeline ];  \
     then cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$PIPELINE_MANIFEST_ORG/pipeline.git pipeline; \
+    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$PIPELINE_MANIFEST_ORG/pipeline.git pipeline; \
 fi
 if [ -d deploy ];  \
     then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone -b master git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; \
+    else git clone --single-branch --branch master git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then

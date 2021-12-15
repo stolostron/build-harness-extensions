@@ -8,6 +8,7 @@ set -e
 #  3b. Mirror the openshift images
 #  4. Query the production redhat docker registry to see what upgrade bundles we can add
 #  5. Build our catalog and push it
+#  6. Push index image change to ACM's pipeline
 #
 # Main Parameters:
 #  $1: GitHub organization name
@@ -66,22 +67,22 @@ PIPELINE_MANIFEST_ORG=$1
 rm -rf /tmp/acm-custom-registry
 if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
-    else git clone -b master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
+    else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
 fi
 echo Squaring up release repo...
 if [ -d release ];  \
     then cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone -b backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$(PIPELINE_MANIFEST_ORG)/release.git release; \
+    else git clone --single-branch --branch backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$(PIPELINE_MANIFEST_ORG)/release.git release; \
 fi
 echo Squaring up backplane-pipeline repo...
 if [ -d backplane-pipeline ];  \
     then cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone -b $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$(PIPELINE_MANIFEST_ORG)/pipeline.git pipeline; \
+    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$(PIPELINE_MANIFEST_ORG)/pipeline.git pipeline; \
 fi
 echo Squaring up deploy repo...
 if [ -d deploy ];  \
     then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone -b master git@github.com:$(PIPELINE_MANIFEST_ORG)/deploy.git deploy; \
+    else git clone --single-branch --branch master git@github.com:$(PIPELINE_MANIFEST_ORG)/deploy.git deploy; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then
