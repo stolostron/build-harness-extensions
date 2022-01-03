@@ -1,7 +1,7 @@
 #!/bin/bash
 export BUILD_HARNESS_ORG=${1:-cloudposse}
 export BUILD_HARNESS_PROJECT=${2:-build-harness}
-export BUILD_HARNESS_BRANCH=${3:-master}
+export BUILD_HARNESS_BRANCH=${3:-main}
 # These will need to be used if a private repo is going to be cloned
 export GITHUB_USER=${4}
 export GITHUB_TOKEN=${5}

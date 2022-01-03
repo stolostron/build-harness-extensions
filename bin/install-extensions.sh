@@ -1,7 +1,7 @@
 #!/bin/bash
 export BUILD_HARNESS_EXTENSIONS_ORG=${1:-open-cluster-management}
 export BUILD_HARNESS_EXTENSIONS_PROJECT=${2:-build-harness-extensions}
-export BUILD_HARNESS_EXTENSIONS_BRANCH=${3:-master}
+export BUILD_HARNESS_EXTENSIONS_BRANCH=${3:-main}
 export GITHUB_USER=${4}
 export GITHUB_TOKEN=${5}
 export GITHUB_REPO_SECRET="https://${GITHUB_USER}:${GITHUB_TOKEN}@"
