@@ -7,7 +7,7 @@ GITHUB_TOKEN ?=
 # May or may not be in github enterprise
 PIPELINE_MANIFEST_SITE ?= github.com
 # May be in RedHat main org or in some ACM specific org
-PIPELINE_MANIFEST_ORG ?= open-cluster-management
+PIPELINE_MANIFEST_ORG ?= stolostron
 # Repo name not yet confirmed
 PIPELINE_MANIFEST_REPO?= pipeline
 # The "product" name that is used for release repo; release=RHACM, backplane=backplane

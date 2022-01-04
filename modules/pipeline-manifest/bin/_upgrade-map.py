@@ -6,7 +6,7 @@ import re
 
 # Parameters:
 #  sys.argv[1] - version number to calculate upgrade mapping for
-#  sys.argv[2] - repository in quay (i.e. open-cluster-management or acm-d)
+#  sys.argv[2] - repository in quay (i.e. stolostron or acm-d)
 
 # Dependencies:
 #  QUAY_TOKEN defined in the environment - read access to quay repo defined in argv[2]
