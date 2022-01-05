@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Push commit to image-builder repo
         run: |
-          git clone "https://${{ secrets.PROW_BOT_TOKEN }}@github.com/open-cluster-management/image-builder.git"
+          git clone "https://${{ secrets.PROW_BOT_TOKEN }}@github.com/stolostron/image-builder.git"
           cd image-builder
           git config --global user.email "acm-cicd@redhat.com"
           git config --global user.name "ACM CICD"
