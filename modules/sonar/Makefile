@@ -1,5 +1,7 @@
 SONAR_GO_TEST_ARGS ?= ./...
 
+SONAR_ORG ?= open-cluster-management
+
 
 .PHONY: sonar/go
 ## Run SonarCloud analysis for Go on Travis CI. This will not be run during local development.
@@ -33,6 +35,7 @@ sonar/go/prow:
 	@cp gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
@@ -51,7 +54,7 @@ sonar/go/prow:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization="${REPO_OWNER}" \
+		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
@@ -73,6 +76,7 @@ sonar/go/openshiftci:
 	@cp gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log"
@@ -86,7 +90,7 @@ sonar/go/openshiftci:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization="${REPO_OWNER}" \
+		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
@@ -107,6 +111,7 @@ sonar/go/openshiftci-post:
 	-gosec -fmt sonarqube -no-fail ./... > >(tee -a gosec.json "${ARTIFACTS}/sonar_gosec.json")
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACTS}/sonar.log"
+	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACTS}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACTS}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "postsubmit" ]]; then \
@@ -114,7 +119,7 @@ sonar/go/openshiftci-post:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization="${REPO_OWNER}" \
+		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACTS}/sonar.log")
 
@@ -147,6 +152,7 @@ sonar/js/prow:
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
 	
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
+	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
@@ -165,6 +171,6 @@ sonar/js/prow:
 	fi
 	
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
-		-Dsonar.organization="${REPO_OWNER}" \
+		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
