@@ -26,4 +26,3 @@ RUN git clone https://github.com/stolostron/build-harness.git
 RUN git clone https://github.com/stolostron/build-harness-extensions.git
 
 ENTRYPOINT ["/bin/bash"]
-
