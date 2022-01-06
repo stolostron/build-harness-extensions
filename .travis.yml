@@ -25,10 +25,9 @@ jobs:
       script:
         - |
           docker build --tag quay.io/stolostron/build-harness:latest .
-          if [ "$TRAVIS_REPO_SLUG" == "open-cluster-management/build-harness-extensions" ]; then
+          if [ "$TRAVIS_REPO_SLUG" == "stolostron/build-harness-extensions" ]; then
             if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ]; then 
               docker login quay.io/stolostron -u ${DOCKER_USER} -p ${DOCKER_PASS}
               docker push quay.io/stolostron/build-harness:latest
             fi
           fi
-

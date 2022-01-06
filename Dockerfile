@@ -23,7 +23,7 @@ ENV INSTALL_PATH /usr/local/bin
 WORKDIR /build-harness
 
 RUN git clone https://github.com/stolostron/build-harness.git
-RUN git clone https://github.com/stolstron/build-harness-extensions.git
+RUN git clone https://github.com/stolostron/build-harness-extensions.git
 
 ENTRYPOINT ["/bin/bash"]
 
