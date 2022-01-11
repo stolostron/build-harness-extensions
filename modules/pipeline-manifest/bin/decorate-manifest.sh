@@ -32,6 +32,11 @@ echo Home Quay org: $home_quay_org
 echo Incoming manfiest filename: $manifest_filename
 echo Creating shad manfiest filename: $shad_filename
 
+ICON="rhacm4kube"
+if [[ "backplane-pipeline" = "$pipeline_repo" ]]; then
+  ICON="backplane"
+fi
+
 rm manifest-sha.badjson 2> /dev/null
 cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
   name=$(echo $item | jq -r '.["image-name"]')
@@ -42,7 +47,7 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
   if [[ "" = "$image_key" ]]
   then
     echo Oh no, can\'t retrieve image key for $name
-    msg="$pipeline_repo/quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve image key for $name in $dictionary_filename"
+    msg=":$ICON: \`$pipeline_repo\` quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve image key for $name in $dictionary_filename"
     make simple-slack/send SLACK_MESSAGE="$msg"
     exit 1
   fi
@@ -65,7 +70,7 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
   if [[ "null" = "$sha_value" ]]
   then
     echo Oh no, can\'t retrieve sha from $url
-    msg="$pipeline_repo/quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve sha from $url"
+    msg=":$ICON: \`$pipeline_repo\` quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve sha from $url"
     make simple-slack/send SLACK_MESSAGE="$msg"
     exit 1
   fi
