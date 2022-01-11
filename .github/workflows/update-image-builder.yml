@@ -2,7 +2,7 @@ name: update-image-builder
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   update-image-builder:
