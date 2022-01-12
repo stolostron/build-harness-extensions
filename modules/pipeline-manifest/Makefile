@@ -217,7 +217,7 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
 		echo .... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
 		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
-		SLACK_MESSAGE_PREP="${PIPELINE_MANIFEST_REPO}/quay_retag (_osci_to_quay): :red_circle: Failure in <$$TRAVIS_BUILD_WEB_URL|retag> commit: \`$$TRAVIS_COMMIT_MESSAGE\`: osci push image $$OSCI_REMOTE to quay $$QUAY_REMOTE failed" ; \
+		SLACK_MESSAGE_PREP="\`${PIPELINE_MANIFEST_REPO}\` quay_retag (_osci_to_quay): :red_circle: Failure in <$$TRAVIS_BUILD_WEB_URL|retag> commit: \`$$TRAVIS_COMMIT_MESSAGE\`: osci push image $$OSCI_REMOTE to quay $$QUAY_REMOTE failed" ; \
  		echo .... Retagging to $$QUAY_REMOTE ; \
  		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
  		echo .... Logging in to $(PIPELINE_MANIFEST_REMOTE_REPO) as $(DOCKER_USER) ; \
