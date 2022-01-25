@@ -72,17 +72,17 @@ fi
 echo Squaring up release repo...
 if [ -d release ];  \
     then cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$(PIPELINE_MANIFEST_ORG)/release.git release; \
+    else git clone --single-branch --branch backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; \
 fi
 echo Squaring up backplane-pipeline repo...
 if [ -d backplane-pipeline ];  \
     then cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$(PIPELINE_MANIFEST_ORG)/pipeline.git pipeline; \
+    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$PIPELINE_MANIFEST_ORG/backplane-pipeline.git backplane-pipeline; \
 fi
 echo Squaring up deploy repo...
 if [ -d deploy ];  \
     then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch master git@github.com:$(PIPELINE_MANIFEST_ORG)/deploy.git deploy; \
+    else git clone --single-branch --branch master git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then
