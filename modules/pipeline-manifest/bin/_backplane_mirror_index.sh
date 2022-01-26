@@ -136,9 +136,28 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with mce
   make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry
 
+  # Take the subject backplane index and give it a "latest" tag relating to the overall backplane version number
+  LATEST_TAG=`cat release/RELEASE_VERSION`-latest
+  docker pull quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
+  docker tag quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP quay.io/acm-d/mce-custom-registry:$LATEST_TAG
+  docker push quay.io/acm-d/mce-custom-registry:$LATEST_TAG
+  docker rmi quay.io/acm-d/mce-custom-registry:$LATEST_TAG
+  docker rmi quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
+
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
-  echo quay.io/acm-d/mce-custom-registry@$amd_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
+  echo quay.io/acm-d/mce-custom-registry@$mce_sha=__DESTINATION_ORG__/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP >> mapping.txt
+
+  # Push the mapping file to the deploy repo
+  cd deploy
+  git pull
+  cat ../mapping.txt | sort -u > mirror/$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP.txt
+  cat ../mapping.txt | sort -u > mirror/`cat ../release/RELEASE_VERSION`-latest-DOWNANDBACK.txt
+  git add mirror/$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP.txt
+  git add mirror/`cat ../release/RELEASE_VERSION`-latest-DOWNANDBACK.txt
+  git commit -am "Added Backplane $Z_RELEASE_VERSION downstream mirror mapping for $DATESTAMP" --quiet
+  git push --quiet
+  cd ..
 
 else
   echo SKIP_INDEX defined, skipping index makeage
