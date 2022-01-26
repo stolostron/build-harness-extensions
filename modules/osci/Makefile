@@ -12,7 +12,6 @@ export OSCI_COMPONENT_NAME ?= $(shell cat COMPONENT_NAME 2> /dev/null)
 export OSCI_COMPONENT_VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
 
 export OSCI_COMPONENT_SUFFIX ?= $(OSCI_COMPONENT_SHA256)
-export OSCI_COMPONENT_TAG ?= $(OSCI_COMPONENT_VERSION)-$(OSCI_COMPONENT_SUFFIX)
 
 export OSCI_PIPELINE_PRODUCT_PREFIX ?= release
 
@@ -29,6 +28,13 @@ export OSCI_PIPELINE_PROMOTE_FROM ?= $(OSCI_PIPELINE_STAGE)
 export OSCI_PIPELINE_PROMOTE_TO ?=
 export OSCI_PIPELINE_GIT_BRANCH ?= $(OSCI_RELEASE_VERSION)-$(OSCI_PIPELINE_PROMOTE_FROM)
 export OSCI_PIPELINE_GIT_URL ?= https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(OSCI_PIPELINE_SITE)/$(OSCI_PIPELINE_ORG)/$(OSCI_PIPELINE_REPO).git
+
+export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
+ifeq ($(OSCI_COMPONENT_VERSION),auto)
+export OSCI_COMPONENT_TAG ?= $(OSCI_Z_RELEASE_VERSION)-$(OSCI_COMPONENT_SUFFIX)
+else
+export OSCI_COMPONENT_TAG ?= $(OSCI_COMPONENT_VERSION)-$(OSCI_COMPONENT_SUFFIX)
+endif
 
 export OSCI_MANIFEST_BASENAME ?= manifest
 export OSCI_MANIFEST_FILENAME ?= $(OSCI_MANIFEST_BASENAME).json
@@ -54,8 +60,6 @@ export OSCI_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(OSCI_COMPONENT_
 export OSCI_SORT_QUERY ?= . | sort_by(.["image-name"])
 
 export OSCI_DATETIME := $(shell (date +%Y-%m-%d-%H-%M-%S))
-
-export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
 
 .PHONY: osci/publish
 ## Add or update component $OSCI_COMPONENT_NAME to have version $OSCI_COMPONENT_VERSION in the pipeline manifest in stage $OSCI_PIPELINE_STAGE
