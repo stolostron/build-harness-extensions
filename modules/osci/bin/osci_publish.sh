@@ -19,8 +19,11 @@ while true; do
 		rm -rf $OSCI_PIPELINE_DIR
 	fi
 	echo ">>> Incoming: OSCI_PIPELINE_PRODUCT_PREFIX=$OSCI_PIPELINE_PRODUCT_PREFIX, OSCI_RELEASE_VERSION=$OSCI_RELEASE_VERSION"
-	echo ">>> Cloning the pipeline repo from $OSCI_PIPELINE_GIT_URL, branch $OSCI_PIPELINE_GIT_BRANCH"
-	git clone -b $OSCI_PIPELINE_GIT_BRANCH $OSCI_PIPELINE_GIT_URL $OSCI_PIPELINE_DIR
+	echo ">>> Cloning the pipeline repo from $OSCI_PIPELINE_SITE/$OSCI_PIPELINE_ORG/$OSCI_PIPELINE_REPO.git, branch $OSCI_PIPELINE_GIT_BRANCH"
+	git clone -b $OSCI_PIPELINE_GIT_BRANCH $OSCI_PIPELINE_GIT_URL $OSCI_MANIFEST_DIR || {
+		echo "Could not clone pipeline repo. Aborting"
+		exit 1
+	}
 	echo ">>> Setting git user name and email"
 	pushd $OSCI_PIPELINE_DIR > /dev/null
 	git config user.email $OSCI_GIT_USER_EMAIL
