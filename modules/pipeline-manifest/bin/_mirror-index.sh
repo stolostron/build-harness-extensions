@@ -149,20 +149,35 @@ if [[ -z $SKIP_INDEX ]]; then
   amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
   echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
+  # Hardcode for the time being that if we're coming from ACM 2.5, we use MCE 2.0
+  if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.5" ]]; then
+    MCE_VERSION="2.0"
+  fi
+  if [[ ! -z "$MCE_VERSION" ]]; then
+    echo MCE version is set to $MCE_VERSION ... seeking deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt to combine
+    # Combine the "latest" backplane downstream mirror mapping file
+    cat deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt >> mapping.txt
+  else
+    echo MCE version is unset, not combining backplane downstream mapping
+  fi
+
   # Create the downstream-upstream connected manifest and mirror mapping
   echo Create the downstream-upstream connected manifest and mirror mapping
   python3 -u $BIN_PATH/_generate_downstream_manifest.py
+
   # Push it to the pipeline and deploy repos
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
   cat mapping.txt | sort -u > deploy/mirror/$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP.txt
+  echo working on pipeline
   cd pipeline
-  git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
   git pull
+  git add snapshots/downstream-$DATESTAMP-$Z_RELEASE_VERSION.json
   git commit -am "Added $Z_RELEASE_VERSION downstream manifest of $DATESTAMP" --quiet
   git push --quiet
+  echo working on deploy
   cd ../deploy
-  git add mirror/$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP.txt
   git pull
+  git add mirror/$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP.txt
   git commit -am "Added $Z_RELEASE_VERSION downstream mirror mapping for $DATESTAMP" --quiet
   git push --quiet
 else
