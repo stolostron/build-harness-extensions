@@ -69,17 +69,20 @@ if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
     else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
 fi
+
 if [ -d release ];  \
-    then cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch release-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; \
+    then echo Grooming release repo; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet; cd ..; \
+    else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
 fi
+
 if [ -d pipeline ];  \
-    then cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$PIPELINE_MANIFEST_ORG/pipeline.git pipeline; \
+    then echo Grooming pipeline repo; cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet; cd ..; \
+    else echo Cloning pipeline repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/pipeline.git pipeline; cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; cd ..; \
 fi
+
 if [ -d deploy ];  \
-    then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch master git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; \
+    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; git checkout master; cd ..; \
+    else echo Cloning deploy repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; cd deploy; git checkout master; cd ..; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then
