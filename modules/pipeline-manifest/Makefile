@@ -210,6 +210,8 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		echo .... image needs to be copied from OpenShift CI ; \
 		$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION ; \
 		echo .... image-version is `cat IMAGE_VERSION` ; \
+		echo .... Since Prow is a bad citizen, giving it 5 minutes to promote from the build farm registry to the main registry; \
+		sleep 300 ; \
 		$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA ; \
 		echo .... git-sha is `cat GIT_SHA` ; \
 		echo .. Copying from OpenShift CI to Quay ; \
