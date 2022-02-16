@@ -81,7 +81,7 @@ if [ -d pipeline ];  \
 fi
 
 if [ -d deploy ];  \
-    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; git checkout master; cd ..; \
+    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; cd ..; \
     else echo Cloning deploy repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; cd deploy; git checkout master; cd ..; \
 fi
 
@@ -100,8 +100,9 @@ if [[ -z $SKIP_MIRROR ]]; then
 
   echo "acm-operator-bundle tag:"
   cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
-  echo "klusterlet-operator-bundle tag:"
-  cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
+  # Removing klusterlet processing for the time being
+  #echo "klusterlet-operator-bundle tag:"
+  #cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
 
   # Mirror the openshift images we depend on
   # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
@@ -138,8 +139,9 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with klusterlet, but it only came into being in 2.2
   if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.0" || "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.1" ]]; then echo No klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION;
   else
-    echo klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION
-    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
+    echo Skipping klusterlet processing for the time being
+    #echo klusterlet index expected in version $PIPELINE_MANIFEST_RELEASE_VERSION
+    #make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
   fi
 
   # Call make_index with acm
@@ -154,12 +156,19 @@ if [[ -z $SKIP_INDEX ]]; then
 
   # Hardcode for the time being that if we're coming from ACM 2.5, we use MCE 2.0
   if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.5" ]]; then
-    MCE_VERSION="2.0"
+    MCE_VERSION=`cat release/BACKPLANE_RELEASE_VERSION`
   fi
   if [[ ! -z "$MCE_VERSION" ]]; then
     echo MCE version is set to $MCE_VERSION ... seeking deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt to combine
     # Combine the "latest" backplane downstream mirror mapping file
     cat deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt >> mapping.txt
+    echo Retagging the \"latest\" MCE index $MCE_VERSION to go with this ACM index
+    LATEST_TAG=$MCE_VERSION-latest
+    docker pull quay.io/acm-d/mce-custom-registry:$LATEST_TAG
+    docker tag quay.io/acm-d/mce-custom-registry:$LATEST_TAG quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+    docker push quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+    docker rmi quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+    docker rmi quay.io/acm-d/mce-custom-registry:$LATEST_TAG
   else
     echo MCE version is unset, not combining backplane downstream mapping
   fi
