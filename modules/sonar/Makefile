@@ -34,6 +34,20 @@ sonar/go/prow:
 	gosec -fmt sonarqube -out gosec.json -no-fail ./... 
 	@cp gosec.json "${ARTIFACT_DIR}/sonar_gosec.json"
 	
+	@if [[ "${REPO_OWNER}" != "openshift" ]] && [[ "${REPO_NAME}" != "release" ]]; then \
+		echo "Fetch ${REPO_OWNER}/${REPO_NAME} and rebase the commits onto ${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git remote add origin https://github.com/${REPO_OWNER}/${REPO_NAME} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git rebase origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
+			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
+			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git branch $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git reset --hard origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git checkout $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		fi; \
+	fi
+
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
@@ -150,7 +164,21 @@ sonar/js/prow: export SONAR_TOKEN="$(shell cat /etc/sonarcloud/token 2> /dev/nul
 sonar/js/prow:
 	@echo "Verify sonar token from kube secret has been mounted" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
-	
+
+	@if [[ "${REPO_OWNER}" != "openshift" ]] && [[ "${REPO_NAME}" != "release" ]]; then \
+		echo "Fetch ${REPO_OWNER}/${REPO_NAME} and rebase the commits onto ${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git remote add origin https://github.com/${REPO_OWNER}/${REPO_NAME} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git rebase origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
+			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
+			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git branch $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git reset --hard origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+			git checkout $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		fi; \
+	fi
+
 	@echo "Starting Sonar Scanner" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
