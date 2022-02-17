@@ -70,6 +70,8 @@ sonar/go/prow:
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
+		-Dsonar.qualitygate.wait=true \
+		-Dsonar.qualitygate.timeout=450 \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
@@ -201,4 +203,6 @@ sonar/js/prow:
 	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
+		-Dsonar.qualitygate.wait=true \
+		-Dsonar.qualitygate.timeout=450 \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
