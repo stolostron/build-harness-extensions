@@ -219,6 +219,16 @@ clusterpool/list-clusterpools: %list-clusterpools: %_init
 	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
 	@$(SELF) -s oc/command OC_COMMAND="get clusterpool.hive -n $(CLUSTERPOOL_HOST_NAMESPACE) $(CLUSTERPOOL_LIST_ARGUMENTS)"
 
+.PHONY: clusterpool/_list-active-clusterpools
+## List all clusterpools in the CLUSTERPOOL_HOST_NAMESPACE that are active subject to CLUSTER_SELECTOR_EXCLUSIONS - ephemeral arguments are curated here
+clusterpool/_list-active-clusterpools: %_list-active-clusterpools:
+	$(call assert-set,CLUSTERPOOL_HOST_NAMESPACE)
+	@if [ -z "$(CLUSTER_SELECTOR_EXCLUSIONS)" ]; then\
+		$(SELF) -s clusterpool/list-clusterpools CLUSTERPOOL_LIST_ARGUMENTS=" -o json" | jq -r '.items[] | select(.status.standby + .status.ready > 0) | .metadata.name' | shuf; \
+	else \
+		$(SELF) -s clusterpool/list-clusterpools CLUSTERPOOL_LIST_ARGUMENTS=" -o json" | jq -r '.items[] | select(.status.standby + .status.ready > 0) | .metadata.name' | grep -v -e "$(CLUSTER_SELECTOR_EXCLUSIONS)" | shuf; \
+	fi
+
 .PHONY: clusterpool/list-clusterimagesets
 ## List all clusterimagesets in the CLUSTERPOOL_HOST_NAMESPACE
 clusterpool/list-clusterimagesets: %list-clusterimagesets: %_init
