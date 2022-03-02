@@ -8,7 +8,8 @@ set -e
 #  3b. Mirror the openshift images
 #  4. Query the production redhat docker registry to see what upgrade bundles we can add
 #  5. Build our catalog and push it
-#  6. Push index image change to ACM's pipeline
+#  6. Build klusterlet catalog and push it
+#  7. Push index image change to ACM's pipeline
 #
 # Main Parameters:
 #  $1: GitHub organization name
@@ -69,20 +70,20 @@ if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
     else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
 fi
-echo Squaring up release repo...
+
 if [ -d release ];  \
-    then cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch backplane-$PIPELINE_MANIFEST_RELEASE_VERSION git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; \
+    then echo Grooming release repo; cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet; cd ..; \
+    else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
 fi
-echo Squaring up backplane-pipeline repo...
+
 if [ -d backplane-pipeline ];  \
-    then cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch $PIPELINE_MANIFEST_RELEASE_VERSION-integration git@github.com:$PIPELINE_MANIFEST_ORG/backplane-pipeline.git backplane-pipeline; \
+    then echo Grooming pipeline repo; cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet; cd ..; \
+    else echo Cloning pipeline repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/backplane-pipeline.git backplane-pipeline; cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; cd ..; \
 fi
-echo Squaring up deploy repo...
+
 if [ -d deploy ];  \
-    then cd deploy; git checkout master; git pull --quiet;cd ..; \
-    else git clone --single-branch --branch master git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; \
+    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; cd ..; \
+    else echo Cloning deploy repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; cd deploy; git checkout master; cd ..; \
 fi
 
 if [[ -z $SKIP_MIRROR ]]; then
@@ -100,6 +101,10 @@ if [[ -z $SKIP_MIRROR ]]; then
 
   echo "mce-operator-bundle tag:"
   cat .ashdod_output | grep "Image to mirror: mce-operator-bundle:" | awk -F":" '{print $3}' | tee .mce_operator_bundle_tag
+
+  echo "klusterlet-operator-bundle tag:"
+  echo "Skipping klusterlet processing for the time being"
+  #cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
 
   # Mirror the openshift images we depend on
   # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
@@ -132,6 +137,10 @@ if [[ -z $SKIP_INDEX ]]; then
   # Do the dance to get our proper quay access
   docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
+
+  # Call make_index with klusterlet
+  echo Skipping klusterlet processing for the time being
+  #make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
 
   # Call make_index with mce
   make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry
