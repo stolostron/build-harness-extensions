@@ -13,7 +13,7 @@ set -e
 #  $1: GitHub organization name
 
 # We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
-postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff4c71fae60b396f518860d6313c4f3287b844aab6d622
+postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:952ac9a625c7600449f0ab1970fae0a86c8a547f785e0f33bfae4365ece06336
 
 # Take an arbitrary bundle and create an index image out of it
 # make_index Parameters:
@@ -39,7 +39,8 @@ make_index () {
 	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Filter out vX.Y results; require vX.Y.Z
 	jq '[.[] | select(.version | test("v\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}"))]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
-
+	# Filter out v2.3.6 version, released prematurely
+	# jq '[.[] | select(.version | contains("v2.3.6") | not)]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Build the extrabs strucutre for this bundle
 	jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/$BUNDLE:{}" > .extrabs-$BUNDLE
 	export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs-$BUNDLE)
@@ -150,18 +151,18 @@ if [[ -z $SKIP_INDEX ]]; then
   # Add postgres to the downstream mirror mapping file
   echo $postgres_spec=__DESTINATION_ORG__/postgresql-12:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
-  # Finally, send out the acm custom registry to the downstream mirror mapping file
+  # Send out the acm custom registry to the downstream mirror mapping file
   amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
   echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
-  # Hardcode for the time being that if we're coming from ACM 2.5, we use MCE 2.0
+  # Pull in the version of MCE that matches ACM
   if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.5" ]]; then
     MCE_VERSION=`cat release/BACKPLANE_RELEASE_VERSION`
   fi
   if [[ ! -z "$MCE_VERSION" ]]; then
     echo MCE version is set to $MCE_VERSION ... seeking deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt to combine
-    # Combine the "latest" backplane downstream mirror mapping file
-    cat deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt >> mapping.txt
+    # Combine the "latest" backplane downstream mirror mapping file, but retag the mce-custom-registry with the ACM snapshot tag
+    eval 'sed -e "s|mce-custom-registry:.*|mce-custom-registry:'$PIPELINE_MANFIEST_INDEX_IMAGE_TAG'|g;" deploy/mirror/'$MCE_VERSION'-latest-DOWNANDBACK.txt >> mapping.txt'
     echo Retagging the \"latest\" MCE index $MCE_VERSION to go with this ACM index
     LATEST_TAG=$MCE_VERSION-latest
     docker pull quay.io/acm-d/mce-custom-registry:$LATEST_TAG
