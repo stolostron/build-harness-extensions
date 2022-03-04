@@ -22,7 +22,7 @@ postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff
 # make_index Parameters:
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
 #  $2: bundle and index tag (i.e. 2.2.0-DOWNSTREAM-2021-01-14-06-28-39)
-#  $3: index name (i.e. acm-custom-registry, klusterlet-custom-registry)
+#  $3: index name (i.e. acm-custom-registry, mce-custom-registry, klusterlet-custom-registry)
 make_index () {
 	BUNDLE=$1
 	BUNDLE_TAG=$2
@@ -49,7 +49,7 @@ make_index () {
 	echo $COMPUTED_UPGRADE_BUNDLES
 	# Build a catalog from bundle
 	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; cd ..
-	rm -rf /tmp/acm-custom-registry
+	rm -rf /tmp/$INDEX
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
 	else
@@ -62,7 +62,11 @@ make_index () {
 
 	# Take the subject index and give it a "latest" tag relating to the overall backplane snapshot
 	LATEST_TAG=`cat release/RELEASE_VERSION`-latest
+	echo podman pulling quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+	docker pull quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+	echo podman tagging quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG as quay.io/acm-d/$INDEX:$LATEST_TAG
 	docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$LATEST_TAG
+	echo podman pushing quay.io/acm-d/$INDEX:$LATEST_TAG
 	docker push quay.io/acm-d/$INDEX:$LATEST_TAG
 	docker rmi quay.io/acm-d/$INDEX:$LATEST_TAG
 	docker rmi quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
@@ -74,7 +78,6 @@ OC=$BUILD_HARNESS_PATH/vendor/oc
 BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
 PIPELINE_MANIFEST_ORG=$1
 
-rm -rf /tmp/acm-custom-registry
 if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
     else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \
@@ -148,27 +151,10 @@ if [[ -z $SKIP_INDEX ]]; then
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
   # Call make_index with klusterlet
-  # echo Skipping klusterlet processing for the time being
   make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
-
-  # Take the subject klusterlet index and give it a "latest" tag relating to the overall backplane version number
-  #LATEST_TAG=`cat release/RELEASE_VERSION`-latest
-  #docker pull quay.io/acm-d/klusterlet-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
-  #docker tag quay.io/acm-d/klusterlet-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP quay.io/acm-d/klusterlet-custom-registry:$LATEST_TAG
-  #docker push quay.io/acm-d/klusterlet-custom-registry:$LATEST_TAG
-  #docker rmi quay.io/acm-d/klusterlet-custom-registry:$LATEST_TAG
-  #docker rmi quay.io/acm-d/klusterlet-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
 
   # Call make_index with mce
   make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry
-
-  # Take the subject backplane index and give it a "latest" tag relating to the overall backplane version number
-  #LATEST_TAG=`cat release/RELEASE_VERSION`-latest
-  #docker pull quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
-  #docker tag quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP quay.io/acm-d/mce-custom-registry:$LATEST_TAG
-  #docker push quay.io/acm-d/mce-custom-registry:$LATEST_TAG
-  #docker rmi quay.io/acm-d/mce-custom-registry:$LATEST_TAG
-  #docker rmi quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
