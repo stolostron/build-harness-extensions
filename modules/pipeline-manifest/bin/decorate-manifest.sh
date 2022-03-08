@@ -60,8 +60,8 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
   fi
   echo image name: [$name] remote: [$remote] repostory: [$repository] tag: [$tag] image_key: [$image_key]
 
-  # Attempt to grab the sha of the image
-  url="https://quay.io/api/v1/repository/$repository/$name/tag/?onlyActiveTags=true&specificTag=$tag"
+  # Attempt to grab the sha of the image (locally)
+  url="https://quay.io/api/v1/repository/$home_quay_org/$name/tag/?onlyActiveTags=true&specificTag=$tag"
   # echo $url
   curl_command="curl -s -X GET -H \"Authorization: Bearer $QUAY_TOKEN\" \"$url\""
   #echo $curl_command
