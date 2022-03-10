@@ -25,9 +25,9 @@ fi
 $(rm HUB_CLUSTER_CLAIM 2> /dev/null)
 $(rm IMPORT_CLUSTER_CLAIM 2> /dev/null)
 
-DUMMY1=$(make clusterpool/checkout CLUSTERPOOL_NAME=$CLUSTER1 CLUSTERPOOL_CLUSTER_CLAIM=$CLUSTER1-$RANDOM_IDENTIFIER) &
+DUMMY1=$(make clusterpool/checkout CLUSTERPOOL_NAME=$CLUSTER1 CLUSTERPOOL_CLUSTER_CLAIM=$CLUSTER1-$RANDOM_IDENTIFIER > .HUB_CHECKOUT_OUTPUT) &
 T_HUB_CLUSTER_CLAIM=${!}
-DUMMY2=$(make clusterpool/checkout CLUSTERPOOL_NAME=$CLUSTER2 CLUSTERPOOL_CLUSTER_CLAIM=$CLUSTER2-$RANDOM_IDENTIFIER) &
+DUMMY2=$(make clusterpool/checkout CLUSTERPOOL_NAME=$CLUSTER2 CLUSTERPOOL_CLUSTER_CLAIM=$CLUSTER2-$RANDOM_IDENTIFIER > .IMPORT_CHECKOUT_OUTPUT) &
 T_IMPORT_CLUSTER_CLAIM=${!}
 
 echo checkout-two.sh: waiting for hub cluster checkout rendezvous
@@ -40,9 +40,17 @@ RC_IMPORT_CLUSTER_CLAIM=$?
 if [[ "$RC_HUB_CLUSTER_CLAIM" = "0" && "$RC_IMPORT_CLUSTER_CLAIM" = "0" ]]; then
     echo $CLUSTER1-$RANDOM_IDENTIFIER > HUB_CLUSTER_CLAIM
     echo $CLUSTER2-$RANDOM_IDENTIFIER > IMPORT_CLUSTER_CLAIM
+    rm .HUB_CHECKOUT_OUTPUT
+    rm .IMPORT_CHECKOUT_OUTPUT
     echo checkout-two.sh: exiting 0
     exit 0
 else
+    echo hub cluster checkout failure - output:
+    cat .HUB_CHECKOUT_OUTPUT
+    rm .HUB_CHECKOUT_OUTPUT
+    echo import cluster checkout failure - output:
+    cat .IMPORT_CHECKOUT_OUTPUT
+    rm .IMPORT_CHECKOUT_OUTPUT
     echo checkout-two.sh: exiting 1
     exit 1
 fi
