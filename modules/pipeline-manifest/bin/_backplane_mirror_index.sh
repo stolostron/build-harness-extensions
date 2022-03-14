@@ -129,7 +129,7 @@ if [[ -z $SKIP_MIRROR ]]; then
     cp $tempy/$(ls $tempy/) mce-operator-bundle-manifest.json
     cat $tempy/$(ls $tempy/) | jq -rc '.[]' | while IFS='' read item;do
       remote=$(echo $item | jq -r '.["image-remote"]')
-      if [[ "registry.redhat.io/openshift4" = "$remote" ]]
+      if [[ "registry.redhat.io/multicluster-engine" != "$remote" ]]
       then
         name=$(echo $item | jq -r '.["image-name"]')
         tag=$(echo $item | jq -r '.["image-tag"]')
