@@ -13,7 +13,7 @@ set -e
 #  $1: GitHub organization name
 
 # We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
-postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:b006af9af125adce28546d0ed9d77421abe54182741f6b5e1d31c88dd763580b
+postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff4c71fae60b396f518860d6313c4f3287b844aab6d622
 
 # Take an arbitrary bundle and create an index image out of it
 # make_index Parameters:
