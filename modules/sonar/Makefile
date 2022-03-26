@@ -38,7 +38,7 @@ sonar/go/prow:
 		echo "Fetch ${REPO_OWNER}/${REPO_NAME} and rebase the commits onto ${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git remote add origin https://github.com/${REPO_OWNER}/${REPO_NAME} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
-		git rebase origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git rebase --strategy-option=theirs origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
 			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
@@ -171,7 +171,7 @@ sonar/js/prow:
 		echo "Fetch ${REPO_OWNER}/${REPO_NAME} and rebase the commits onto ${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git remote add origin https://github.com/${REPO_OWNER}/${REPO_NAME} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
-		git rebase origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		git rebase --strategy-option=theirs origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
 			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
