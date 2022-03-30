@@ -62,7 +62,8 @@ for v in data:
                     if re.match("^[\\d]+\\.[\\d]+\\.[\\d]+-SNAPSHOT-\\d{4}(-\\d\\d){5}$",tag) or \
                             re.match("^[\\d]+\\.[\\d]+\\.[\\d]+-\\d{4}(-\\d\\d){5}$",tag) or \
                             re.match("^v[\\d]+\\.[\\d]+\\.[\\d]+-\\d{4}(-\\d\\d){5}$",tag) or \
-                            re.match("^v[\\d]+\\.[\\d]+\\.[\\d]+-\\d{4}(-\\d\\d){5}a$",tag):
+                            re.match("^v[\\d]+\\.[\\d]+\\.[\\d]+-\\d{4}(-\\d\\d){5}a$",tag) or \
+                            re.match("^v[\\d]+\\.[\\d]+\\.[\\d]+-\\d{4}(-\\d\\d){5}b$",tag):
                         url = "https://api.github.com/repos/"+new_org+"/"+repo+"/git/refs/tags/{}".format(tag)
                         try:
                             response = requests.delete(url, headers=headers)
