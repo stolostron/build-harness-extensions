@@ -39,7 +39,7 @@ for v in data:
         # We don't try to tag anyone else's repos
         run('echo RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={} repo-type={}'.format(retag_name, component_name, component_repo, compenent_tag, compenent_sha, sys.argv[3], sys.argv[4]), shell=True)
         if (sys.argv[4] == "git"):
-            if ((component_name != "origin-oauth-proxy") & (component_name != "grafana")):
+            if (component_name != "origin-oauth-proxy"):
                 run('make -s retag/git RETAG_SNAPSHOT_NAME={} RETAG_REPO={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_repo, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
         elif (sys.argv[4] == "quay"):
             run('make -s retag/quay RETAG_SNAPSHOT_NAME={} COMPONENT_NAME={} RETAG_QUAY_COMPONENT_TAG={} RETAG_GITHUB_SHA={} RETAG_DRY_RUN={}'.format(retag_name, component_name, compenent_tag, compenent_sha, sys.argv[3]), shell=True, check=True)
