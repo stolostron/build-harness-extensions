@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Execute all the mechanics of creating a custom catalog
 #  1. Make sure we can talk to brew to extract the downstream build contents
@@ -13,9 +12,6 @@ set -e
 #
 # Main Parameters:
 #  $1: GitHub organization name
-
-# We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
-postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff4c71fae60b396f518860d6313c4f3287b844aab6d622
 
 # Take an arbitrary bundle and create an index image out of it;
 #  Tag it with the incoming index name as well as vX.Y-latest
@@ -35,43 +31,52 @@ make_index () {
 	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
+	curl_output=$(curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/$BUNDLE/tags/list)
+	err_code=$(echo $curl_output | jq -r '.errors[].code' 2> /dev/null )
+	echo err_code from bundle curl \(blank or 404 is good\): $err_code
+	if [[ $err_code = "404" ]] || [[ $err_code = "" ]]; then
+	    echo $curl_output | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
 
-	# Sort results
-	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
-	# Filter out vX.Y results; require vX.Y.Z
-	jq '[.[] | select(.version | test("v\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}"))]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
+		# Sort results
+		jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
+		# Filter out vX.Y results; require vX.Y.Z
+		jq '[.[] | select(.version | test("v\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}"))]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 
-	# Build the extrabs strucutre for this bundle
-	jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/$BUNDLE:{}" > .extrabs-$BUNDLE
-	export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs-$BUNDLE)
-	echo Adding upgrade bundles:
-	echo $COMPUTED_UPGRADE_BUNDLES
+		# Build the extrabs strucutre for this bundle
+		jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/$BUNDLE:{}" > .extrabs-$BUNDLE
+		export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs-$BUNDLE)
+		echo Adding upgrade bundles:
+		echo $COMPUTED_UPGRADE_BUNDLES
+	else
+		echo curl for $BUNDLE failed.
+		return 1
+	fi
 	# Build a catalog from bundle
-	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; cd ..
+	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE && cd .. || { cd .. && echo I BROKE && return 1; }
 	rm -rf /tmp/$INDEX
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
 	else
 		echo Got at a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
 		echo docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG || return 1
+		docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG || return 1
 		docker rmi quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
 	fi
 
 	# Take the subject index and give it a "latest" tag relating to the overall backplane snapshot
 	LATEST_TAG=`cat release/RELEASE_VERSION`-latest
 	echo podman pulling quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
-	docker pull quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+	docker pull quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG || return 1
 	echo podman tagging quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG as quay.io/acm-d/$INDEX:$LATEST_TAG
-	docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$LATEST_TAG
+	docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$LATEST_TAG || return 1
 	echo podman pushing quay.io/acm-d/$INDEX:$LATEST_TAG
-	docker push quay.io/acm-d/$INDEX:$LATEST_TAG
+	docker push quay.io/acm-d/$INDEX:$LATEST_TAG || return 1
 	docker rmi quay.io/acm-d/$INDEX:$LATEST_TAG
 	docker rmi quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
 }
 
+setup () {
 # Get logged into brew, update/check out the repos we need
 echo Preparing environment for release $Z_RELEASE_VERSION tagged as $PIPELINE_MANFIEST_INDEX_IMAGE_TAG...
 OC=$BUILD_HARNESS_PATH/vendor/oc
@@ -84,28 +89,30 @@ if [ -d ashdod ];  \
 fi
 
 if [ -d release ];  \
-    then echo Grooming release repo; cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet; cd ..; \
+    then { echo Grooming release repo; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
 fi
 
 if [ -d backplane-pipeline ];  \
-    then echo Grooming pipeline repo; cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet; cd ..; \
+    then { echo Grooming pipeline repo && cd backplane-pipeline && git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning pipeline repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/backplane-pipeline.git backplane-pipeline; cd backplane-pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; cd ..; \
 fi
 
 if [ -d deploy ];  \
-    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; cd ..; \
+    then { echo Grooming deploy repo && cd deploy && git checkout master && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning deploy repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; cd deploy; git checkout master; cd ..; \
 fi
+}
 
+mirror () {
 if [[ -z $SKIP_MIRROR ]]; then
-  brew hello
+  brew hello || return 1
   # Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
   echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
-  cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG --namespace $PIPELINE_MANIFEST_MIRROR_NAMESPACE | tee ../.ashdod_output; cd ..
+  cd ashdod && python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG --namespace $PIPELINE_MANIFEST_MIRROR_NAMESPACE | tee ../.ashdod_output && cd .. || { cd .. && return 1; }
   if [[ ! -s .ashdod_output ]]; then
     echo No output from ashdod\; aborting
-    exit 1
+    return 1
   fi
 
   # We expect ashdod to leave a mapping.txt file that contains all the images it knew to mirror
@@ -144,17 +151,19 @@ if [[ -z $SKIP_MIRROR ]]; then
 else
   echo SKIP_MIRROR defined, skipping mirror
 fi
+}
 
+index () {
 if [[ -z $SKIP_INDEX ]]; then
   # Do the dance to get our proper quay access
-  docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
+  docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com || return 1
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
-  # Call make_index with klusterlet
-  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry
-
   # Call make_index with mce
-  make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry
+  make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry || return 1
+
+  # Call make_index with klusterlet
+  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry || return 1
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
@@ -174,3 +183,32 @@ if [[ -z $SKIP_INDEX ]]; then
 else
   echo SKIP_INDEX defined, skipping index makeage
 fi
+}
+
+function fail {
+  echo fail exiting with $1...
+  echo $1 >&2
+  exit 1
+}
+
+function retry {
+  local n=1
+  local max=5
+  local delay=5
+  while true; do
+    echo Working $@ retry n=$n "$*" \""$@"\"
+    "$@" && break || {
+      if [[ $n -lt $max ]]; then
+        ((n++))
+        echo "retry failed. Attempt $n/$max:"
+        sleep $delay;
+      else
+        fail "Retry of $@ failed after $n attempts."
+      fi
+    }
+  done
+}
+
+retry setup $*
+retry mirror
+retry index
