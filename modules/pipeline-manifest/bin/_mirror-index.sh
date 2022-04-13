@@ -34,7 +34,6 @@ make_index () {
 
 	# Extract version list, Pull out timestamp
 	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
-
 	# Sort results
 	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Filter out vX.Y results; require vX.Y.Z
@@ -47,7 +46,10 @@ make_index () {
 	echo Adding upgrade bundles:
 	echo $COMPUTED_UPGRADE_BUNDLES
 	# Build a catalog from bundle
-	cd release; echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE; cd ..
+	cd release
+	echo tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE
+	tools/downstream-testing/build-catalog.sh $BUNDLE_TAG $PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX quay.io/acm-d/$BUNDLE || { cd .. && echo I BROKE && return 1; }
+	cd ..
 	rm -rf /tmp/acm-custom-registry
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
@@ -59,6 +61,7 @@ make_index () {
 	fi
 }
 
+setup () {
 # Get logged into brew, update/check out the repos we need
 echo Preparing environment for release $Z_RELEASE_VERSION tagged as $PIPELINE_MANFIEST_INDEX_IMAGE_TAG...
 OC=$BUILD_HARNESS_PATH/vendor/oc
@@ -72,28 +75,30 @@ if [ -d ashdod ];  \
 fi
 
 if [ -d release ];  \
-    then echo Grooming release repo; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; git pull --quiet; cd ..; \
+    then { echo Grooming release repo; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
 fi
 
 if [ -d pipeline ];  \
-    then echo Grooming pipeline repo; cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; git pull --quiet; cd ..; \
+    then { echo Grooming pipeline repo && cd pipeline && git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning pipeline repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/pipeline.git pipeline; cd pipeline; git checkout $PIPELINE_MANIFEST_RELEASE_VERSION-integration; cd ..; \
 fi
 
 if [ -d deploy ];  \
-    then echo Grooming deploy repo; cd deploy; git checkout master; git pull --quiet; cd ..; \
+    then { echo Grooming deploy repo && cd deploy && git checkout master && git pull --quiet && cd ..; } || { cd .. && return 1; } \
     else echo Cloning deploy repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/deploy.git deploy; cd deploy; git checkout master; cd ..; \
 fi
+}
 
+mirror () {
 if [[ -z $SKIP_MIRROR ]]; then
-  brew hello
+  brew hello || return 1
   # Mirror the images we explicitly build in the errata; expect source-list.json to be written, gives us build sources
   echo Mirroring main images from advisory $PIPELINE_MANIFEST_ADVISORY_ID...
-  cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output; cd ..
+  cd ashdod; python3 -u ashdod/main.py --advisory_id $PIPELINE_MANIFEST_ADVISORY_ID --org $PIPELINE_MANIFEST_MIRROR_ORG | tee ../.ashdod_output && cd .. || { cd .. && return 1;}
   if [[ ! -s .ashdod_output ]]; then
     echo No output from ashdod\; aborting
-    exit 1
+    return 1
   fi
 
   # We expect ashdod to leave a mapping.txt file that contains all the images it knew to mirror
@@ -101,9 +106,6 @@ if [[ -z $SKIP_MIRROR ]]; then
 
   echo "acm-operator-bundle tag:"
   cat .ashdod_output | grep "Image to mirror: acm-operator-bundle:" | awk -F":" '{print $3}' | tee .acm_operator_bundle_tag
-  # Removing klusterlet processing for the time being
-  #echo "klusterlet-operator-bundle tag:"
-  #cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
 
   # Mirror the openshift images we depend on
   # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
@@ -121,7 +123,7 @@ if [[ -z $SKIP_MIRROR ]]; then
         name=$(echo $item | jq -r '.["image-name"]')
         tag=$(echo $item | jq -r '.["image-tag"]')
         echo oc image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
-        $OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag
+        $OC image mirror --keep-manifest-list=true --filter-by-os=.* $remote/$name:$tag quay.io/acm-d/$name:$tag || return 1
         amd_sha=$($OC image info quay.io/acm-d/$name:$tag --filter-by-os=linux/amd64 --output=json | jq -r '.listDigest')
         echo quay.io/acm-d/$name@$amd_sha=__DESTINATION_ORG__/$name:$tag >> mapping.txt
       fi
@@ -131,10 +133,12 @@ if [[ -z $SKIP_MIRROR ]]; then
 else
   echo SKIP_MIRROR defined, skipping mirror
 fi
+}
 
+index () {
 if [[ -z $SKIP_INDEX ]]; then
   # Do the dance to get our proper quay access
-  docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com
+  docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com || return 1
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
   # Call make_index with klusterlet, but it only came into being in 2.2
@@ -146,7 +150,7 @@ if [[ -z $SKIP_INDEX ]]; then
   fi
 
   # Call make_index with acm
-  make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry
+  make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry || return 1
 
   # Add postgres to the downstream mirror mapping file
   echo $postgres_spec=__DESTINATION_ORG__/postgresql-12:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
@@ -162,6 +166,7 @@ if [[ -z $SKIP_INDEX ]]; then
   if [[ ! -z "$MCE_VERSION" ]]; then
     echo MCE version is set to $MCE_VERSION ... seeking deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt to combine
     # Combine the "latest" backplane downstream mirror mapping file, but retag the mce-custom-registry with the ACM snapshot tag
+    echo `cat deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt | grep mce-custom-registry | awk -F: '{ print $3 }'` > mce-snapshot.txt
     eval 'sed -e "s|mce-custom-registry:.*|mce-custom-registry:'$PIPELINE_MANFIEST_INDEX_IMAGE_TAG'|g;" deploy/mirror/'$MCE_VERSION'-latest-DOWNANDBACK.txt >> mapping.txt'
     echo Retagging the \"latest\" MCE index $MCE_VERSION to go with this ACM index
     LATEST_TAG=$MCE_VERSION-latest
@@ -176,7 +181,7 @@ if [[ -z $SKIP_INDEX ]]; then
 
   # Create the downstream-upstream connected manifest and mirror mapping
   echo Create the downstream-upstream connected manifest and mirror mapping
-  python3 -u $BIN_PATH/_generate_downstream_manifest.py
+  retry python3 -u $BIN_PATH/_generate_downstream_manifest.py
 
   # Push it to the pipeline and deploy repos
   cp downstream-$DATESTAMP-$Z_RELEASE_VERSION.json pipeline/snapshots
@@ -196,3 +201,32 @@ if [[ -z $SKIP_INDEX ]]; then
 else
   echo SKIP_INDEX defined, skipping index makeage
 fi
+}
+
+function fail {
+  echo fail exiting with $1...
+  echo $1 >&2
+  exit 1
+}
+
+function retry {
+  local n=1
+  local max=5
+  local delay=5
+  while true; do
+    echo Working $@ retry n=$n "$*" \""$@"\"
+    "$@" && break || {
+      if [[ $n -lt $max ]]; then
+        ((n++))
+        echo "retry failed. Attempt $n/$max:"
+        sleep $delay;
+      else
+        fail "Retry of $@ failed after $n attempts."
+      fi
+    }
+  done
+}
+
+retry setup $*
+retry mirror
+retry index
