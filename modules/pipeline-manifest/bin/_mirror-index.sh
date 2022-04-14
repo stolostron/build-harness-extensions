@@ -68,7 +68,7 @@ OC=$BUILD_HARNESS_PATH/vendor/oc
 BIN_PATH=$BUILD_HARNESS_PATH/../build-harness-extensions/modules/pipeline-manifest/bin
 PIPELINE_MANIFEST_ORG=$1
 
-rm -rf /tmp/acm-custom-registry
+sudo rm -rf /tmp/acm-custom-registry
 if [ -d ashdod ];  \
     then cd ashdod; git pull --quiet;cd ..; \
     else git clone --single-branch --branch master git@github.com:rh-deliverypipeline/ashdod.git ashdod; \

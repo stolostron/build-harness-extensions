@@ -89,8 +89,8 @@ if [ -d ashdod ];  \
 fi
 
 if [ -d release ];  \
-    then { echo Grooming release repo; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION && git pull --quiet && cd ..; } || { cd .. && return 1; } \
-    else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout release-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
+    then { echo Grooming release repo; cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION && git pull --quiet && cd ..; } || { cd .. && return 1; } \
+    else echo Cloning release repo; git clone git@github.com:$PIPELINE_MANIFEST_ORG/release.git release; cd release; git checkout backplane-$PIPELINE_MANIFEST_RELEASE_VERSION; cd ..; \
 fi
 
 if [ -d backplane-pipeline ];  \

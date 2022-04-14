@@ -302,7 +302,6 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 # Mirror a brew tag without an errata and create custom registry/index
 pipeline-manifest/_mirror-backplane-index: %_mirror-backplane-index:
 	$(call assert-set,PIPELINE_MANIFEST_MIRROR_ORG)
-	$(call assert-set,PIPELINE_MANIFEST_MIRROR_TAG)
 	$(call assert-set,PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
 	@$(shell $(SELF) oc/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_backplane_mirror_index.sh $(PIPELINE_MANIFEST_ORG)
