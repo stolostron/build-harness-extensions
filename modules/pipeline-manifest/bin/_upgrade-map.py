@@ -79,23 +79,23 @@ while True:
 # We need to scan the full list of pages for instances of the RC names, then match them via docker image shas in order to find snapshot names
 if upgrade_map['ga'] != '':
   match = next(x for x in page_data if x['name'] == upgrade_map['ga'] )
-  gasha=match['image_id']
+  gasha=match['manifest_digest']
 if upgrade_map['gaplus'] != '':
   matchplus = next(x for x in page_data if x['name'] == upgrade_map['gaplus'] )
-  gaplussha=matchplus['image_id']
+  gaplussha=matchplus['manifest_digest']
 if upgrade_map['gaminus'] != '':
   matchminus = next(x for x in page_data if x['name'] == upgrade_map['gaminus'] )
-  gaminussha=matchminus['image_id']
+  gaminussha=matchminus['manifest_digest']
 for x in page_data:
-    if x['image_id'] == gasha:
+    if x['manifest_digest'] == gasha:
         if x['name'] != upgrade_map['ga']:
             newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
             upgrade_map['gaupstream'] = newname
-    if x['image_id'] == gaplussha:
+    if x['manifest_digest'] == gaplussha:
         if x['name'] != upgrade_map['gaplus']:
             newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
             upgrade_map['gaplusupstream'] = newname
-    if x['image_id'] == gaminussha:
+    if x['manifest_digest'] == gaminussha:
         if x['name'] != upgrade_map['gaminus']:
             newname = re.sub(r'DOWNSTREAM','SNAPSHOT',x['name'])
             upgrade_map['gaminusupstream'] = newname
