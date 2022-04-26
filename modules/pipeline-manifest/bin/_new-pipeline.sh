@@ -1,60 +1,44 @@
 #!/bin/sh
-#make
-#make jq/install > /dev/null
 
-# Notes - set these in your environment or here:
-#export GITHUB_TOKEN=your_token
-#export PIPELINE_MANIFEST_ORG=<github org where repos are>
-#export PIPELINE_MANIFEST_REPO=(pipeline or backplane-pipeline)
-#export PIPELINE_MANIFEST_LATEST_BRANCH=x.y-integration
-#export PIPELINE_MANIFEST_LATEST_Z_RELEASE=x.y.z
-#export MANIFEST_FILE=`make pipeline-manifest/_get_latest_manifest`
-#export PIPELINE_REPO_BRANCH=$PIPELINE_MANIFEST_LATEST_BRANCH
+# $1 - repo (pipeline vs. backplane-pipeline)
+# $2 - existing branch x.y
+# $3 - to-be branch x.y
 
-NEW_BRANCH=release-x.y
-OLD_BRANCH=
-OLD_BRANCH1=master
-OLD_BRANCH2=main
+TMPPLACE=newpipe-tmp
 
-rm pipeline.json 2> /dev/null
-$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/$PIPELINE_MANIFEST_ORG/$PIPELINE_MANIFEST_REPO/$PIPELINE_REPO_BRANCH/snapshots/$MANIFEST_FILE --output pipeline.json)
+if [ -z "$1" -o -z "$2" -o -z "$3" ]; then echo "I need three parameters: repo (pipeline or backplane-pipeline), old branch x.y number, new branch x.y number."; exit 1;
+fi
 
-cat pipeline.json | jq -rc '.[]' | while IFS='' read item;do
-  #
-  # For a component in the pipeline...
-  #
-  gitrepo=$(echo $item | jq -r '.["git-repository"]')
-  name=`basename $gitrepo`
-  repo=`dirname $gitrepo`
-  echo git repo: [$repo] name: [$name]
+if [ -d "$TMPPLACE" ]; then echo "The directory $TMPPLACE exists.  Remove it in order to continue."; exit 1;
+fi
 
-  #
-  # Grab the git commit sha of component's "master" branch
-  #
-  MASTER_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$gitrepo/git/refs/heads/$OLD_BRANCH1" | jq -r '.object.sha')
-  if [ $MASTER_SHA == "null" ]; then
-    MASTER_SHA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$gitrepo/git/refs/heads/$OLD_BRANCH2" | jq -r '.object.sha')
-    OLD_BRANCH=$OLD_BRANCH2
-  else
-    OLD_BRANCH=$OLD_BRANCH1
-  fi
+setup() {
+  # $1 - pipeline/backplane-pipeline repo
+  mkdir $TMPPLACE
+  cd $TMPPLACE
+  git clone git@github.com:open-cluster-management/$1 $TMPPLACE
+  cd $TMPPLACE
+}
 
-  #
-  # Create a new branch if we have a master sha
-  #
-  if [ $MASTER_SHA == "null" ]; then
-    echo "No master/main branch - ignoring"
-  else
-    if [ $repo == $PIPELINE_MANIFEST_ORG ]; then
-      #
-      # Create the new branch off of master/main
-      #
-      echo Cutting new branch off of $name, branch $OLD_BRANCH at sha $MASTER_SHA
-      output=`curl -s --show-error -X POST -H "Authorization: token $GITHUB_TOKEN" -d  "{\"ref\": \"refs/heads/$NEW_BRANCH\",\"sha\": \"$MASTER_SHA\"}" "https://api.github.com/repos/$gitrepo/git/refs"`
-      #output='curl -s --show-error -X POST -H "Authorization: token $GITHUB_TOKEN" -d  "{\"ref\": \"refs/heads/$NEW_BRANCH\",\"sha\": \"$MASTER_SHA\"}" "https://api.github.com/repos/$gitrepo/git/refs"'
-      echo $output
-    else
-      echo "Not in $PIPELINE_MANIFEST_ORG - ignoring"
-    fi
-  fi
-done
+teardown() {
+  cd ../..
+}
+
+operate() {
+  # $1 - existing branch x.y
+  # $2 - to-be branch x.y
+  # $3 - branch suffix
+  git checkout $1-$3
+  git pull
+  git checkout -b $2-$3
+  rm snapshots/*
+  touch snapshots/.gitkeep
+  git commit -am "Clean out snapshots for new branch"
+  git push --set-upstream origin $2-$3
+}
+
+setup $1
+operate $2 $3 integration
+operate $2 $3 edge
+operate $2 $3 stable
+teardown
