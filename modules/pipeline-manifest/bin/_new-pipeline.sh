@@ -16,7 +16,7 @@ setup() {
   # $1 - pipeline/backplane-pipeline repo
   mkdir $TMPPLACE
   cd $TMPPLACE
-  git clone git@github.com:open-cluster-management/$1 $TMPPLACE
+  git clone git@github.com:stolostron/$1 $TMPPLACE
   cd $TMPPLACE
 }
 
