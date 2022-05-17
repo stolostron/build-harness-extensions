@@ -57,8 +57,10 @@ make_index () {
 	if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
 		echo Didn\'t get a bonus tag
 	else
-		echo Got at a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
-		echo docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		echo Got a bonus tag: $PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+		echo podman pulling quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+		docker pull quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG || return 1
+		echo podman tagging quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
 		docker tag quay.io/acm-d/$INDEX:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG || return 1
 		docker push quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG || return 1
 		docker rmi quay.io/acm-d/$INDEX:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
