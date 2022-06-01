@@ -2,7 +2,6 @@ SONAR_GO_TEST_ARGS ?= ./...
 
 SONAR_ORG ?= open-cluster-management
 
-
 .PHONY: sonar/go
 ## Run SonarCloud analysis for Go on Travis CI. This will not be run during local development.
 sonar/go: go/gosec-install
@@ -52,7 +51,10 @@ sonar/go/prow:
 	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
+	@if [[ "${REPO_OWNER}" == "openshift" ]] && [[ "${REPO_NAME}" == "release" ]]; then \
+		echo "Detected openshift/release repo. Running a postsubmit scan on 'main' branch."; \
+		echo "sonar.branch.name=main" >> sonar-project.properties ; \
+	elif [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
@@ -185,7 +187,10 @@ sonar/js/prow:
 	@echo "SONAR_ORG=${SONAR_ORG}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
-	@if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
+	@if [[ "${REPO_OWNER}" == "openshift" ]] && [[ "${REPO_NAME}" == "release" ]]; then \
+		echo "Detected openshift/release repo. Running a postsubmit scan on 'main' branch."; \
+		echo "sonar.branch.name=main" >> sonar-project.properties ; \
+	elif [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_NAME=${REPO_NAME}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
