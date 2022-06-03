@@ -52,9 +52,9 @@ sonar/go/prow:
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${REPO_OWNER}" == "openshift" ]] && [[ "${REPO_NAME}" == "release" ]]; then \
-		TARGET_BRANCH="$(echo "${JOB_SPEC}" | jq -r '.extra_refs[] | select(.workdir == true).base_ref')"; \
-		echo "Detected openshift/release repo. Running a postsubmit scan on '${TARGET_BRANCH}' branch."; \
-		echo "sonar.branch.name=${TARGET_BRANCH}" >> sonar-project.properties ; \
+		TARGET_BRANCH="$(shell echo '${JOB_SPEC}' | jq -r '.extra_refs[] | select(.workdir == true).base_ref')"; \
+		echo "Detected openshift/release repo. Running a postsubmit scan on '$${TARGET_BRANCH}' branch."; \
+		echo "sonar.branch.name=$${TARGET_BRANCH}" >> sonar-project.properties ; \
 	elif [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
@@ -189,9 +189,9 @@ sonar/js/prow:
 	@echo "JOB_TYPE=${JOB_TYPE}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@echo "PULL_BASE_REF=${PULL_BASE_REF}" | tee -a "${ARTIFACT_DIR}/sonar.log"
 	@if [[ "${REPO_OWNER}" == "openshift" ]] && [[ "${REPO_NAME}" == "release" ]]; then \
-		TARGET_BRANCH="$(echo "${JOB_SPEC}" | jq -r '.extra_refs[] | select(.workdir == true).base_ref')"; \
-		echo "Detected openshift/release repo. Running a postsubmit scan on '${TARGET_BRANCH}' branch."; \
-		echo "sonar.branch.name=${TARGET_BRANCH}" >> sonar-project.properties ; \
+		TARGET_BRANCH="$(shell echo '${JOB_SPEC}' | jq -r '.extra_refs[] | select(.workdir == true).base_ref')"; \
+		echo "Detected openshift/release repo. Running a postsubmit scan on '$${TARGET_BRANCH}' branch."; \
+		echo "sonar.branch.name=$${TARGET_BRANCH}" >> sonar-project.properties ; \
 	elif [[ "${JOB_TYPE}" == "presubmit" ]]; then \
 		echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
 		echo "REPO_OWNER=${REPO_OWNER}" | tee -a "${ARTIFACT_DIR}/sonar.log" ; \
