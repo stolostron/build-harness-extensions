@@ -165,8 +165,11 @@ if [[ -z $SKIP_INDEX ]]; then
   echo quay.io/acm-d/acm-custom-registry@$amd_sha=__DESTINATION_ORG__/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
   # Pull in the version of MCE that matches ACM
-  if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.5" ]]; then
+  #
+  # semver comparison - are we greater than 2.4?
+  if [[ "$(echo "2.4 $PIPELINE_MANIFEST_RELEASE_VERSION)" | tr " " "\n" | sort -rV | head -n 1)" != "2.4" ]]; then
     MCE_VERSION=`cat release/BACKPLANE_RELEASE_VERSION`
+    echo We are in an ACM version greater than 2.4 - pulled in associated MCE version $MCE_VERSION
   fi
   if [[ ! -z "$MCE_VERSION" ]]; then
     echo MCE version is set to $MCE_VERSION ... seeking deploy/mirror/$MCE_VERSION-latest-DOWNANDBACK.txt to combine
