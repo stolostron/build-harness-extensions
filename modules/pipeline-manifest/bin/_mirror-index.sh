@@ -20,11 +20,12 @@ postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
 #  $2: bundle and index tag (i.e. 2.2.0-DOWNSTREAM-2021-01-14-06-28-39)
 #  $3: index name (i.e. acm-custom-registry, klusterlet-custom-registry)
-
+#  $4: GA bundle image namespace (i.e. rhacm2)
 make_index () {
 	BUNDLE=$1
 	BUNDLE_TAG=$2
 	INDEX=$3
+	NAMESPACE=$4
 	# Prepare for battle
 	TEMPFILE=.extrabs.$1.json
 	TEMPFILE2=.extrabs.$1-2.json
@@ -33,7 +34,7 @@ make_index () {
  	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
+	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/$NAMESPACE/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
 	# Sort results
 	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Filter out vX.Y results; require vX.Y.Z
@@ -41,7 +42,7 @@ make_index () {
 	# Filter out v2.3.6 version, released prematurely
 	# jq '[.[] | select(.version | contains("v2.3.6") | not)]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Build the extrabs strucutre for this bundle
-	jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/$BUNDLE:{}" > .extrabs-$BUNDLE
+	jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/$NAMESPACE/$BUNDLE:{}" > .extrabs-$BUNDLE
 	export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs-$BUNDLE)
 	echo Adding upgrade bundles:
 	echo $COMPUTED_UPGRADE_BUNDLES

@@ -19,10 +19,12 @@
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
 #  $2: bundle and index tag (i.e. 2.2.0-DOWNSTREAM-2021-01-14-06-28-39)
 #  $3: index name (i.e. acm-custom-registry, mce-custom-registry, klusterlet-custom-registry)
+#  $4: GA bundle image namespace (i.e. rhacm2, multicluster-engine)
 make_index () {
 	BUNDLE=$1
 	BUNDLE_TAG=$2
 	INDEX=$3
+	NAMESPACE=$4
 	# Prepare for battle
 	TEMPFILE=.extrabs.$1.json
 	TEMPFILE2=.extrabs.$1-2.json
@@ -31,7 +33,7 @@ make_index () {
 	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl_output=$(curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/rhacm2/$BUNDLE/tags/list)
+	curl_output=$(curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/$NAMESPACE/$BUNDLE/tags/list)
 	err_code=$(echo $curl_output | jq -r '.errors[].code' 2> /dev/null )
 	echo err_code from bundle curl \(blank or 404 is good\): $err_code
 	if [[ $err_code = "404" ]] || [[ $err_code = "" ]]; then
@@ -43,7 +45,7 @@ make_index () {
 		jq '[.[] | select(.version | test("v\\d{1,2}\\.\\d{1,2}\\.\\d{1,2}"))]' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 
 		# Build the extrabs strucutre for this bundle
-		jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/rhacm2/$BUNDLE:{}" > .extrabs-$BUNDLE
+		jq -r '.[].version' $TEMPFILE | xargs -L1 -I'{}' echo  "-B registry.redhat.io/$NAMESPACE/$BUNDLE:{}" > .extrabs-$BUNDLE
 		export COMPUTED_UPGRADE_BUNDLES=$(cat .extrabs-$BUNDLE)
 		echo Adding upgrade bundles:
 		echo $COMPUTED_UPGRADE_BUNDLES
@@ -162,10 +164,10 @@ if [[ -z $SKIP_INDEX ]]; then
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
 
   # Call make_index with mce
-  make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry || return 1
+  make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry multicluster-engine || return 1
 
   # Call make_index with klusterlet
-  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry || return 1
+  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry rhacm2 || return 1
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
