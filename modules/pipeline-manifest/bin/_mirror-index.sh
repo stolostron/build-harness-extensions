@@ -34,7 +34,7 @@ make_index () {
  	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/$NAMESPACE/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {}
+	curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/$NAMESPACE/$BUNDLE/tags/list | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {} $NAMESPACE
 	# Sort results
 	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Filter out vX.Y results; require vX.Y.Z
@@ -156,7 +156,7 @@ if [[ -z $SKIP_INDEX ]]; then
   fi
 
   # Call make_index with acm
-  make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry || return 1
+  make_index acm-operator-bundle $(cat .acm_operator_bundle_tag) acm-custom-registry rhacm2 || return 1
 
   # Add postgres to the downstream mirror mapping file
   echo $postgres_spec=__DESTINATION_ORG__/postgresql-12:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
