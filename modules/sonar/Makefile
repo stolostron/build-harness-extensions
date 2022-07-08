@@ -39,7 +39,7 @@ sonar/go/prow:
 		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git rebase --strategy-option=theirs origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
-			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
+			BRANCH="$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")-pr${PULL_BASE_REF}"; \
 			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 			git branch $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 			git reset --hard origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
@@ -176,7 +176,7 @@ sonar/js/prow:
 		git fetch origin | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		git rebase --strategy-option=theirs origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		if [[ "${JOB_TYPE}" == "presubmit" ]]; then \
-			BRANCH=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref"); \
+			BRANCH="$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")-pr${PULL_BASE_REF}"; \
 			echo "Creating and checking out to branch $${BRANCH}" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 			git branch $${BRANCH} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 			git reset --hard origin/${PULL_BASE_REF} | tee -a "${ARTIFACT_DIR}/sonar.log"; \
