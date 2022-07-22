@@ -26,10 +26,10 @@ sonar/go/prow:
 	@if [[ -z "${SONAR_TOKEN}" ]] ; then echo "---> ERROR: SONAR_TOKEN is not set" | tee -a "${ARTIFACT_DIR}/sonar.log" ; exit 1 ; fi
 
 	@if [[ -z "${SONAR_GO_TEST_USE_GINKGO}" ]]; then \
-		echo "Running go test" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		echo "Running go tests" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
 	else; \
-		echo "Running ginkgo test" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
+		echo "Running ginkgo tests" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		ginkgo -r --cover --coverprofile=coverage.out --coverpkg ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
 	fi
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
