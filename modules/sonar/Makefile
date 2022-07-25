@@ -28,7 +28,7 @@ sonar/go/prow:
 	@if [[ -z "${SONAR_GO_TEST_USE_GINKGO}" ]]; then \
 		echo "Running go tests" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
-	else; \
+	else \
 		echo "Running ginkgo tests" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
 		ginkgo -r --cover --coverprofile=coverage.out --coverpkg ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
 	fi
