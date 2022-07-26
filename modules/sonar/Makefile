@@ -30,7 +30,9 @@ sonar/go/prow:
 		go test -coverprofile=coverage.out -json ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
 	else \
 		echo "Running ginkgo tests" | tee -a "${ARTIFACT_DIR}/sonar.log"; \
-		ginkgo -r --cover --coverprofile=coverage.out --coverpkg ${SONAR_GO_TEST_ARGS} | tee -a report.json "${ARTIFACT_DIR}/sonar_gotest.json"; \
+		ginkgo -r --cover --coverprofile=coverage.out --coverpkg ${SONAR_GO_TEST_ARGS}; \
+		go tool cover -html "coverage.out" -o ${PROJECT_DIR}/cover.html; \
+		cp cover.html ${ARTIFACT_DIR}/ginkgo_cover.html; \
 	fi
 	@cp coverage.out "${ARTIFACT_DIR}/coverage.out"
 
