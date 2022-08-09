@@ -105,7 +105,7 @@ while true; do
     git commit -am "Stage $OSCI_Z_RELEASE_VERSION snapshot of $OSCI_COMPONENT_NAME-$OSCI_COMPONENT_SUFFIX"
     echo ">>> Push retag branch update to pipeline repo"
 	if git push ; then
-        echo "Successfully updated $OSCI_COMPONENT_NAME to $OSCI_COMPONENT_NAME:$OSCI_COMPONENT_VERSION in https://$OSCI_PIPELINE_SITE/$OSCI_PIPELINE_ORG/$OSCI_PIPELINE_REPO#$OSCI_RELEASE_VERSION-$OSCI_PIPELINE_STAGE"
+        echo "Successfully updated $OSCI_COMPONENT_NAME to $OSCI_COMPONENT_NAME:$OSCI_Z_RELEASE_VERSION in https://$OSCI_PIPELINE_SITE/$OSCI_PIPELINE_ORG/$OSCI_PIPELINE_REPO#$OSCI_RELEASE_VERSION-$OSCI_PIPELINE_STAGE"
 		popd > /dev/null
 		break
 	fi
