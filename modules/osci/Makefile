@@ -9,10 +9,6 @@ export OSCI_COMPONENT_BRANCH ?= ${PULL_BASE_REF}
 export OSCI_COMPONENT_SHA256 ?= ${PULL_BASE_SHA}
 
 export OSCI_COMPONENT_NAME ?= $(shell cat COMPONENT_NAME 2> /dev/null)
-export OSCI_COMPONENT_VERSION ?= $(shell cat COMPONENT_VERSION 2> /dev/null)
-
-export OSCI_COMPONENT_SUFFIX ?= $(OSCI_COMPONENT_SHA256)
-export OSCI_COMPONENT_TAG ?= $(OSCI_COMPONENT_VERSION)-$(OSCI_COMPONENT_SUFFIX)
 
 export OSCI_PIPELINE_PRODUCT_PREFIX ?= release
 
@@ -48,16 +44,19 @@ export OSCI_GIT_USER_NAME ?= "ACM CICD"
 export OSCI_GIT_USER_EMAIL ?= "acm-cicd@redhat.com"
 export OSCI_GIT_MESSAGE ?= Added or Updated $(OSCI_COMPONENT_NAME)
 
+export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)\
+
+export OSCI_COMPONENT_SUFFIX ?= $(OSCI_COMPONENT_SHA256)
+export OSCI_COMPONENT_TAG ?= $(OSCI_Z_RELEASE_VERSION)-$(OSCI_COMPONENT_SUFFIX)
+
 export OSCI_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(OSCI_COMPONENT_NAME)")
-export OSCI_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_COMPONENT_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)", "image-remote-src": "$(OSCI_IMAGE_REMOTE_REPO_SRC)"}
+export OSCI_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_RELEASE_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)", "image-remote-src": "$(OSCI_IMAGE_REMOTE_REPO_SRC)"}
 export OSCI_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(OSCI_COMPONENT_NAME)")
 export OSCI_SORT_QUERY ?= . | sort_by(.["image-name"])
 
 export OSCI_DATETIME := $(shell (date +%Y-%m-%d-%H-%M-%S))
 
-export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
-
 .PHONY: osci/publish
-## Add or update component $OSCI_COMPONENT_NAME to have version $OSCI_COMPONENT_VERSION in the pipeline manifest in stage $OSCI_PIPELINE_STAGE
+## Add or update component $OSCI_COMPONENT_NAME to have version $OSCI_Z_RELEASE_VERSION in the pipeline manifest in stage $OSCI_PIPELINE_STAGE
 osci/publish:
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/osci/bin/osci_publish.sh
