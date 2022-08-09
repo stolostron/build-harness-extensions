@@ -37,7 +37,8 @@ export OSCI_MANIFEST_SNAPSHOT_DIR ?= snapshots
 export OSCI_PUBLISH_DELAY ?= 5
 
 export OSCI_IMAGE_REMOTE_REPO ?= $(PIPELINE_MANIFEST_REMOTE_REPO)
-export OSCI_IMAGE_REMOTE_REPO_SRC ?= $(OSCI_IMAGE_REMOTE_REPO)
+# Optionally set by consumer if they don't use ocm-ci-image-mirror to mirror their image and would like retag to do it
+# export OSCI_IMAGE_REMOTE_REPO_SRC ?= $(OSCI_IMAGE_REMOTE_REPO)
 export OSCI_IMAGE_REMOTE_REPO_DST ?= $(OSCI_IMAGE_REMOTE_REPO)
 
 export OSCI_GIT_USER_NAME ?= "ACM CICD"
@@ -50,7 +51,8 @@ export OSCI_COMPONENT_SUFFIX ?= $(OSCI_COMPONENT_SHA256)
 export OSCI_COMPONENT_TAG ?= $(OSCI_Z_RELEASE_VERSION)-$(OSCI_COMPONENT_SUFFIX)
 
 export OSCI_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(OSCI_COMPONENT_NAME)")
-export OSCI_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_RELEASE_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)", "image-remote-src": "$(OSCI_IMAGE_REMOTE_REPO_SRC)"}
+export OSCI_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_RELEASE_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)"}
+export OSCI_ADDITION_QUERY_REMOTE_SRC ?= .[. | length] |= . + {"image-name": "$(OSCI_COMPONENT_NAME)", "image-version": "$(OSCI_RELEASE_VERSION)", "image-tag": "$(OSCI_COMPONENT_TAG)", "git-sha256": "$(OSCI_COMPONENT_SHA256)", "git-repository": "$(OSCI_COMPONENT_REPO)",  "image-remote": "$(OSCI_IMAGE_REMOTE_REPO_DST)", "image-remote-src": "$(OSCI_IMAGE_REMOTE_REPO_SRC)"}
 export OSCI_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(OSCI_COMPONENT_NAME)")
 export OSCI_SORT_QUERY ?= . | sort_by(.["image-name"])
 
