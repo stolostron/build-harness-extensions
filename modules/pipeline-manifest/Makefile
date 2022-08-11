@@ -49,8 +49,9 @@ PIPELINE_STAGE ?= integration
 
 PM_MANIFEST_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)")
 PM_IMAGE_REMOTE_SRC_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-remote-src"]
-PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
-PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
+# Deprecated: PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
+# Deprecated PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
+PM_IMAGE_TAG_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-tag"]
 PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.["image-name"])
@@ -208,15 +209,13 @@ pipeline-manifest/_osci_to_quay: %_osci_to_quay: %_clone
  		echo .... image does not need to be copied from OpenShift CI ; \
  	else \
  		echo .... image needs to be copied from OpenShift CI ; \
-		$(JQ) -r '$(PM_IMAGE_VERSION_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_VERSION ; \
-		echo .... image-version is `cat IMAGE_VERSION` ; \
-		$(JQ) -r '$(PM_GIT_SHA_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > GIT_SHA ; \
-		echo .... git-sha is `cat GIT_SHA` ; \
+		$(JQ) -r '$(PM_IMAGE_TAG_QUERY)' $(PIPELINE_MANIFEST_FILE_NAME).json > IMAGE_TAG ; \
+		echo .... image-tag is `cat IMAGE_TAG` ; \
 		echo .. Copying from OpenShift CI to Quay ; \
 		OSCI_REMOTE="`cat IMAGE_REMOTE_SRC`/$(PIPELINE_MANIFEST_RELEASE_VERSION):$(PIPELINE_MANIFEST_COMPONENT)" ; \
 		echo .... Pulling $$OSCI_REMOTE ; \
  		$(DOCKER) pull $$OSCI_REMOTE ; \
-		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_VERSION`-`cat GIT_SHA`" ; \
+		QUAY_REMOTE="$(PIPELINE_MANIFEST_REMOTE_REPO)/$(PIPELINE_MANIFEST_COMPONENT):`cat IMAGE_TAG`"; \
 		SLACK_MESSAGE_PREP="\`${PIPELINE_MANIFEST_REPO}\` quay_retag (_osci_to_quay): :red_circle: Failure in <$$TRAVIS_BUILD_WEB_URL|retag> commit: \`$$TRAVIS_COMMIT_MESSAGE\`: osci push image $$OSCI_REMOTE to quay $$QUAY_REMOTE failed" ; \
  		echo .... Retagging to $$QUAY_REMOTE ; \
  		$(DOCKER) tag "$$OSCI_REMOTE" "$$QUAY_REMOTE" ; \
