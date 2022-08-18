@@ -22,11 +22,11 @@ OC_SILENT ?= true
 oc/install: %install:
 	@if [ ! -x $(OC) ]; then \
 		if [ ! -z "$(OC_SILENT)" ]; then \
-			curl -s -X GET ${OC_SOURCE_URL} -o ${OC_TAR_PATH} > /dev/null; \
+			curl -s -L -X GET ${OC_SOURCE_URL} -o ${OC_TAR_PATH} > /dev/null; \
 			tar -xf ${OC_TAR_PATH} -C ${OC_DEST_PATH} > /dev/null; \
 			rm -f ${OC_TAR_PATH} > /dev/null; \
 		else \
-			curl -X GET ${OC_SOURCE_URL} -o ${OC_TAR_PATH}; \
+			curl -L -X GET ${OC_SOURCE_URL} -o ${OC_TAR_PATH}; \
 			tar -xf ${OC_TAR_PATH} -C ${OC_DEST_PATH}; \
 			rm -f ${OC_TAR_PATH}; \
 		fi \
