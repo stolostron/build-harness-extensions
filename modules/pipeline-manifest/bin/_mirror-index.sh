@@ -14,6 +14,7 @@ set -e
 
 # We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
 postgres_spec=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff4c71fae60b396f518860d6313c4f3287b844aab6d622
+postgres_spec_1=registry.redhat.io/rhel8/postgresql-13@sha256:84098713e0ba841756190e48a731b0c78e76f13c0738400bf345b1928a59eeca
 
 # Take an arbitrary bundle and create an index image out of it
 # make_index Parameters:
@@ -160,6 +161,7 @@ if [[ -z $SKIP_INDEX ]]; then
 
   # Add postgres to the downstream mirror mapping file
   echo $postgres_spec=__DESTINATION_ORG__/postgresql-12:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
+  echo $postgres_spec_1=__DESTINATION_ORG__/postgresql-13:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP >> mapping.txt
 
   # Send out the acm custom registry to the downstream mirror mapping file
   amd_sha=$($OC image info quay.io/acm-d/acm-custom-registry:$Z_RELEASE_VERSION-DOWNSTREAM-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
