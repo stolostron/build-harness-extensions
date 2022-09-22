@@ -14,7 +14,8 @@ set -e
 
 # We send out the postgres sha to the downstream mapping file... this is the hardcoded version we are using today:
 postgres_spec_12=registry.redhat.io/rhel8/postgresql-12@sha256:da0b8d525b173ef472ff4c71fae60b396f518860d6313c4f3287b844aab6d622
-postgres_spec_13=registry.redhat.io/rhel8/postgresql-13@sha256:d8ec037e60575b86320fdc162117600240ce53038fb8b9b7296ce525d2b8e605
+postgres_spec_13=registry.redhat.io/rhel8/postgresql-13@sha256:4bb562f98edc2d94299f25080dc3dd8290e5f8db2710fe8f76a5cd71442bb4c7
+
 # Take an arbitrary bundle and create an index image out of it
 # make_index Parameters:
 #  $1: bundle name (i.e. acm-operator-bundle, klusterlet-operator-bundle, etc.)
