@@ -170,7 +170,7 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with klusterlet, but skip MCE 2.2 for now
   if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.2" ]]; then echo Skip klusterlet operator bundle for now in version $PIPELINE_MANIFEST_RELEASE_VERSION;
   else
-    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry rhacm2 || return 1
+    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
   fi
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
