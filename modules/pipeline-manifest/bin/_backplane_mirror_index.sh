@@ -167,11 +167,8 @@ if [[ -z $SKIP_INDEX ]]; then
   # Call make_index with mce
   make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry multicluster-engine || return 1
 
-  # Call make_index with klusterlet, but skip MCE 2.2 for now
-  if [[ "$PIPELINE_MANIFEST_RELEASE_VERSION" == "2.2" ]]; then echo Skip klusterlet operator bundle for now in version $PIPELINE_MANIFEST_RELEASE_VERSION;
-  else
-    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
-  fi
+  # Call make_index with klusterlet
+  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
