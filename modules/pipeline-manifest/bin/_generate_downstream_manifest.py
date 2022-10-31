@@ -21,6 +21,11 @@ release_manifest = []
 
 def get_upstream_sha(container, sha):
     # print('looking for container {} with sha {}'.format(container,sha))
+    # Note: he system running this command must also have certs configured via:
+    # https://source.redhat.com/groups/public/identity-access-management/identity__access_management_wiki/specification_recommended_system_level_pki_settings
+    # Note: the following bash env variable must be set to configure the ca bundle
+    #       that will be used by python. This configuration is probably already in the bash_profile!
+    # export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
     req_string = 'https://pkgs.devel.redhat.com/cgit/containers/{}/plain/container.yaml?id={}'.format(container,sha)
     # print (req_string)
     res = requests.get(
