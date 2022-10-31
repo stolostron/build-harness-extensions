@@ -4,6 +4,9 @@ DOCKER := $(shell which docker 2> /dev/null)
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
+# Set REQUESTS_CA_BUNDLE
+export REQUESTS_CA_BUNDLE ?= /etc/pki/tls/certs/ca-bundle.crt
+
 # May or may not be in github enterprise
 PIPELINE_MANIFEST_SITE ?= github.com
 # May be in RedHat main org or in some ACM specific org
@@ -293,6 +296,7 @@ pipeline-manifest/_mirror-index: %_mirror-index:
 	$(call assert-set,PIPELINE_MANFIEST_INDEX_IMAGE_TAG)
 	$(call assert-set,PIPELINE_MANIFEST_REDHAT_USER)
 	$(call assert-set,PIPELINE_MANIFEST_REDHAT_TOKEN)
+	$(call assert-set,REQUESTS_CA_BUNDLE)
 	@$(shell $(SELF) jq/install > /dev/null)
 	@$(shell $(SELF) oc/install > /dev/null)
 	$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/pipeline-manifest/bin/_mirror-index.sh $(PIPELINE_MANIFEST_ORG)
