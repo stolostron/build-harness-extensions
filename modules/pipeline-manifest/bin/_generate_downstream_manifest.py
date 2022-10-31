@@ -21,7 +21,7 @@ release_manifest = []
 
 def get_upstream_sha(container, sha):
     # print('looking for container {} with sha {}'.format(container,sha))
-    req_string = 'http://dist-git.host.prod.eng.bos.redhat.com/cgit/containers/{}/plain/container.yaml?id={}'.format(container,sha)
+    req_string = 'https://pkgs.devel.redhat.com/cgit/containers/{}/plain/container.yaml?id={}'.format(container,sha)
     # print (req_string)
     res = requests.get(
         req_string
