@@ -4,7 +4,9 @@ DOCKER := $(shell which docker 2> /dev/null)
 GITHUB_USER := $(shell echo $(GITHUB_USER) | sed 's/@/%40/g')
 GITHUB_TOKEN ?=
 
-# Set REQUESTS_CA_BUNDLE
+# Set REQUESTS_CA_BUNDLE for use by _generate-downstream-manifest.py
+# via the requests package, which requires a CA Bundle override to talk
+# to dist-git!
 export REQUESTS_CA_BUNDLE ?= /etc/pki/tls/certs/ca-bundle.crt
 
 # May or may not be in github enterprise
