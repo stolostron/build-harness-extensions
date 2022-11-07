@@ -13,6 +13,8 @@ COMMUNITY_GIT_SITE ?= github.com
 COMMUNITY_OPERATOR_ORG ?= stolostron
 # Name of upstream operator project
 COMMUNITY_REPO?= community-operators-prod 
+# Location of the community operators upstream
+UPSTREAM_OPERATOR_ORG ?= redhat-openshift-ecosystem 
 # URL for Git clone
 COMMUNITY_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)/$(COMMUNITY_OPERATOR_ORG)/$(COMMUNITY_REPO).git"
 # Branch to sync
@@ -32,11 +34,12 @@ community-publish/init: %init:
 .PHONY: community-publish/pull
 ## Install upstream community changes
 community-publish/pull: %pull: %init
-	$(GIT) clone -b $(COMMUNITY_OPERATOR_BRANCH) $(COMMUNITY_GIT_URL) $(COMMUNITY_REPO);
-	$(GIT) fetch upstream
-	$(GIT) checkout $(COMMUNITY_OPERATOR_BRANCH)
-	$(GIT) rebase upstream/$(COMMUNITY_OPERATOR_BRANCH)
-	$(GIT) checkout -b $(OPERATOR_TYPE):$(OPERATOR_VERSION)
+	@$(GIT) clone -b $(COMMUNITY_OPERATOR_BRANCH) $(COMMUNITY_GIT_URL) $(COMMUNITY_REPO);
+	@$(GIT) remote add upstream https://$(COMMUNITY_GIT_SITE)/$(UPSTREAM_OPERATOR_ORG)/$(COMMUNITY_REPO)
+	@$(GIT) fetch upstream
+	@$(GIT) checkout $(COMMUNITY_OPERATOR_BRANCH)
+	@$(GIT) rebase upstream/$(COMMUNITY_OPERATOR_BRANCH)
+	@$(GIT) checkout -b $(OPERATOR_TYPE):$(OPERATOR_VERSION)
 
 .PHONY: community-publish/image-pull
 ## Pull operator from image repo
@@ -47,5 +50,6 @@ community-publish/image-pull: %image-pull %init
 	
 .PHONY: community-publish/push
 ## Push new operator to upstream
-	@(GIT) push
-## Need some command to PR changes back to upstream fork
+	@$(GTI) add $(OPERATOR_DIR)
+	@$(GIT) commit -m "Publishing $(SNAPSHOT) to $(OPERATOR_TYPE) v$(OPERATOR_VERSION)"
+	@$(GIT) push --quiet
