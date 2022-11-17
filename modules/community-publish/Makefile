@@ -24,11 +24,11 @@ COMMUNITY_OPERATOR_BRANCH ?= main
 # Community operator release repo location
 RELEASE_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)/release.git"
 
-
+OPERATOR_IMAGE_REPO ?= $(COMMUNITY_OPERATOR_ORG)
 OPERATOR_DIR ?= $(COMMUNITY_REPO)/operators/$(OPERATOR_TYPE)/$(OPERATOR_VERSION)
 Y_VERSION ?= $(echo $(OPERATOR_VERSION) | sed -nr "s/([0-9]+\.[0-9]+)\.{0,1}[0-9]*/\1/p")
-OPERATOR_NAME ?= $(if [[ "$(OPERATOR_TYPE)" == "stolostron" ]]; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi) 
-OPERATOR_BRANCH = ?= $(if [[ "$(OPERATOR_TYPE)" == "stolostron" ]]; then echo "stolostron-$(Y_VERSION)"; else echo "stolostron_engine-$(Y_VERSION)"; fi)
+OPERATOR_NAME ?= $(shell if [[ "$OPERATOR_TYPE" == "stolostron" ]]; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi)
+OPERATOR_BRANCH = ?= $(shell if [[ "$OPERATOR_TYPE" == "stolostron" ]]; then echo "stolostron-$(Y_VERSION)"; else echo "stolostron_engine-$(Y_VERSION)"; fi)
 
 .PHONY: community-publish/init
 ## Install build dependencies
@@ -42,35 +42,44 @@ community-publish/init: %init:
 .PHONY: community-publish/pull
 ## Install upstream community changes
 community-publish/pull: %pull: %init
-	$(GIT) clone -b $(COMMUNITY_OPERATOR_BRANCH) $(COMMUNITY_GIT_URL) $(COMMUNITY_REPO);
-	@cd $(COMMUNITY_REPO)
-	$(GIT) remote add upstream https://$(COMMUNITY_GIT_SITE)/$(UPSTREAM_OPERATOR_ORG)/$(UPSTREAM_COMMUNITY_REPO)
-	$(GIT) fetch upstream
-	$(GIT) checkout $(COMMUNITY_OPERATOR_BRANCH)
-	$(GIT) rebase upstream/$(COMMUNITY_OPERATOR_BRANCH)
-	$(GIT) checkout -b $(OPERATOR_TYPE)-$(OPERATOR_VERSION)
-	@cd ..
+	@$(GIT) clone -b $(COMMUNITY_OPERATOR_BRANCH) $(COMMUNITY_GIT_URL) $(COMMUNITY_REPO); \
+	cd $(COMMUNITY_REPO); \
+	echo "Adding upstream community reference"; \
+	$(GIT) remote add upstream https://$(COMMUNITY_GIT_SITE)/$(UPSTREAM_OPERATOR_ORG)/$(UPSTREAM_COMMUNITY_REPO); \
+	echo "Fetching upstream changes"; \
+	$(GIT) fetch upstream; \
+	echo "Rebase on upstream repo"; \
+	$(GIT) rebase upstream/$(COMMUNITY_OPERATOR_BRANCH); \
+	echo "Make new branch for changes"; \
+	$(GIT) checkout -b $(OPERATOR_TYPE)-$(OPERATOR_VERSION); \
+	cd ..
 
 .PHONY: community-publish/image-pull
 ## Pull operator from image repo
-community-publish/image-pull: %image-pull %init
+community-publish/image-pull: %image-pull: %init
 	@mkdir -p $(OPERATOR_DIR)
-	@$(SELF) docker/login DOCKER_USER=$(DOCKER_USER) DOCKER_PASS=$(DOCKER_PASS)
-	@$(SELF) oc/command OC_COMMAND="image extract $(DOCKER_REGISTRY)/$(COMMUNITY_OPERATOR_ORG)/$(OPERATOR_NAME):$(SNAPSHOT) --path /:/$(OPERATOR_DIR)"
+	@$(SELF) docker/login
+	@$(SELF) oc/command OC_LOGGED_IN=$(OPERATOR_DIR) OC_COMMAND="image extract $(DOCKER_REGISTRY)/$(OPERATOR_IMAGE_REPO)/$(OPERATOR_NAME):$(SNAPSHOT) --path /:$(OPERATOR_DIR)"
 	
 .PHONY: community-publish/push
 ## Push new operator to upstream
-	@cd $(COMMUNITY_REPO)
-	$(GIT) commit -am "Publishing $(SNAPSHOT) to $(OPERATOR_TYPE) v$(OPERATOR_VERSION)"
-	$(GIT) push --quiet
-	@cd ..
+community-publish/push: %push: %init
+	@cd $(COMMUNITY_REPO); \
+	$(GIT) add --all; \
+	$(GIT) commit -m "Publishing $(SNAPSHOT) to $(OPERATOR_TYPE) v$(OPERATOR_VERSION)"; \
+	$(GIT) push --quiet --set-upstream origin $(OPERATOR_TYPE)-$(OPERATOR_VERSION); \
+	cd ..
 
 .PHONY: community-publish/pull-request
 ## Create a pull request to the upstream org
-	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/community-publish/bin/make-pr.sh 
+community-publish/pull-request: %pull-request: %init
+	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/community-publish/bin/make-pr.sh \
+	$(OPERATOR_TYPE) $(OPERATOR_VERSION) $(UPSTREAM_OPERATOR_ORG) $(UPSTREAM_COMMUNITY_REPO)\
+	$(COMMUNITY_OPERATOR_ORG) $(COMMUNITY_OPERATOR_BRANCH)
 
 .PHONY: community-publish/version-update
 ## Updating the version number in local operator
+community-publish/version-update: %version-update:
 	$(GIT) clone -b $(OPERATOR_BRANCH) $(RELEASE_GIT_URL)
 	@NEW_Z_VERSION=`cat release/Z_RELEASE_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`; 
 	@echo $NEW_Z_VERSION > release/Z_RELEASE_VERSION; \
