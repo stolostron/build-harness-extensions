@@ -66,7 +66,7 @@ community-publish/image-pull: %image-pull: %init
 community-publish/push: %push: %init
 	@cd $(COMMUNITY_REPO); \
 	$(GIT) add --all; \
-	$(GIT) commit -m "Publishing $(SNAPSHOT) to $(OPERATOR_TYPE) v$(OPERATOR_VERSION)"; \
+	$(GIT) commit --signoff -m "Publishing $(SNAPSHOT) to $(OPERATOR_TYPE) v$(OPERATOR_VERSION)"; \
 	$(GIT) push --quiet --set-upstream origin $(OPERATOR_TYPE)-$(OPERATOR_VERSION); \
 	cd ..
 
