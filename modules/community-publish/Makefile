@@ -14,9 +14,9 @@ COMMUNITY_REPO ?= community-operators-submission-fork
 # May be in RedHat main org or in some ACM specific org
 COMMUNITY_OPERATOR_ORG ?= stolostron
 # Name of upstream community operator project
-UPSTREAM_COMMUNITY_REPO?= community-operators-prod 
+UPSTREAM_COMMUNITY_REPO ?= community-operators-prod
 # Location of the community operators upstream
-UPSTREAM_OPERATOR_ORG ?= redhat-openshift-ecosystem 
+UPSTREAM_OPERATOR_ORG ?= redhat-openshift-ecosystem
 # URL for Git clone
 COMMUNITY_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)/$(COMMUNITY_OPERATOR_ORG)/$(COMMUNITY_REPO).git"
 # Branch to sync
@@ -27,8 +27,8 @@ RELEASE_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)
 OPERATOR_IMAGE_REPO ?= $(COMMUNITY_OPERATOR_ORG)
 OPERATOR_DIR ?= $(COMMUNITY_REPO)/operators/$(OPERATOR_TYPE)/$(OPERATOR_VERSION)
 Y_VERSION ?= $(echo $(OPERATOR_VERSION) | sed -nr "s/([0-9]+\.[0-9]+)\.{0,1}[0-9]*/\1/p")
-OPERATOR_NAME ?= $(shell if [[ "$OPERATOR_TYPE" == "stolostron" ]]; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi)
-OPERATOR_BRANCH = ?= $(shell if [[ "$OPERATOR_TYPE" == "stolostron" ]]; then echo "stolostron-$(Y_VERSION)"; else echo "stolostron_engine-$(Y_VERSION)"; fi)
+OPERATOR_NAME ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi)
+OPERATOR_BRANCH ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stolostron-$(Y_VERSION)"; else echo "stolostron_engine-$(Y_VERSION)"; fi)
 
 .PHONY: community-publish/init
 ## Install build dependencies
@@ -74,7 +74,7 @@ community-publish/push: %push: %init
 ## Create a pull request to the upstream org
 community-publish/pull-request: %pull-request: %init
 	@$(BUILD_HARNESS_EXTENSIONS_PATH)/modules/community-publish/bin/make-pr.sh \
-	$(OPERATOR_TYPE) $(OPERATOR_VERSION) $(UPSTREAM_OPERATOR_ORG) $(UPSTREAM_COMMUNITY_REPO)\
+	$(OPERATOR_TYPE) $(OPERATOR_VERSION) $(UPSTREAM_OPERATOR_ORG) $(UPSTREAM_COMMUNITY_REPO) \
 	$(COMMUNITY_OPERATOR_ORG) $(COMMUNITY_OPERATOR_BRANCH)
 
 .PHONY: community-publish/version-update
