@@ -28,7 +28,7 @@ OPERATOR_IMAGE_REPO ?= $(COMMUNITY_OPERATOR_ORG)
 OPERATOR_DIR ?= $(COMMUNITY_REPO)/operators/$(OPERATOR_TYPE)/$(OPERATOR_VERSION)
 Y_VERSION ?= $(echo $(OPERATOR_VERSION) | sed -nr "s/([0-9]+\.[0-9]+)\.{0,1}[0-9]*/\1/p")
 OPERATOR_NAME ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi)
-OPERATOR_BRANCH ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stolostron-$(Y_VERSION)"; else echo "stolostron_engine-$(Y_VERSION)"; fi)
+OPERATOR_BRANCH ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stolostron-${Y_VERSION}"; else echo "stolostron_engine-${Y_VERSION}"; fi)
 
 .PHONY: community-publish/init
 ## Install build dependencies
