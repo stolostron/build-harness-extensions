@@ -22,7 +22,7 @@ COMMUNITY_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SIT
 # Branch to sync
 COMMUNITY_OPERATOR_BRANCH ?= main
 # Community operator release repo location
-RELEASE_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)/release.git"
+RELEASE_GIT_URL ?= "https://$(GITHUB_USER):$(GITHUB_TOKEN)@$(COMMUNITY_GIT_SITE)/$(COMMUNITY_OPERATOR_ORG)/release.git"
 
 OPERATOR_IMAGE_REPO ?= $(COMMUNITY_OPERATOR_ORG)
 OPERATOR_DIR ?= $(COMMUNITY_REPO)/operators/$(OPERATOR_TYPE)/$(OPERATOR_VERSION)
@@ -81,7 +81,9 @@ community-publish/pull-request: %pull-request: %init
 ## Updating the version number in local operator
 community-publish/version-update: %version-update:
 	@$(GIT) clone -b $(OPERATOR_BRANCH) $(RELEASE_GIT_URL); \
-	NEW_Z_VERSION=`cat release/Z_RELEASE_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`; \
-	echo $NEW_Z_VERSION > release/Z_RELEASE_VERSION; \
+	cd release
+	NEW_Z_VERSION=`cat Z_RELEASE_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`; \
+	echo $NEW_Z_VERSION > Z_RELEASE_VERSION; \
 	$(GIT) commit -am "[skip ci] Updating version to $(NEW_Z_VERSION)"; \
-	$(GIT) push;
+	$(GIT) push; \
+	cd ..
