@@ -80,10 +80,10 @@ community-publish/pull-request: %pull-request: %init
 .PHONY: community-publish/version-update
 ## Updating the version number in local operator
 community-publish/version-update: %version-update:
-	@$(GIT) clone -b $(OPERATOR_BRANCH_SHORTNAME)-$(Y_VERSION) $(RELEASE_GIT_URL); \
+@$(GIT) clone -b $(OPERATOR_BRANCH_SHORTNAME)-$(Y_VERSION) $(RELEASE_GIT_URL); \
+	NEW_Z_VERSION=$(shell echo $$OPERATOR_VERSION | awk -F. '/[0-9]+\./{$$NF++;print}' OFS=.); \
 	cd release; \
-	NEW_Z_VERSION=$(cat Z_RELEASE_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.); \
-	echo $NEW_Z_VERSION > Z_RELEASE_VERSION; \
-	$(GIT) commit -am "[skip ci] Updating version to $(NEW_Z_VERSION)"; \
+	echo $$NEW_Z_VERSION > Z_RELEASE_VERSION; \
+	$(GIT) commit -am "[skip ci] Updating version to $$NEW_Z_VERSION"; \
 	$(GIT) push; \
 	cd ..
