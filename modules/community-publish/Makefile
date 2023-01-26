@@ -28,7 +28,7 @@ OPERATOR_IMAGE_REPO ?= $(COMMUNITY_OPERATOR_ORG)
 OPERATOR_DIR ?= $(COMMUNITY_REPO)/operators/$(OPERATOR_TYPE)/$(OPERATOR_VERSION)
 Y_VERSION ?= $(echo $(OPERATOR_VERSION) | sed -nr "s/([0-9]+\.[0-9]+)\.{0,1}[0-9]*/\1/p")
 OPERATOR_NAME ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stn-operator-bundle"; else echo "ste-operator-bundle"; fi)
-OPERATOR_BRANCH ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stolostron-${Y_VERSION}"; else echo "stolostron_engine-${Y_VERSION}"; fi)
+OPERATOR_BRANCH_SHORTNAME ?= $(shell if [[ "$(OPERATOR_TYPE)" == "stolostron" ]] ; then echo "stolostron"; else echo "stolostron_engine"; fi)
 
 .PHONY: community-publish/init
 ## Install build dependencies
@@ -80,7 +80,7 @@ community-publish/pull-request: %pull-request: %init
 .PHONY: community-publish/version-update
 ## Updating the version number in local operator
 community-publish/version-update: %version-update:
-	@$(GIT) clone -b $(OPERATOR_BRANCH) $(RELEASE_GIT_URL); \
+	@$(GIT) clone -b $(OPERATOR_BRANCH_SHORTNAME)-$(Y_VERSION) $(RELEASE_GIT_URL); \
 	cd release
 	NEW_Z_VERSION=`cat Z_RELEASE_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`; \
 	echo $NEW_Z_VERSION > Z_RELEASE_VERSION; \
