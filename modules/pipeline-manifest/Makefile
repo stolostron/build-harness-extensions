@@ -337,4 +337,8 @@ pipeline-manifest/_snapshot-pruner: %_snapshot-pruner:
 pipeline-manifest/_mapping: %_mapping:
 	$(call assert-set,ACM_SNAPSHOT)
 	$(call assert-set,MCE_SNAPSHOT)
-	@$(JQ) -n --arg a $ACM_SNAPSHOT --arg b $MCE_SNAPSHOT '{"ACM": $a, "MCE": $b}' > mappings/$ACM_SNAPSHOT
+	$(call assert-set,PIPELINE_MANIFEST_BRANCH)
+	$(GIT) clone -b mapping $(PIPELINE_MANIFEST_GIT_URL) mapping_dir
+	mkdir -p mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)
+	$(JQ) -n --arg a $ACM_SNAPSHOT --arg b $MCE_SNAPSHOT '{"ACM": $a, "MCE": $b}' > mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)/$ACM_SNAPSHOT
+	@cd mapping_dir; $(GIT) commit -am "Adding mapping for $(ACM_SNAPSHOT)"; $(GIT) push --quiet
