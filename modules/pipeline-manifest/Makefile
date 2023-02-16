@@ -74,6 +74,9 @@ DATETIME_VAR := $(shell (date +%Y-%m-%d-%H-%M-%S))
 Z_RELEASE_VERSION ?= $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${PIPELINE_MANIFEST_ORG}/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
 	
 
+ACM_SNAPSHOT ?=
+MCE_SNAPSHOT ?=
+
 .PHONY: pipeline-manifest/_datetime_gen
 # Factory method for storing datetime variable
 pipeline-manifest/_datetime_gen: %_datetime_gen:
@@ -328,3 +331,14 @@ pipeline-manifest/_snapshot-pruner: %_snapshot-pruner:
 	@if [[ "$(REALLY_REALLY_DO_IT)" = "True" ]]; then \
 		cd .pruner_work;  $(GIT) commit -am "Trim snapshots [skip ci]" --quiet; $(GIT) push --quiet ; \
 	fi
+	
+.PHONY: pipeline-manifest/_mapping
+# Map ACM pipeline to MCE pipeline
+pipeline-manifest/_mapping: %_mapping:
+	$(call assert-set,ACM_SNAPSHOT)
+	$(call assert-set,MCE_SNAPSHOT)
+	$(call assert-set,PIPELINE_MANIFEST_BRANCH)
+	$(GIT) clone -b mapping $(PIPELINE_MANIFEST_GIT_URL) mapping_dir
+	mkdir -p mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)
+	@$(JQ) -n --arg a $(ACM_SNAPSHOT) --arg b $(MCE_SNAPSHOT) '{"ACM": [$a], "MCE": [$b]}' > mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)/$(ACM_SNAPSHOT)
+	@cd mapping_dir; $(GIT) add -A && $(GIT) commit -m "Adding mapping for $(ACM_SNAPSHOT)"; $(GIT) push --quiet
