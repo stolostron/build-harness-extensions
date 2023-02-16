@@ -340,5 +340,5 @@ pipeline-manifest/_mapping: %_mapping:
 	$(call assert-set,PIPELINE_MANIFEST_BRANCH)
 	$(GIT) clone -b mapping $(PIPELINE_MANIFEST_GIT_URL) mapping_dir
 	mkdir -p mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)
-	@$(JQ) -n --arg a $(ACM_SNAPSHOT) --arg b $(MCE_SNAPSHOT) '{"ACM": [$a], "MCE": [$b]}' > mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)/$(ACM_SNAPSHOT)
+	$(JQ) -n '{"ACM": "${ACM_SNAPSHOT}", "MCE": "${MCE_SNAPSHOT}" }' > mapping_dir/$(PIPELINE_MANIFEST_RELEASE_VERSION)/$(Z_RELEASE_VERSION)/$(ACM_SNAPSHOT)
 	@cd mapping_dir; $(GIT) add -A && $(GIT) commit -m "Adding mapping for $(ACM_SNAPSHOT)"; $(GIT) push --quiet
