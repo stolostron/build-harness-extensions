@@ -55,7 +55,7 @@ page_data=[]
 while True:
   page=page+1
   url = "https://quay.io/api/v1/repository/"+repository+"/acm-custom-registry/tag/?onlyActiveTags=true&limit=100&page={}".format(page)
-  response = requests.get(url, headers=headers).json()
+  response = requests.get(url, headers=headers, verify=False).json()
   # We need to have a consolidated list to search, so we do array extension of the pages
   page_data.extend(response["tags"])
   my_list = response["tags"]
