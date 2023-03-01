@@ -57,7 +57,7 @@ PM_IMAGE_REMOTE_SRC_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST
 # Deprecated: PM_IMAGE_VERSION_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-version"]
 # Deprecated PM_GIT_SHA_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["git-sha256"]
 PM_IMAGE_TAG_QUERY ?= .[] |select(.["image-name"] == "$(PIPELINE_MANIFEST_COMPONENT)") | .["image-tag"]
-PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
+PM_ADDITION_QUERY ?= .[. | length] |= . + {"image-name": "$(PIPELINE_MANIFEST_COMPONENT)", "image-version": "$(PIPELINE_MANIFEST_COMPONENT_VERSION)", "image-tag": "$(PIPELINE_MANIFEST_COMPONENT_TAG)", "git-branch": "$(PIPELINE_MANIFEST_COMPONENT_BRANCH)", "git-sha256": "$(PIPELINE_MANIFEST_COMPONENT_SHA256)", "git-repository": "$(PIPELINE_MANIFEST_COMPONENT_REPO)",  "image-remote": "$(PIPELINE_MANIFEST_REMOTE_REPO)"}
 PM_DELETION_QUERY ?= .[] | select(.["image-name"] != "$(DELETED_COMPONENT)")
 PM_SORT_QUERY ?= . | sort_by(.["image-name"])
 
