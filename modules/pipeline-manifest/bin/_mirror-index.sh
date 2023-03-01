@@ -184,6 +184,13 @@ if [[ -z $SKIP_INDEX ]]; then
     docker pull quay.io/acm-d/mce-custom-registry:$LATEST_TAG
     docker tag quay.io/acm-d/mce-custom-registry:$LATEST_TAG quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
     docker push quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
+    if [[ -z $PIPELINE_MANIFEST_MIRROR_BONUS_TAG ]]; then
+	echo Didn\'t get ACM bonus tag
+    else
+    	docker tag quay.io/acm-d/mce-custom-registry:$LATEST_TAG quay.io/acm-d/mce-custom-registry:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+    	docker push quay.io/acm-d/mce-custom-registry:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+	docker rmi quay.io/acm-d/mce-custom-registry:$PIPELINE_MANIFEST_MIRROR_BONUS_TAG
+    fi
     docker rmi quay.io/acm-d/mce-custom-registry:$PIPELINE_MANFIEST_INDEX_IMAGE_TAG
     docker rmi quay.io/acm-d/mce-custom-registry:$LATEST_TAG
   else
