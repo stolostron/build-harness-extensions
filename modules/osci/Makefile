@@ -45,7 +45,7 @@ export OSCI_GIT_USER_NAME ?= "ACM CICD"
 export OSCI_GIT_USER_EMAIL ?= "acm-cicd@redhat.com"
 export OSCI_GIT_MESSAGE ?= Added or Updated $(OSCI_COMPONENT_NAME)
 
-export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_COMPONENT_BRANCH}/Z_RELEASE_VERSION)
+export OSCI_Z_RELEASE_VERSION ?= $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_PIPELINE_GIT_BRANCH}/Z_RELEASE_VERSION)
 
 export OSCI_COMPONENT_SUFFIX ?= $(OSCI_COMPONENT_SHA256)
 export OSCI_COMPONENT_TAG ?= $(OSCI_Z_RELEASE_VERSION)-$(OSCI_COMPONENT_SUFFIX)
