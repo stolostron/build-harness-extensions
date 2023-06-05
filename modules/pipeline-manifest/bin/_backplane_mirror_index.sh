@@ -33,8 +33,8 @@ make_index () {
 	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl_output=$(podman login --username=$PIPELINE_MANIFEST_REDHAT_USER --password=$PIPELINE_MANIFEST_REDHAT_TOKEN registry.redhat.io & \
-    podman search registry.redhat.io/$NAMESPACE/$BUNDLE --list-tags --format json --limit=99999 | jq -r '.[0].Tags[]' | sort --version-sort)
+  podman login --username=$PIPELINE_MANIFEST_REDHAT_USER --password=$PIPELINE_MANIFEST_REDHAT_TOKEN registry.redhat.io
+	curl_output=$(podman search registry.redhat.io/$NAMESPACE/$BUNDLE --list-tags --format json --limit=99999 | jq -r '.[0].Tags[]' | sort --version-sort)
 	err_code=$(echo $curl_output | jq -r '.errors[].code' 2> /dev/null )
 	echo err_code from bundle curl \(blank or 404 is good\): $err_code
 	if [[ $err_code = "404" ]] || [[ $err_code = "" ]]; then
