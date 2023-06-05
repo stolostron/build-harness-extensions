@@ -36,7 +36,7 @@ make_index () {
 
 	# Extract version list, Pull out timestamp
   podman login --username=$PIPELINE_MANIFEST_REDHAT_USER --password=$PIPELINE_MANIFEST_REDHAT_TOKEN registry.redhat.io
-	podman search registry.redhat.io/$NAMESPACE/$BUNDLE --list-tags --format json --limit=99999 | jq -r '.[0].Tags[]' | sort --version-sort | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {} $NAMESPACE
+	podman search registry.redhat.io/$NAMESPACE/$BUNDLE --list-tags --format json --limit=99999 | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | sort --version-sort | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {} $NAMESPACE
 	# Sort results
 	jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
 	# Filter out vX.Y results; require vX.Y.Z
