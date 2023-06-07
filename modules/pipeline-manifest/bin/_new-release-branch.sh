@@ -88,12 +88,12 @@ operate() {
 setup
 if [ "$1" = "backplane" ]; then
   operate $1 $2 $3 STOLOSTRON_ENGINE
-  community_creation $1 $2 $4 stolostron-engine
+  community_creation $1 $2 $3 stolostron-engine
   # branch creation
   # stolostron-engine setup
 elif [ "$1" = "release" ]; then
   operate $1 $2 $3 STOLOSTRON $4
-  community_creation $1 $2 $4 stolostron
+  community_creation $1 $2 $3 stolostron
   # branch creation
   # add backplane files
   # stolostron setup
