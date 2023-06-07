@@ -98,7 +98,7 @@ while true; do
     echo ">>> Add additional data to retag branch"
     echo $OSCI_DATETIME > $OSCI_PIPELINE_DIR/TAG
     echo $OSCI_PIPELINE_GIT_BRANCH > $OSCI_PIPELINE_DIR/ORIGIN_BRANCH
-    echo $OSCI_RELEASE_VERSION > $OSCI_PIPELINE_DIR/RELEASE_VERSION
+    echo $OSCI_Y_RELEASE_VERSION > $OSCI_PIPELINE_DIR/RELEASE_VERSION
     echo $OSCI_Z_RELEASE_VERSION > $OSCI_PIPELINE_DIR/Z_RELEASE_VERSION
     echo $OSCI_COMPONENT_NAME > $OSCI_PIPELINE_DIR/COMPONENT_NAME
     echo ">>> Restore manifest and image alias files"
@@ -109,7 +109,7 @@ while true; do
     git commit -am "Stage $OSCI_Z_RELEASE_VERSION snapshot of $OSCI_COMPONENT_NAME-$OSCI_COMPONENT_SUFFIX"
     echo ">>> Push retag branch update to pipeline repo"
 	if git push ; then
-        echo "Successfully updated $OSCI_COMPONENT_NAME to $OSCI_COMPONENT_NAME:$OSCI_Z_RELEASE_VERSION in https://$OSCI_PIPELINE_SITE/$OSCI_PIPELINE_ORG/$OSCI_PIPELINE_REPO#$OSCI_RELEASE_VERSION-$OSCI_PIPELINE_STAGE"
+        echo "Successfully updated $OSCI_COMPONENT_NAME to $OSCI_COMPONENT_NAME:$OSCI_Z_RELEASE_VERSION in https://$OSCI_PIPELINE_SITE/$OSCI_PIPELINE_ORG/$OSCI_PIPELINE_REPO#$OSCI_Y_RELEASE_VERSION-$OSCI_PIPELINE_STAGE"
 		popd > /dev/null
 		break
 	fi
