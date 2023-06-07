@@ -33,11 +33,12 @@ make_index () {
 	echo Locating upgrade bundles for $BUNDLE...
 
 	# Extract version list, Pull out timestamp
-	curl_output=$(curl --silent --location -H "Authorization: Bearer $REDHAT_REGISTRY_TOKEN" https://registry.redhat.io/v2/$NAMESPACE/$BUNDLE/tags/list)
+  podman login --username=$PIPELINE_MANIFEST_REDHAT_USER --password=$PIPELINE_MANIFEST_REDHAT_TOKEN registry.redhat.io
+	curl_output=$(podman search registry.redhat.io/$NAMESPACE/$BUNDLE --list-tags --format json --limit=99999)
 	err_code=$(echo $curl_output | jq -r '.errors[].code' 2> /dev/null )
 	echo err_code from bundle curl \(blank or 404 is good\): $err_code
 	if [[ $err_code = "404" ]] || [[ $err_code = "" ]]; then
-		echo $curl_output | jq -r '.tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {} $NAMESPACE
+		echo $curl_output | jq -r '.[0].Tags[] | select(test("'$PIPELINE_MANIFEST_BUNDLE_REGEX'"))' | sort --version-sort | xargs -L1 -I'{}' $BIN_PATH/_get_timestamp.sh $TEMPFILE $BUNDLE {} $NAMESPACE
 
 		# Sort results
 		jq '. | sort_by(.["timestamp"])' $TEMPFILE > $TEMPFILE2; mv $TEMPFILE2 $TEMPFILE
