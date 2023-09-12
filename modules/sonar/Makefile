@@ -77,7 +77,7 @@ sonar/go/prow:
 		exit 1 ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		-Dsonar.qualitygate.wait=true \
@@ -115,7 +115,7 @@ sonar/go/openshiftci:
 		echo "sonar.pullrequest.branch=$(shell curl -s "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}" | jq ".head.ref")" >> sonar-project.properties ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
@@ -144,7 +144,7 @@ sonar/go/openshiftci-post:
 		echo "sonar.branch.name=${PULL_BASE_REF}" >> sonar-project.properties ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		--debug > >(tee -a "${ARTIFACTS}/sonar.log")
@@ -214,7 +214,7 @@ sonar/js/prow:
 		exit 1 ; \
 	fi
 
-	@sonar-scanner -Dsonar.login=${SONAR_TOKEN} \
+	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		-Dsonar.qualitygate.wait=true \
