@@ -2,8 +2,8 @@
 SECURITYSCANS_DIR=${BUILD_HARNESS_PATH}/../build-harness-extensions/modules/security-scans/scripts
 
 # Find component name and component version from repo artifacts
-SECURITYSCANS_IMAGE_NAME ?= $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_NAME 2> /dev/null)
-SECURITYSCANS_IMAGE_VERSION ?= $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_VERSION 2> /dev/null)
+SECURITYSCANS_IMAGE_NAME := $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_NAME 2> /dev/null)
+SECURITYSCANS_IMAGE_VERSION := $(shell cat ${BUILD_HARNESS_PATH}/../COMPONENT_VERSION 2> /dev/null)
 SECURITYSCANS_IMAGE_TAG_EXTENSION ?= ${COMPONENT_TAG_EXTENSION}
 
 # Build the details for the remote destination repo for the image

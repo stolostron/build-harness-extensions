@@ -71,7 +71,7 @@ PIPELINE_MANIFEST_GIT_BRANCH ?= $(PIPELINE_MANIFEST_RELEASE_VERSION)-$(PROMOTE_F
 PIPELINE_MANIFEST_RETAG_REPO ?= quay
 
 DATETIME_VAR := $(shell (date +%Y-%m-%d-%H-%M-%S))
-Z_RELEASE_VERSION ?= $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${PIPELINE_MANIFEST_ORG}/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
+Z_RELEASE_VERSION := $(shell curl -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${PIPELINE_MANIFEST_ORG}/release/${PIPELINE_MANIFEST_BRANCH}/Z_RELEASE_VERSION)
 	
 
 ACM_SNAPSHOT ?=

@@ -1,8 +1,8 @@
 CURL := $(shell which curl 2> /dev/null)
 TMP ?= /tmp
 JQ_VERSION ?= 1.5
-JQ_PLATFORM ?= $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/osx-amd/g')
-JQ_ARCH ?= $(shell echo $(BUILD_HARNESS_ARCH) | sed 's/amd64/64/g')
+JQ_PLATFORM := $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/osx-amd/g')
+JQ_ARCH := $(shell echo $(BUILD_HARNESS_ARCH) | sed 's/amd64/64/g')
 JQ_URL ?= https://github.com/stedolan/jq/releases/download/jq-$(JQ_VERSION)/jq-$(JQ_PLATFORM)$(JQ_ARCH)
 JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 

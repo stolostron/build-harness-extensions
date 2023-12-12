@@ -1,7 +1,7 @@
 # A simple build harness module to install the newest version of the oc cli.
 
 OC_BUILD_VERSION?=latest
-OC_PLATFORM ?= $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/mac/g')
+OC_PLATFORM := $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/mac/g')
 OC_SOURCE_URL?="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_BUILD_VERSION}/openshift-client-${OC_PLATFORM}.tar.gz"
 
 OC_DEST_PATH?=${BUILD_HARNESS_PATH}/vendor
