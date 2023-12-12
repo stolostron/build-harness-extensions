@@ -86,7 +86,7 @@ JQ ?= $(BUILD_HARNESS_PATH)/vendor/jq
 # Install jq and oc cli and log in to the ClusterPool Host cluster
 clusterpool/_init: %_init:
 	$(call assert-set,CLUSTERPOOL_HOST_API)
-	@$(SELF) -s jq/install 2>&1 > /dev/null
+	@$(SELF) -s jq/install
 	@$(SELF) -s oc/login OC_CLUSTER_USER=$(CLUSTERPOOL_HOST_USER) OC_CLUSTER_PASS=$(CLUSTERPOOL_HOST_PASS) OC_CLUSTER_TOKEN=$(CLUSTERPOOL_HOST_TOKEN) \
 		OC_CLUSTER_URL=$(CLUSTERPOOL_HOST_API) OC_FORCE_LOGIN="true" OC_SILENT="false"
 
