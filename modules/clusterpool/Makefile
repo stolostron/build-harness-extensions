@@ -1,3 +1,4 @@
+.SECONDEXPANSION:
 #---Login/Host-cluster related env vars---#
 # API URL of the cluster running the target clusterpool, used in oc login, so port :6443 is required
 CLUSTERPOOL_HOST_API ?=
