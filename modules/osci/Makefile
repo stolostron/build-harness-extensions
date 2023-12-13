@@ -5,7 +5,11 @@
 # https://github.com/kubernetes/test-infra/blob/master/prow/jobs.md#job-environment-variables
 #
 export OSCI_COMPONENT_REPO ?= ${REPO_OWNER}/${REPO_NAME}
-export OSCI_COMPONENT_BRANCH ?= ${PULL_BASE_REF}
+ifeq ($(PULL_BASE_REF),)
+	OSCI_COMPONENT_BRANCH=release-2.9
+else
+	OSCI_COMPONENT_BRANCH=$(PULL_BASE_REF)
+endif
 export OSCI_COMPONENT_SHA256 ?= ${PULL_BASE_SHA}
 
 export OSCI_COMPONENT_NAME := $(shell cat COMPONENT_NAME 2> /dev/null)
@@ -15,12 +19,16 @@ export OSCI_PIPELINE_PRODUCT_PREFIX ?= release
 export OSCI_RELEASE_VERSION ?= $(subst $(OSCI_PIPELINE_PRODUCT_PREFIX)-,,$(OSCI_COMPONENT_BRANCH))
 export OSCI_RELEASE_SHA_VERSION ?= $(OSCI_RELEASE_VERSION)
 export OSCI_RELEASE_BRANCH ?= $(OSCI_PIPELINE_PRODUCT_PREFIX)-$(OSCI_RELEASE_VERSION)
-export OSCI_Z_RELEASE_VERSION := $(shell curl --silent -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/${OSCI_RELEASE_BRANCH}/Z_RELEASE_VERSION)
+ifeq ($(PIPELINE_MANIFEST_ORG),) 
+	OSCI_PIPELINE_ORG = stolostron
+else 
+	OSCI_PIPELINE_ORG = $(PIPELINE_MANIFEST_ORG)
+endif
+export OSCI_Z_RELEASE_VERSION := $(shell curl --silent -H "Authorization: token $(GITHUB_TOKEN)" -H "Accept: application/vnd.github.v3.raw" https://raw.githubusercontent.com/${OSCI_PIPELINE_ORG}/release/$(OSCI_RELEASE_BRANCH)/Z_RELEASE_VERSION)
 export OSCI_Y_RELEASE_VERSION := $(shell echo $(OSCI_Z_RELEASE_VERSION) | sed -nr "s/([0-9]+\.[0-9]+)\.{0,1}[0-9]*/\1/p")
 
 
 export OSCI_PIPELINE_SITE ?= github.com
-export OSCI_PIPELINE_ORG ?= $(PIPELINE_MANIFEST_ORG)
 export OSCI_PIPELINE_REPO ?= pipeline
 export OSCI_PIPELINE_DIR ?= $(OSCI_PIPELINE_REPO)
 export OSCI_PIPELINE_STAGE ?= integration
