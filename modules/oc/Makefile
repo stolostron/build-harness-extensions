@@ -5,8 +5,8 @@ OC_BUILD_VERSION?=latest
 OC_PLATFORM := $(shell echo $(BUILD_HARNESS_OS) | sed 's/darwin/mac/g')
 OC_SOURCE_URL?="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_BUILD_VERSION}/openshift-client-${OC_PLATFORM}.tar.gz"
 
-OC_DEST_PATH?=${BUILD_HARNESS_PATH}/vendor
-OC_TAR_PATH?=${OC_DEST_PATH}/oc.tar.gz
+OC_DEST_PATH := "${BUILD_HARNESS_PATH}/vendor"
+OC_TAR_PATH := "${OC_DEST_PATH}/oc.tar.gz"
 OC?=${OC_DEST_PATH}/oc
 OC_CLUSTER_USER ?=
 OC_CLUSTER_PASS ?=
@@ -14,7 +14,7 @@ OC_CLUSTER_TOKEN ?=
 OC_CLUSTER_URL ?=
 OC_LOGIN_OPTIONS ?= --insecure-skip-tls-verify=true
 OC_COMMAND ?=
-OC_LOGGED_IN ?= $(OC_DEST_PATH)/.oc_cli_logged_in
+OC_LOGGED_IN := "$(OC_DEST_PATH)/.oc_cli_logged_in"
 OC_FORCE_LOGIN ?= 
 OC_SILENT ?= true
 
