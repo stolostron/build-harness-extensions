@@ -1,3 +1,4 @@
+.SECONDEXPANSION:
 # A simple build harness module to install the newest version of the oc cli.
 
 OC_BUILD_VERSION?=latest
