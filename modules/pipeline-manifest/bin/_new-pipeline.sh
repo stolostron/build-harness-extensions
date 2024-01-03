@@ -43,7 +43,6 @@ operate $2 $3 dev
 operate $2 $3 nightly
 operate $2 $3 preview
 if [ "$1" = "pipeline" ]; then
-  operate $2 $3 edge
   operate $2 $3 stable
 fi
 teardown
