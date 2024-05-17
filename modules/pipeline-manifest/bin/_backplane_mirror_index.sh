@@ -121,6 +121,9 @@ if [[ -z $SKIP_MIRROR ]]; then
     return 1
   fi
 
+  # In case we need the MCE version as X.Y in case it's needed
+  MCE_VER = $(echo $(cat .klusterlet_operator_bundle_tag) | sed -rn "s/([0-9]\.[0-9]{1,})\.{0,1}[0-9]{1,}-.*/\1/p")
+
   # We expect ashdod to leave a mapping.txt file that contains all the images it knew to mirror
   cp ashdod/mapping.txt .
 
@@ -129,7 +132,16 @@ if [[ -z $SKIP_MIRROR ]]; then
 
   echo "klusterlet-operator-bundle tag:"
   #echo "Skipping klusterlet processing for the time being"
-  cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
+  #cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
+
+  # Include klusterlet-operator-bundle if build is MCE 2.2, 2.3, 2.4, or 2.5
+  if [[ "$MCE_VER" == "2.2" || "$MCE_VER" == "2.3" || \
+        "$MCE_VER" == "2.4" || "$MCE_VER" == "2.5" ]]; then
+
+    cat .ashdod_output | grep "Image to mirror: klusterlet-operator-bundle:" | awk -F":" '{print $3}' | tee .klusterlet_operator_bundle_tag
+  else
+    echo "Skipping klusterlet processing for the time being"
+  fi
 
   # Mirror the openshift images we depend on
   # Note: the oc image extract command is so dangerous that we ensure we are in a known-good-temporary location before attempting extraction
@@ -164,12 +176,23 @@ if [[ -z $SKIP_INDEX ]]; then
   # Do the dance to get our proper quay access
   docker login -u $PIPELINE_MANIFEST_REDHAT_USER -p $PIPELINE_MANIFEST_REDHAT_TOKEN registry.access.redhat.com || return 1
   export REDHAT_REGISTRY_TOKEN=$(curl --silent -u "$PIPELINE_MANIFEST_REDHAT_USER":$PIPELINE_MANIFEST_REDHAT_TOKEN "https://sso.redhat.com/auth/realms/rhcc/protocol/redhat-docker-v2/auth?service=docker-registry&client_id=curl&scope=repository:rhel:pull" | jq -r '.access_token')
+  
+  # MCE version as X.Y in case it's needed
+  MCE_VER = $(echo $(cat .klusterlet_operator_bundle_tag) | sed -rn "s/([0-9]\.[0-9]{1,})\.{0,1}[0-9]{1,}-.*/\1/p")
 
   # Call make_index with mce
   make_index mce-operator-bundle $(cat .mce_operator_bundle_tag) mce-custom-registry multicluster-engine || return 1
+  
+  # Include klusterlet-operator-bundle if build is MCE 2.2, 2.3, 2.4, or 2.5
+  if [[ "$MCE_VER" == "2.2" || "$MCE_VER" == "2.3" || \
+        "$MCE_VER" == "2.4" || "$MCE_VER" == "2.5" ]]; then
 
+    # Call make_index with klusterlet
+    make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
+  fi
+  
   # Call make_index with klusterlet
-  make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
+  # make_index klusterlet-operator-bundle $(cat .klusterlet_operator_bundle_tag) klusterlet-custom-registry multicluster-engine || return 1
 
   # Finally, send out the mce custom registry to the downstream mirror mapping file
   mce_sha=$($OC image info quay.io/acm-d/mce-custom-registry:$Z_RELEASE_VERSION-DOWNANDBACK-$DATESTAMP --filter-by-os=amd64 --output=json | jq -r '.digest')
