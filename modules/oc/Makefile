@@ -24,8 +24,8 @@ OC_SILENT ?= true
 oc/install: %install:
 	@if [ ! -x $(OC) ]; then \
 		OC_BINARY="openshift-client-${OC_PLATFORM}"; \
-		if command -v ldd &>/dev/null; then \
-			OC_LIBC_VERSION="$$(ldd --version | head -1 | awk '{print $NF}')"; \
+		if command -v ldd $&>/dev/null; then \
+			OC_LIBC_VERSION="$$(ldd --version | head -1 | awk '{print $$NF}')"; \
 		fi; \
 		if [ -n "$${OC_LIBC_VERSION}" ] && [  "$${OC_LIBC_VERSION%\.*}" -le "2" ] && [ "$${OC_LIBC_VERSION#*\.}" -lt "32" ]; then \
 			OC_BINARY="$${OC_BINARY}-${BUILD_HARNESS_ARCH}-rhel8"; \
