@@ -14,7 +14,7 @@ sonar/go: go/gosec-install
 	@cat gosec.json
 	@echo "--> Running sonar-scanner"
 	unset SONARQUBE_SCANNER_PARAMS
-	sonar-scanner --debug
+	sonar-scanner
 
 
 .PHONY: sonar/go/prow
@@ -81,8 +81,7 @@ sonar/go/prow:
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		-Dsonar.qualitygate.wait=true \
-		-Dsonar.qualitygate.timeout=450 \
-		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
+		-Dsonar.qualitygate.timeout=450 > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
 .PHONY: sonar/go/openshiftci
@@ -117,8 +116,7 @@ sonar/go/openshiftci:
 
 	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
-		-Dsonar.host.url=https://sonarcloud.io \
-		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
+		-Dsonar.host.url=https://sonarcloud.io > >(tee -a "${ARTIFACT_DIR}/sonar.log")
 
 
 .PHONY: sonar/go/openshiftci-post
@@ -146,8 +144,7 @@ sonar/go/openshiftci-post:
 
 	@sonar-scanner -Dsonar.token=${SONAR_TOKEN} \
 		-Dsonar.organization="${SONAR_ORG}" \
-		-Dsonar.host.url=https://sonarcloud.io \
-		--debug > >(tee -a "${ARTIFACTS}/sonar.log")
+		-Dsonar.host.url=https://sonarcloud.io > >(tee -a "${ARTIFACTS}/sonar.log")
 
 
 # This expects that your code uses Jest to execute tests.
@@ -166,7 +163,7 @@ sonar/js/jest-init:
 ## Runs the SonarCloud analysis for JavaScript on Travis. This will not be run during local development.
 sonar/js:
 	unset SONARQUBE_SCANNER_PARAMS
-	sonar-scanner --debug
+	sonar-scanner
 
 
 .PHONY: sonar/js/prow
@@ -218,5 +215,4 @@ sonar/js/prow:
 		-Dsonar.organization="${SONAR_ORG}" \
 		-Dsonar.host.url=https://sonarcloud.io \
 		-Dsonar.qualitygate.wait=true \
-		-Dsonar.qualitygate.timeout=450 \
-		--debug > >(tee -a "${ARTIFACT_DIR}/sonar.log")
+		-Dsonar.qualitygate.timeout=450 > >(tee -a "${ARTIFACT_DIR}/sonar.log")
