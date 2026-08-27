@@ -37,8 +37,10 @@ if [[ "backplane-pipeline" = "$pipeline_repo" ]]; then
   ICON="backplane"
 fi
 
+exit_code=0
+
 rm manifest-sha.badjson 2> /dev/null
-cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
+while IFS='' read -r item; do
   name=$(echo $item | jq -r '.["image-name"]')
   remote=$(echo $item | jq -r '.["image-remote"]')
   repository=$(echo $item | jq -r '.["image-remote"]' | awk -F"/" '{ print $2 }')
@@ -49,7 +51,9 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
     echo Oh no, can\'t retrieve image key for $name
     msg=":$ICON: \`$pipeline_repo\` quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve image key for $name in $dictionary_filename"
     make simple-slack/send SLACK_MESSAGE="$msg"
-    exit 1
+    exit_code=1
+
+    continue
   fi
   if [[ "$home_quay_org" = "$remote" ]]; then
     echo "**** Home ****"
@@ -67,16 +71,19 @@ cat $manifest_filename | jq -rc '.[]' | while IFS='' read item; do
   #echo $curl_command
   sha_value=$(eval "$curl_command | jq -r .tags[0].manifest_digest")
   echo sha_value: $sha_value
-  if [[ "null" = "$sha_value" ]]
-  then
+  if [[ "null" = "$sha_value" ]]; then
     echo Oh no, can\'t retrieve sha from $url
     msg=":$ICON: \`$pipeline_repo\` quay_retag (decorate-manifest.sh): :red_circle: Failure in <$TRAVIS_BUILD_WEB_URL|retag> commit: \`$TRAVIS_COMMIT_MESSAGE\`: cannot retrieve sha from $url"
     make simple-slack/send SLACK_MESSAGE="$msg"
-    exit 1
+    exit_code=1
+
+    continue
   fi
   echo $item | jq --arg sha_value $sha_value --arg image_key $image_key --arg home_quay_org $home_quay_org '. + { "image-digest": $sha_value, "image-key": $image_key, "image-remote": $home_quay_org }' >> manifest-sha.badjson
-done
+done < <(cat $manifest_filename | jq -rc '.[]')
 
 echo Creating $shad_filename file
 jq -s '.' < manifest-sha.badjson > $shad_filename
 rm manifest-sha.badjson 2> /dev/null
+
+exit "${exit_code}"
